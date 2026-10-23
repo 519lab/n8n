@@ -34,6 +34,15 @@ vi.mock('vue-router', () => ({
 	onBeforeRouteLeave: vi.fn(),
 }));
 
+// FocusSidebar loads the license on mount; keep it off the real settings API
+vi.mock('@/features/ai/evaluation/composables/useEvaluationsLicense', () => ({
+	useEvaluationsLicense: () => ({
+		isLicensed: { value: false },
+		isResolved: { value: true },
+		ensureLicenseLoaded: vi.fn(async () => {}),
+	}),
+}));
+
 describe('NodeView', () => {
 	let workflowsStore: ReturnType<typeof useWorkflowsStore>;
 	let workflowDocumentStore: ReturnType<typeof useWorkflowDocumentStore>;
