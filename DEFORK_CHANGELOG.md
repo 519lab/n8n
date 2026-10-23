@@ -16,6 +16,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-10-16 — Dependabot config + auto-merge workflow
+
+**Infrastructure, not de-fork work; no `.ee` source involved.** Dependabot now
+opens weekly npm PRs for the root and every workspace package (minor/patch
+grouped, 5 open at a time) plus weekly GitHub Actions updates
+(`.github/dependabot.yml`). A `dependabot-auto-merge` workflow enables squash
+auto-merge on patch/minor Dependabot PRs once required CI checks pass; major
+updates stay open for manual review.
 ### 2026-09-30 — editor-ui suite green; four clean-room frontend gaps closed
 
 The editor-ui unit suite carried a standing-red baseline: **18 files, 136
