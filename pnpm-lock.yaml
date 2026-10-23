@@ -493,8 +493,8 @@ catalogs:
       specifier: 6.0.1
       version: 6.0.1
     sanitize-html:
-      specifier: 2.18.0
-      version: 2.18.0
+      specifier: 2.18.1
+      version: 2.18.1
     sass-embedded:
       specifier: ^1.98.0
       version: 1.98.0
@@ -3302,7 +3302,7 @@ importers:
         version: 4.6.14
       sanitize-html:
         specifier: 'catalog:'
-        version: 2.18.0
+        version: 2.18.1
       sqlite3:
         specifier: 5.1.7
         version: 5.1.7
@@ -5142,7 +5142,7 @@ importers:
         version: 2.5.0(typescript@6.0.2)(vue@3.5.26(typescript@6.0.2))
       sanitize-html:
         specifier: 'catalog:'
-        version: 2.18.0
+        version: 2.18.1
       vue-boring-avatars:
         specifier: ^1.3.0
         version: 1.3.0(vue@3.5.26(typescript@6.0.2))
@@ -5941,7 +5941,7 @@ importers:
         version: 2.5.0(typescript@6.0.2)(vue@3.5.26(typescript@6.0.2))
       sanitize-html:
         specifier: 'catalog:'
-        version: 2.18.0
+        version: 2.18.1
       semver:
         specifier: 7.7.3
         version: 7.7.3
@@ -6447,7 +6447,7 @@ importers:
         version: 3.13.0
       sanitize-html:
         specifier: 'catalog:'
-        version: 2.18.0
+        version: 2.18.1
       semver:
         specifier: 7.7.3
         version: 7.7.3
@@ -20967,8 +20967,8 @@ packages:
   sanitize-filename@1.6.4:
     resolution: {integrity: sha512-9ZyI08PsvdQl2r/bBIGubpVdR3RR9sY6RDiWFPreA21C/EFlQhmgo20UZlNjZMMZNubusLhAQozkA0Od5J21Eg==}
 
-  sanitize-html@2.18.0:
-    resolution: {integrity: sha512-CvY+PV+NBhxe3BnjFI5f//vEDKLULm9OlZArso7gdgVsWvanBuq9PNDx+/2llfL+8XFYa/UNBxvqRBg3TWU2Ug==}
+  sanitize-html@2.18.1:
+    resolution: {integrity: sha512-2X5lC8fYla8YaT8g73Nj+HcLWXan5dLyCWLgVvaOmfw7JI78IRsyNtIDytTHdn7hBQbIkCah7Zbmd5jabzeDig==}
     engines: {node: '>=22.12.0'}
 
   sass-embedded-all-unknown@1.98.0:
@@ -40742,9 +40742,8 @@ snapshots:
     dependencies:
       truncate-utf8-bytes: 1.0.2
 
-  sanitize-html@2.18.0:
+  sanitize-html@2.18.1:
     dependencies:
-      deepmerge: 4.3.1
       escape-string-regexp: 4.0.0
       htmlparser2: 12.0.0
       is-plain-object: 5.1.0
