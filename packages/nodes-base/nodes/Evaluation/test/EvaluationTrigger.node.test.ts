@@ -1,5 +1,5 @@
 import { mock, mockDeep } from 'vitest-mock-extended';
-import type { IExecuteFunctions, NodeParameterValueType } from 'n8n-workflow';
+import type { IExecuteFunctions, INodeExecutionData, NodeParameterValueType } from 'n8n-workflow';
 
 import { GoogleSheet } from '../../Google/Sheet/v2/helpers/GoogleSheet';
 import { EvaluationTrigger } from '../EvaluationTrigger/EvaluationTrigger.node';
@@ -373,7 +373,9 @@ describe('Evaluation Trigger Node', () => {
 
 				// First execution - no previous data
 				mockExecuteFunctions.getInputData.mockReturnValue([{ json: {} }]);
-				const result1 = await evaluationTrigger.execute.call(mockExecuteFunctions);
+				const result1 = (await evaluationTrigger.execute.call(
+					mockExecuteFunctions,
+				)) as INodeExecutionData[][];
 
 				expect(result1[0][0].json.row_id).toBe(1);
 				expect(result1[0][0].json.row_number).toBe(0);
@@ -397,7 +399,9 @@ describe('Evaluation Trigger Node', () => {
 
 				// Second execution - previous row was id=1
 				mockExecuteFunctions.getInputData.mockReturnValue(result1[0]);
-				const result2 = await evaluationTrigger.execute.call(mockExecuteFunctions);
+				const result2 = (await evaluationTrigger.execute.call(
+					mockExecuteFunctions,
+				)) as INodeExecutionData[][];
 
 				expect(result2[0][0].json.row_id).toBe(2);
 				expect(result2[0][0].json.row_number).toBe(1);
@@ -425,7 +429,9 @@ describe('Evaluation Trigger Node', () => {
 
 				// Third execution - previous row was id=2
 				mockExecuteFunctions.getInputData.mockReturnValue(result2[0]);
-				const result3 = await evaluationTrigger.execute.call(mockExecuteFunctions);
+				const result3 = (await evaluationTrigger.execute.call(
+					mockExecuteFunctions,
+				)) as INodeExecutionData[][];
 
 				expect(result3[0][0].json.row_id).toBe(3);
 				expect(result3[0][0].json.row_number).toBe(2);
