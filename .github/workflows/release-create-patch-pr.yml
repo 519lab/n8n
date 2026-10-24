@@ -30,13 +30,13 @@ on:
 jobs:
   determine-version-info:
     name: Determine publishing track
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     outputs:
       release_candidate_branch: ${{ steps.determine-branch.outputs.release_candidate_branch }}
       should_create_pr: ${{ steps.determine-branch.outputs.should_create_pr }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: useblacksmith/checkout@v1 # v6.0.2
         with:
           fetch-depth: 0
 
@@ -58,7 +58,7 @@ jobs:
     name: Skip release PR (no new commits)
     needs: [determine-version-info]
     if: needs.determine-version-info.outputs.should_create_pr != 'true'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - name: Log skip reason
         run: echo "No new commits found between the release candidate branch and the current release tag. Skipping PR creation."
@@ -77,9 +77,9 @@ jobs:
     name: Notify Slack
     needs: [create-release-pr]
     if: needs.create-release-pr.result == 'success' && needs.create-release-pr.outputs.pull-request-number != ''
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: useblacksmith/checkout@v1 # v6.0.2
         with:
           sparse-checkout: .github/scripts/slack
           sparse-checkout-cone-mode: false

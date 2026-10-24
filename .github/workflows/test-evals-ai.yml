@@ -37,7 +37,7 @@ on:
 jobs:
   check-skip:
     name: Check Skip Label
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     outputs:
       should_skip: ${{ steps.check.outputs.should_skip }}
     steps:
@@ -102,7 +102,7 @@ jobs:
     name: Determine Configuration
     needs: check-skip
     if: needs.check-skip.outputs.should_skip != 'true'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     outputs:
       branch: ${{ steps.config.outputs.branch }}
       spec_repetitions: ${{ steps.config.outputs.spec_repetitions }}

@@ -35,7 +35,7 @@ permissions:
 jobs:
   generate-sbom:
     name: Generate and Attach SBOM to Release
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 15
     # No continue-on-error: SBOM is now the source of truth for
     # THIRD_PARTY_LICENSES.md (served by the /third-party-licenses endpoint
@@ -43,7 +43,7 @@ jobs:
     # the release rather than silently shipping a stale or missing manifest.
     steps:
       - name: Checkout release tag
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: useblacksmith/checkout@v1 # v6.0.2
         with:
           ref: ${{ inputs.release_tag_ref }}
 

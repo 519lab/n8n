@@ -8,7 +8,7 @@ on:
 
 jobs:
   notify:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     if: >-
       (github.event_name == 'pull_request_review' && github.event.review.state == 'approved') ||
       (github.event_name == 'pull_request_review' && github.event.review.state == 'dismissed') ||

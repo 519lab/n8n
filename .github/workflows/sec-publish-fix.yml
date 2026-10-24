@@ -8,7 +8,7 @@ on:
 jobs:
   sync-security-fix:
     if: github.repository == 'n8n-io/n8n-private' && github.event.pull_request.merged == true
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     permissions:
       contents: write
 
@@ -23,7 +23,7 @@ jobs:
           repositories: n8n,n8n-private
 
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: useblacksmith/checkout@v1 # v6.0.2
         with:
           fetch-depth: 0
           token: ${{ steps.generate_token.outputs.token }}

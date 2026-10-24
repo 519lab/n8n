@@ -14,7 +14,7 @@ jobs:
   check_branch:
     if: ${{ github.repository == 'n8n-io/n8n-private' }}
     name: enforce-bundle-branches-only-in-private
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
 
     steps:
       - name: Validate head branch

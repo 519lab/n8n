@@ -33,7 +33,7 @@ on:
 jobs:
   validate-inputs:
     name: Validate Inputs
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     outputs:
       version: ${{ steps.check_version.outputs.version }}
       release_channel: ${{ inputs.release-channel }}
@@ -67,7 +67,7 @@ jobs:
 
   release-to-npm:
     name: Release to NPM
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     needs: validate-inputs
     timeout-minutes: 5
     environment: release
@@ -97,13 +97,13 @@ jobs:
 
   release-to-docker-hub:
     name: Release to DockerHub
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     needs: validate-inputs
     timeout-minutes: 5
     environment: release
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: useblacksmith/checkout@v1 # v6.0.2
 
       - name: Login to DockerHub
         uses: ./.github/actions/docker-registry-login
@@ -135,7 +135,7 @@ jobs:
 
   release-to-github-container-registry:
     name: Release to GitHub Container Registry
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     needs: validate-inputs
     timeout-minutes: 5
     environment: release
@@ -143,7 +143,7 @@ jobs:
       packages: write
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: useblacksmith/checkout@v1 # v6.0.2
 
       - name: Login to GitHub Container Registry
         uses: ./.github/actions/docker-registry-login
@@ -166,7 +166,7 @@ jobs:
 
   update-docs:
     name: Update latest and next in the docs
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     needs: [validate-inputs, release-to-npm, release-to-docker-hub]
     timeout-minutes: 2
     environment: release

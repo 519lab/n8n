@@ -33,14 +33,14 @@ on:
 
 jobs:
   determine-changes:
-    runs-on: ubuntu-slim
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     environment: release
     outputs:
       has_node_enhancements: ${{ steps.get-changes.outputs.has_node_enhancements }}
       has_core_changes: ${{ steps.get-changes.outputs.has_core_changes }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: useblacksmith/checkout@v1 # v6.0.2
         with:
           fetch-depth: 0
 

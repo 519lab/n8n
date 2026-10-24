@@ -7,7 +7,7 @@ on:
 jobs:
   ensure-release-candidate-branches:
     name: Ensure release-candidate branches
-    runs-on: ubuntu-slim
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     permissions:
       contents: write
     steps:
@@ -19,7 +19,7 @@ jobs:
           private-key: ${{ secrets.N8N_ASSISTANT_PRIVATE_KEY }}
 
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: useblacksmith/checkout@v1 # v6.0.2
         with:
           fetch-depth: 1
           fetch-tags: true

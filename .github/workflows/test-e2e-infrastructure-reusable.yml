@@ -57,7 +57,7 @@ jobs:
     runs-on: blacksmith-2vcpu-ubuntu-2204
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: useblacksmith/checkout@v1 # v6.0.2
 
       - name: Setup Node.js
         uses: ./.github/actions/setup-nodejs

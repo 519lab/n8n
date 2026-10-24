@@ -61,7 +61,7 @@ on:
 jobs:
   determine-build-context:
     name: Determine Build Context
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     outputs:
       release_type: ${{ steps.context.outputs.release_type }}
       n8n_version: ${{ steps.context.outputs.version }}
@@ -71,7 +71,7 @@ jobs:
       short_sha: ${{ steps.sha.outputs.short_sha }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: useblacksmith/checkout@v1 # v6.0.2
         with:
           ref: ${{ inputs.ref }}
 
@@ -233,7 +233,7 @@ jobs:
   create_multi_arch_manifest:
     name: Create Multi-Arch Manifest
     needs: [determine-build-context, build-and-push-docker]
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     if: |
       needs.build-and-push-docker.result == 'success' &&
       needs.determine-build-context.outputs.push_enabled == 'true'
@@ -246,10 +246,10 @@ jobs:
       runners_distroless_image: ${{ steps.get-digests.outputs.runners_distroless_image }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: useblacksmith/checkout@v1 # v6.0.2
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Setup Blacksmith Builder
+        uses: useblacksmith/setup-docker-builder@v1
 
       - name: Login to Docker registries
         uses: ./.github/actions/docker-registry-login
@@ -377,7 +377,7 @@ jobs:
   call-success-url:
     name: Call Success URL
     needs: [create_multi_arch_manifest]
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     if: needs.create_multi_arch_manifest.result == 'success' || needs.create_multi_arch_manifest.result == 'skipped'
     steps:
       - name: Call Success URL
@@ -464,13 +464,13 @@ jobs:
       (needs.determine-build-context.outputs.release_type == 'stable' ||
        needs.determine-build-context.outputs.release_type == 'rc' ||
        needs.determine-build-context.outputs.release_type == 'nightly')
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     permissions:
       id-token: write
       packages: write
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: useblacksmith/checkout@v1 # v6.0.2
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
@@ -529,14 +529,14 @@ jobs:
       (needs.determine-build-context.outputs.release_type == 'stable' ||
        needs.determine-build-context.outputs.release_type == 'rc' ||
        needs.determine-build-context.outputs.release_type == 'nightly')
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 30
     permissions:
       id-token: write
       packages: write
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: useblacksmith/checkout@v1 # v6.0.2
 
       - name: Setup Node.js and install SBOM tooling
         uses: ./.github/actions/setup-nodejs
@@ -593,11 +593,11 @@ jobs:
 
   notify-on-failure:
     name: Notify Cats on nightly build failure
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     needs: [build-and-push-docker]
     if: needs.build-and-push-docker.result == 'failure' && github.event_name == 'schedule'
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: useblacksmith/checkout@v1 # v6.0.2
         with:
           sparse-checkout: .github/scripts/slack
           sparse-checkout-cone-mode: false

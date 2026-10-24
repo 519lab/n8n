@@ -28,12 +28,12 @@ jobs:
     # so gating PR runs on these would produce false-positive blockers.
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     needs: build-and-test-performance
-    runs-on: ubuntu-slim
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     permissions:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: useblacksmith/checkout@v1 # v6.0.2
         with:
           sparse-checkout: packages/testing/playwright/scripts/canvas-perf-sentinels.mjs
           sparse-checkout-cone-mode: false
