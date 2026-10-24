@@ -16,6 +16,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-10-24 — n8n image built on this fork's GHCR base
+
+**Infrastructure; no `.ee` source involved.** `docker/images/n8n/Dockerfile`
+now builds from `ghcr.io/519lab/base:24.18.1`, pinned to index digest
+`sha256:b0db5645…f5836` (the first base published by `build-base-image.yml`
+from `develop`), not upstream's `n8nio/base`. The base package is public, so
+image builds need no registry login to pull it.
+
 ### 2026-10-24 — Base image off Docker Hardened Images; publish to GHCR only
 
 **Infrastructure; no `.ee` source involved.** This fork has no `dhi.io`
