@@ -16,6 +16,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-10-24 — Workflow UX features on without a license (#133 wave 4)
+
+**Ungate; no `.ee` source involved.** Advanced execution filters (with the E19
+annotations), debug-in-editor, workflow diffs, named versions, workflow reviews
+(E18) and token exchange are now in `FAIR_CODE_LICENSED_FEATURES`. Workflow
+reviews and token exchange additionally keep their `N8N_ENV_FEAT_*` opt-in flags.
+The token-exchange E2E spec drops `@licensed`.
+
 ### 2026-10-24 — Data and infrastructure features on without a license (#133 wave 3)
 
 **Ungate; no `.ee` source involved.** Log streaming (E9), variables (E2),

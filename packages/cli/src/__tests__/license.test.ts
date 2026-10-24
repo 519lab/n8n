@@ -185,6 +185,12 @@ describe('License', () => {
 			'feat:binaryDataAz',
 			'feat:executionDataS3',
 			'feat:executionDataAz',
+			'feat:advancedExecutionFilters',
+			'feat:debugInEditor',
+			'feat:workflowDiffs',
+			'feat:namedVersions',
+			'feat:workflowReviews',
+			'feat:tokenExchange',
 		])('isLicensed(%s) is true without consulting the license manager', (feature) => {
 			vi.mocked(LicenseManager.prototype.hasFeatureEnabled).mockReturnValue(false);
 
