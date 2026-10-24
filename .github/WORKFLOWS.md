@@ -283,16 +283,13 @@ runs).
 
 ## Runner Selection
 
-The `RUNNER_PROVIDER` repository variable is set to `github`. Jobs written as
-`${{ vars.RUNNER_PROVIDER == 'github' && 'ubuntu-latest' || 'blacksmith-…' }}`
-honour it; jobs with a hard-coded `blacksmith-*` label (most jobs since the
-Blacksmith migration, plus the Docker build matrix in
-`scripts/docker/docker-config.mjs`) always use Blacksmith. New labels must be
-added to `actionlint.yml`, or the `actionlint_check` pre-commit hook fails.
+All jobs run on Blacksmith runners (hard-coded labels; there is no provider
+toggle), including the Docker build matrix in `scripts/docker/docker-config.mjs`.
+New labels must be added to `actionlint.yml`, or the `actionlint_check`
+pre-commit hook fails.
 
 | Runner                              | Use Case                    |
 |-------------------------------------|-----------------------------|
-| `ubuntu-slim`                       | `RUNNER_PROVIDER=github` fallback for light jobs |
 | `ubuntu-latest`                     | Simple jobs                 |
 | `blacksmith-4vcpu-ubuntu-2404`      | Default for most jobs       |
 | `blacksmith-4vcpu-windows-2025`     | Windows build               |
