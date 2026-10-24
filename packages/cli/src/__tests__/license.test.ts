@@ -173,6 +173,18 @@ describe('License', () => {
 			'feat:ldap',
 			'feat:saml',
 			'feat:oidc',
+			'feat:logStreaming',
+			'feat:variables',
+			'feat:externalSecrets',
+			'feat:sourceControl',
+			'feat:workerView',
+			'feat:dataRedaction',
+			'feat:otel:customSpanAttributes',
+			'feat:communityNodes:customRegistry',
+			'feat:binaryDataS3',
+			'feat:binaryDataAz',
+			'feat:executionDataS3',
+			'feat:executionDataAz',
 		])('isLicensed(%s) is true without consulting the license manager', (feature) => {
 			vi.mocked(LicenseManager.prototype.hasFeatureEnabled).mockReturnValue(false);
 

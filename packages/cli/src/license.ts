@@ -58,6 +58,22 @@ const FAIR_CODE_LICENSED_FEATURES: readonly BooleanLicenseFeature[] = [
 	LICENSE_FEATURES.LDAP,
 	LICENSE_FEATURES.SAML,
 	LICENSE_FEATURES.OIDC,
+	// Data and infrastructure (#133 wave 3): log streaming (E9), variables (E2), external
+	// secrets (E8), source control (E3), worker view (E10), blob stores (PR #2), and the
+	// fair-code redaction, OTel and custom-registry features. Storage modes only take
+	// effect once an admin configures them.
+	LICENSE_FEATURES.LOG_STREAMING,
+	LICENSE_FEATURES.VARIABLES,
+	LICENSE_FEATURES.EXTERNAL_SECRETS,
+	LICENSE_FEATURES.SOURCE_CONTROL,
+	LICENSE_FEATURES.WORKER_VIEW,
+	LICENSE_FEATURES.DATA_REDACTION,
+	LICENSE_FEATURES.OTEL_CUSTOM_SPAN_ATTRIBUTES,
+	LICENSE_FEATURES.COMMUNITY_NODES_CUSTOM_REGISTRY,
+	LICENSE_FEATURES.BINARY_DATA_S3,
+	LICENSE_FEATURES.BINARY_DATA_AZURE,
+	LICENSE_FEATURES.EXECUTION_DATA_S3,
+	LICENSE_FEATURES.EXECUTION_DATA_AZURE,
 ];
 
 /** Numeric quotas those fair-code features need to be fully usable (an ungated
