@@ -22,6 +22,7 @@ import { z } from 'zod';
 import type { EventMessageTypes } from '@/eventbus/event-message-classes';
 import type { MessageEventBus } from '@/eventbus/message-event-bus/message-event-bus';
 
+import { destinationHttpClient } from './destination-http-client';
 import { MessageEventBusDestination, type SerializeOptions } from './message-event-bus-destination';
 import { isSupportedGenericAuthType, REDACTED_SECRET_VALUE } from '../constants';
 
@@ -95,7 +96,7 @@ export class MessageEventBusDestinationWebhook extends MessageEventBusDestinatio
 		this.queryParameters = options.queryParameters ?? { parameters: [] };
 		this.sendPayload = options.sendPayload ?? true;
 		this.options = options.options ?? {};
-		this.httpClient = outboundHttp.requests();
+		this.httpClient = destinationHttpClient(outboundHttp);
 	}
 
 	private parametersToObject(item: MessageEventBusDestinationWebhookParameterItem): IDataObject {

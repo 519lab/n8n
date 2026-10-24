@@ -10,6 +10,7 @@ import { N8N_VERSION } from '@/constants';
 import type { EventMessageTypes } from '@/eventbus/event-message-classes';
 import type { MessageEventBus } from '@/eventbus/message-event-bus/message-event-bus';
 
+import { destinationHttpClient } from './destination-http-client';
 import { MessageEventBusDestination, type SerializeOptions } from './message-event-bus-destination';
 
 /**
@@ -38,7 +39,7 @@ export class MessageEventBusDestinationSentry extends MessageEventBusDestination
 		this.dsn = options.dsn;
 		this.tracesSampleRate = options.tracesSampleRate;
 		this.sendPayload = options.sendPayload ?? true;
-		this.httpClient = outboundHttp.requests();
+		this.httpClient = destinationHttpClient(outboundHttp);
 	}
 
 	/** DSN `https://<publicKey>@<host>/<projectId>` → envelope ingestion endpoint. */
