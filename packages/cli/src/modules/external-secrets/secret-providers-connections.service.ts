@@ -24,7 +24,7 @@ import { ExternalSecretsProviderConnectionManager } from './external-secrets-pro
 import { ExternalSecretsProviders } from './external-secrets-providers';
 import { ExternalSecretsProviderRegistry } from './provider-registry.service';
 import { ExternalSecretsSecretsCache } from './secrets-cache.service';
-import { redactSettings } from './settings-redaction';
+import { redactSettings, restoreRedactedSettings } from './settings-redaction';
 
 /**
  * The stored `type` is a free-form column: the public DTO enum constrains what
@@ -154,6 +154,17 @@ export class SecretProvidersConnectionsService {
 				? await this.findOrFail(providerKey)
 				: await this.findForProjectOrFail(projectId, providerKey, { mustOwn: true });
 
+		// The API hands passwords back blanked; a blanked field in the update means
+		// "keep the stored value". A type change starts from a clean slate.
+		const settings =
+			dto.settings === undefined || (dto.type !== undefined && dto.type !== connection.type)
+				? dto.settings
+				: restoreRedactedSettings(
+						dto.settings,
+						this.providerConnectionManager.decryptSettings(connection),
+						this.propertiesOf(connection.type),
+					);
+
 		await this.txRunner.run({}, async (ctx) => {
 			await this.connectionRepository.updateById(
 				connection.id,
@@ -162,10 +173,10 @@ export class SecretProvidersConnectionsService {
 					...(dto.isEnabled === undefined ? {} : { isEnabled: dto.isEnabled }),
 					// Settings replace wholesale: a merge would silently keep fields the
 					// caller meant to drop.
-					...(dto.settings === undefined
+					...(settings === undefined
 						? {}
 						: {
-								encryptedSettings: this.providerConnectionManager.encryptSettings(dto.settings),
+								encryptedSettings: this.providerConnectionManager.encryptSettings(settings),
 							}),
 				},
 				ctx,
