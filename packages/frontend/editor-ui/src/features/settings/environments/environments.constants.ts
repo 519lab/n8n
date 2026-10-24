@@ -1,5 +1,5 @@
 /** Modal key for the create/edit variable dialog, registered in the UI store. */
-export const VARIABLE_MODAL_KEY = 'variable';
+export const VARIABLE_MODAL_KEY = 'variableModal';
 
 /** REST root for the variables API (see cli `VariablesController`). */
 export const VARIABLES_API_ROOT = 'variables';
