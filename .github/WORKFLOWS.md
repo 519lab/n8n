@@ -290,15 +290,15 @@ added to `actionlint.yml`, or the `actionlint_check` pre-commit hook fails.
 
 | Scanner / artifact | Runs on                          | Output                         |
 |--------------------|----------------------------------|--------------------------------|
-| Poutine            | PRs touching `.github/**`        | Fails on error-level findings  |
+| Poutine            | PRs touching `.github/**`        | Fails on error-level findings; SARIF → Security tab |
 | Zizmor             | PRs touching `.github/**`        | Workflow-hardening findings    |
 | Trivy              | `docker-build-push.yml` builds   | Step summary + logs            |
 | SBOM (CycloneDX)   | `sbom-generation-callable.yml`   | Attached to the GitHub release |
 | SLSA L3 provenance | `docker-build-push.yml` pushes   | Image attestation              |
 | VEX (OpenVEX)      | `docker-build-push.yml` pushes   | `cosign` attestation from `security/vex.openvex.json` |
 
-Poutine's SARIF upload step is still gated to `n8n-io/n8n`, so findings only
-appear in the run, not the Security tab.
+Poutine uploads its SARIF to the Security tab (code scanning) on every scan,
+including scans that fail on error-level findings.
 
 **Verify image provenance / VEX:**
 
