@@ -82,6 +82,9 @@ const FAIR_CODE_LICENSED_FEATURES: readonly BooleanLicenseFeature[] = [
 	LICENSE_FEATURES.NAMED_VERSIONS,
 	LICENSE_FEATURES.WORKFLOW_REVIEWS,
 	LICENSE_FEATURES.TOKEN_EXCHANGE,
+	// Multi-main (#133 wave 5): leader election rebuilt in E10; source control now takes a
+	// cluster-wide lease, so every main can serve it.
+	LICENSE_FEATURES.MULTIPLE_MAIN_INSTANCES,
 ];
 
 /** Numeric quotas those fair-code features need to be fully usable (an ungated

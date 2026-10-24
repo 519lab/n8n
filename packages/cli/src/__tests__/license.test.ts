@@ -191,6 +191,7 @@ describe('License', () => {
 			'feat:namedVersions',
 			'feat:workflowReviews',
 			'feat:tokenExchange',
+			'feat:multipleMainInstances',
 		])('isLicensed(%s) is true without consulting the license manager', (feature) => {
 			vi.mocked(LicenseManager.prototype.hasFeatureEnabled).mockReturnValue(false);
 

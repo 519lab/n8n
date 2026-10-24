@@ -16,6 +16,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-10-24 — Multi-main without a license; source control locks cluster-wide (#133 wave 5)
+
+**Ungate + fix; no `.ee` source involved.** Source-control workfolder
+operations (status-with-reset, push, pull, connect, disconnect, reset) were
+serialized by an in-process promise queue, so two mains could run them at once
+and mix commits or double-import. They now take a lease through the existing
+`LockService` (in-process on one main, Redis-backed under multi-main), renewed
+while the operation runs. With that, `feat:multipleMainInstances` (leader
+election rebuilt in E10) joins `FAIR_CODE_LICENSED_FEATURES`; before, a follower
+main retried for about a minute and then exited with `FeatureNotLicensedError`.
+Verified with two mains on Postgres + Redis: one leader, one follower, and a
+session created on one is served by the other.
+
 ### 2026-10-24 — Inverse license flags removed (#133 wave 6)
 
 **Removal; no `.ee` source involved.** `feat:apiDisabled` and
