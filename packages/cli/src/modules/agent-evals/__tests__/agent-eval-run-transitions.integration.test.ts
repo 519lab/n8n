@@ -127,7 +127,11 @@ describe('AgentEvalResultRepository.countByStatus (integration)', () => {
 			Array.from({ length: 3 }, (_, runIndex) => ({ runId: run.id, runIndex })),
 		);
 
-		await resultRepository.markAsCompleted(seeded[0].id, {});
+		await resultRepository.markAsCompleted(seeded[0].id, {
+			output: null,
+			toolCalls: null,
+			metrics: null,
+		});
 		await resultRepository.markAsError(seeded[1].id, 'empty_input', { message: 'no input' });
 
 		const counts = await resultRepository.countByStatus(run.id);
