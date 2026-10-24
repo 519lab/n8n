@@ -101,6 +101,7 @@ jobs:
         run: |
           echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
           docker pull "$DOCKER_IMAGE"
+          docker pull "ghcr.io/${{ github.repository_owner }}/runners:ci-${{ github.run_id }}"
 
       - name: Start K3s + Helm stack
         env:
