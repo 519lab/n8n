@@ -16,6 +16,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-10-24 — Sharing, team projects and RBAC on without a license (#133 wave 1)
+
+**Ungate; no `.ee` source involved.** Sharing, team projects and their admin/
+editor/viewer roles, advanced permissions, custom roles, the personal-space
+policy, MFA enforcement and API-key scopes were rebuilt fair-code (E1, E14–E16,
+#36) but stayed behind license gates no instance of this fork can satisfy. They
+are now in `FAIR_CODE_LICENSED_FEATURES`, and the team-project quota is
+unlimited: unlicensed it fell back to `0`, which blocked creating any team
+project. Verified on a booted build: a team project is created, a credential
+share persists, and a member is added with `project:editor`.
+
 ### 2026-10-24 — Docker images publish to GHCR only
 
 **Infrastructure; no `.ee` source involved.** Scheduled (nightly) and release
