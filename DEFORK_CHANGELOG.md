@@ -16,6 +16,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-10-24 — Sharing, team projects and RBAC on without a license (#133 wave 1)
+
+**Ungate; no `.ee` source involved.** Sharing, team projects and their admin/
+editor/viewer roles, advanced permissions, custom roles, the personal-space
+policy, MFA enforcement and API-key scopes were rebuilt fair-code (E1, E14–E16,
+#36) but stayed behind license gates no instance of this fork can satisfy. They
+are now in `FAIR_CODE_LICENSED_FEATURES`, and the team-project quota is
+unlimited: unlicensed it fell back to `0`, which blocked creating any team
+project. Verified on a booted build: a team project is created, a credential
+share persists, and a member is added with `project:editor`.
+
 ### 2026-10-24 — Docker images publish to GHCR only
 
 **Infrastructure; no `.ee` source involved.** Scheduled (nightly) and release
@@ -1530,6 +1541,21 @@ scope sets, project listing — unchanged by this work); public API `scope-parit
 keeps 3/4 with the same pre-existing `users.handler.ee` load failure, and the
 "no orphan API-key scopes" assertion still passes. `eslint` on every touched file:
 0 errors, no rule disables.
+
+### 2026-08-09 — S3 and Azure external storage rebuilt fair-code (PR #2)
+
+*Provenance entry added 2026-10-24 (#133); the rebuild landed in `6994717f59`
+without one.* The S3 and Azure object-store providers in `@n8n/blob-storage`
+were Enterprise (`.ee`) and were purged, leaving only the filesystem store.
+`ObjectStoreService` + `S3ByteStore` (via `@aws-sdk/client-s3`) and
+`AzureBlobService` + `AzureByteStore` (via `@azure/storage-blob` /
+`@azure/identity`) were rebuilt clean-room. **Clean-room sources:** the surviving
+package tests (behavioural spec), the surviving fair-code (`ByteStore` interface,
+the `fs-byte-store` pattern, `*.config.ts`, `byte-store-registry`) and the public
+AWS/Azure SDK APIs. No `.ee` source was read. Review follow-ups chunk S3 deletes to
+the 1000-key limit and keep a malformed Azure connection string (which embeds the
+account key) out of startup errors. Verified then: build exit 0, 122/122 package
+tests, eslint 0 errors, 0 `.ee` references.
 
 ### 2026-08-09 — E10 hardening: split-brain fixes in multi-main leadership
 
