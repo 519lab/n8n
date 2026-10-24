@@ -149,7 +149,9 @@ export const test = base.extend<
 
 			await container.stop();
 		},
-		{ scope: 'worker', box: true },
+		// Worker fixtures default to the 60s test timeout, which heavy stacks (e.g. the
+		// sandbox service) exceed; a timed-out setup restarts the worker and orphans the stack.
+		{ scope: 'worker', box: true, timeout: 300_000 },
 	],
 
 	n8nUrl: [
