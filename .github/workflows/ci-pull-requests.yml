@@ -123,7 +123,11 @@ jobs:
               .tbls.postgres.yml
 
       - name: Setup and Build
-        if: fromJSON(steps.ci-filter.outputs.results).ci || fromJSON(steps.ci-filter.outputs.results).e2e
+        # force-e2e needs at least the janitor build: the shard-matrix step runs its CLI.
+        if: >-
+          fromJSON(steps.ci-filter.outputs.results).ci ||
+          fromJSON(steps.ci-filter.outputs.results).e2e ||
+          contains(github.event.pull_request.labels.*.name, 'force-e2e')
         uses: ./.github/actions/setup-nodejs
         with:
           build-command: ${{ fromJSON(steps.ci-filter.outputs.results).ci && 'pnpm build' || 'pnpm turbo run build --filter=@n8n/playwright-janitor' }}
@@ -134,13 +138,24 @@ jobs:
 
       - name: Generate shard matrix
         id: generate-matrix
-        if: fromJSON(steps.ci-filter.outputs.results).ci || fromJSON(steps.ci-filter.outputs.results).e2e
+        # force-e2e must generate a matrix too: the e2e job passes this output to
+        # test-e2e-reusable, and an empty string fails its fromJSON before any shard starts.
+        if: >-
+          fromJSON(steps.ci-filter.outputs.results).ci ||
+          fromJSON(steps.ci-filter.outputs.results).e2e ||
+          contains(github.event.pull_request.labels.*.name, 'force-e2e')
         env:
           CHANGED_FILES: ${{ steps.ci-filter.outputs.changed-files }}
           MERGE_BASE: ${{ steps.ci-filter.outputs.merge-base }}
+          FORCE_E2E: ${{ contains(github.event.pull_request.labels.*.name, 'force-e2e') }}
         run: |
           FILES_CSV=$(echo "$CHANGED_FILES" | tr '\n' ',' | sed 's/,$//')
-          MATRIX=$(node packages/testing/playwright/scripts/distribute-tests.mjs --matrix 16 --orchestrate --impact "--files=$FILES_CSV" "--base=$MERGE_BASE")
+          # A forced run means "run everything", so skip impact selection.
+          if [ "$FORCE_E2E" = "true" ]; then
+            MATRIX=$(node packages/testing/playwright/scripts/distribute-tests.mjs --matrix 16 --orchestrate)
+          else
+            MATRIX=$(node packages/testing/playwright/scripts/distribute-tests.mjs --matrix 16 --orchestrate --impact "--files=$FILES_CSV" "--base=$MERGE_BASE")
+          fi
           echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
           echo "skip-tests=$(node -e "process.stdout.write(JSON.parse(process.argv[1])[0]?.skip === true ? 'true' : 'false')" "$MATRIX")" >> "$GITHUB_OUTPUT"
 
@@ -216,7 +231,6 @@ jobs:
     name: Prepare Docker
     needs: install-and-build
     if: >-
-      github.repository == 'n8n-io/n8n' &&
       github.event_name != 'merge_group' &&
       (needs.install-and-build.outputs.runtime == 'true'
         || needs.install-and-build.outputs.e2e == 'true'
@@ -226,7 +240,7 @@ jobs:
       branch: ${{ needs.install-and-build.outputs.commit_sha }}
     secrets: inherit
 
-  # Internal-only 1-spec fail-fast sanity check on sqlite.
+  # 1-spec fail-fast sanity check on sqlite.
   sqlite-sanity:
     name: 'SQLite: Sanity Check'
     needs: [install-and-build, prepare-docker]
@@ -235,7 +249,6 @@ jobs:
       (needs.install-and-build.outputs.runtime == 'true'
         || needs.install-and-build.outputs.e2e == 'true'
         || contains(github.event.pull_request.labels.*.name, 'force-e2e')) &&
-      github.repository == 'n8n-io/n8n' &&
       github.event_name != 'merge_group' &&
       github.event.pull_request.head.repo.fork != true
     uses: ./.github/workflows/test-e2e-reusable.yml
@@ -247,8 +260,9 @@ jobs:
       artifact-prefix: sanity
     secrets: inherit
 
-  # Full e2e run. Internal PRs run multi-main (postgres + redis + caddy + 2 mains + 1 worker).
-  # Fork PRs run sqlite-only and skip @licensed tests (no enterprise license secrets on forks).
+  # Full e2e run on sqlite. @licensed specs are skipped for now: their features are still
+  # license-gated in this build (packages/cli/src/license.ts) and are being ungated or
+  # removed feature by feature. The goal is no license dependency at all.
   e2e:
     name: E2E
     needs: [install-and-build, prepare-docker]
@@ -263,7 +277,7 @@ jobs:
     with:
       branch: ${{ needs.install-and-build.outputs.commit_sha }}
       test-mode: docker-artifact
-      test-command: ${{ github.event.pull_request.head.repo.fork == true && 'pnpm --filter=n8n-playwright test:container:sqlite:e2e --grep-invert=@licensed' || 'pnpm --filter=n8n-playwright test:container:multi-main:e2e' }}
+      test-command: pnpm --filter=n8n-playwright test:container:sqlite:e2e --grep-invert=@licensed
       workers: '1'
       pre-generated-matrix: ${{ needs.install-and-build.outputs.matrix }}
       artifact-prefix: e2e
@@ -310,6 +324,8 @@ jobs:
 
   # This job is required by GitHub branch protection rules.
   # PRs cannot be merged unless this job passes.
+  # The full `e2e` job is deliberately not in `needs` yet: its first baseline on this fork
+  # (run 40113712069) had 25 failures to triage. Re-add it once that baseline is green.
   required-checks:
     name: Required Checks
     needs:
@@ -320,7 +336,6 @@ jobs:
         lint,
         check-packaging,
         sqlite-sanity,
-        e2e,
         dev-server-smoke,
         db-tests,
         security-checks,

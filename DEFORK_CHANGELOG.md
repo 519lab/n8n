@@ -1579,6 +1579,21 @@ keeps 3/4 with the same pre-existing `users.handler.ee` load failure, and the
 "no orphan API-key scopes" assertion still passes. `eslint` on every touched file:
 0 errors, no rule disables.
 
+### 2026-08-09 — S3 and Azure external storage rebuilt fair-code (PR #2)
+
+*Provenance entry added 2026-10-24 (#133); the rebuild landed in `6994717f59`
+without one.* The S3 and Azure object-store providers in `@n8n/blob-storage`
+were Enterprise (`.ee`) and were purged, leaving only the filesystem store.
+`ObjectStoreService` + `S3ByteStore` (via `@aws-sdk/client-s3`) and
+`AzureBlobService` + `AzureByteStore` (via `@azure/storage-blob` /
+`@azure/identity`) were rebuilt clean-room. **Clean-room sources:** the surviving
+package tests (behavioural spec), the surviving fair-code (`ByteStore` interface,
+the `fs-byte-store` pattern, `*.config.ts`, `byte-store-registry`) and the public
+AWS/Azure SDK APIs. No `.ee` source was read. Review follow-ups chunk S3 deletes to
+the 1000-key limit and keep a malformed Azure connection string (which embeds the
+account key) out of startup errors. Verified then: build exit 0, 122/122 package
+tests, eslint 0 errors, 0 `.ee` references.
+
 ### 2026-08-09 — E10 hardening: split-brain fixes in multi-main leadership
 
 Follow-up to the E10 rebuild below, closing eight defects found in an adversarial
