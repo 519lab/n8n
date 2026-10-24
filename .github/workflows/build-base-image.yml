@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - master
+      - develop
     paths:
       - 'docker/images/n8n-base/Dockerfile'
       - '.github/workflows/build-base-image.yml'
@@ -32,7 +33,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node_version: ['22', '24.18.1']
+        # The Dockerfile pins one Node version (FROM digest), so build only that.
+        node_version: ['24.18.1']
     steps:
       - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
 

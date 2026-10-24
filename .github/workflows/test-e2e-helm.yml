@@ -69,6 +69,7 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
+      packages: read
     steps:
       - name: Checkout
         uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
@@ -90,6 +91,16 @@ jobs:
 
       - name: Install kubectl
         uses: azure/setup-kubectl@776406bce94f63e41d621b960d78ee25c8b76ede # v4.0.1
+
+      # GHCR packages of a private repo can't be pulled anonymously from inside
+      # K3s; pre-pull with credentials so the stack imports the local copy.
+      - name: Pull CI image from GHCR
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
+        run: |
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+          docker pull "$DOCKER_IMAGE"
 
       - name: Start K3s + Helm stack
         env:
