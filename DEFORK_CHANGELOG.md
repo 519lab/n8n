@@ -16,6 +16,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-10-24 — Stale-branch cleanup always keeps master and develop
+
+**Infrastructure; no `.ee` source involved.** The scheduled cleanup used
+upstream's `1.x,3.x` keep-list, and `master` has no deletion ruleset here, so
+a 100-day gap between promotions would have deleted `master` (#126). The
+keep-list is now always `master,develop`, plus any manual extras.
+
 ### 2026-10-24 — Remove upstream-only CI workflows and dead secret steps
 
 **Infrastructure; no `.ee` source involved.** Removed 60 GitHub Actions
