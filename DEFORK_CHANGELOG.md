@@ -24,6 +24,13 @@ Typecheck, unit tests, lint, E2E…) ran on 2-vCPU `ubuntu-latest` while the res
 of CI had moved to Blacksmith, and Typecheck was runner-cancelled there. Every
 job now uses a Blacksmith label.
 
+### 2026-10-24 — Stale-branch cleanup always keeps master and develop
+
+**Infrastructure; no `.ee` source involved.** The scheduled cleanup used
+upstream's `1.x,3.x` keep-list, and `master` has no deletion ruleset here, so
+a 100-day gap between promotions would have deleted `master` (#126). The
+keep-list is now always `master,develop`, plus any manual extras.
+
 ### 2026-10-24 — CI failure alerts as GitHub issues
 
 **Infrastructure; no `.ee` source involved.** Replaces the removed Slack
