@@ -26,7 +26,7 @@ import { SYSTEM_RESOLVER_ID } from '../constants';
 import { EXTERNAL_IDENTITY_SOURCE } from '../credential-resolvers/identifiers/oauth2-userinfo-identifier';
 import { DynamicCredentialEntryStorage } from '../credential-resolvers/storage/dynamic-credential-entry-storage';
 import { DynamicCredentialUserEntryStorage } from '../credential-resolvers/storage/dynamic-credential-user-entry-storage';
-import { collectCredentialIds } from './credential-check.service';
+import { collectCredentialIds } from './collect-credential-ids';
 import { CredentialResolverService } from './credential-resolver.service';
 import { CredentialResolverWorkflowService } from './credential-resolver-workflow.service';
 
@@ -55,6 +55,8 @@ export type AuthorizeLink = {
 	authorizationHeader: string;
 	/** Credential-context source, e.g. `n8n-oauth` for an MCP client's n8n token. */
 	source: string;
+	/** Protected resource an `n8n-oauth` token was issued for; its audience is checked on store. */
+	resource?: string;
 	/** Set when the identity is an n8n user (system resolver). */
 	userId?: string;
 };
@@ -241,7 +243,7 @@ export class DynamicCredentialAuthorizationService {
 			origin: 'dynamic-credential',
 			credentialResolverId: link.resolverId,
 			authorizationHeader: link.authorizationHeader,
-			authMetadata: { source: link.source },
+			authMetadata: { source: link.source, ...(link.resource ? { resource: link.resource } : {}) },
 			...(link.userId ? { userId: link.userId } : {}),
 		};
 		this.bindToBrowser(csrfData, browser);
@@ -309,16 +311,11 @@ export class DynamicCredentialAuthorizationService {
 		const query = `resolverId=${encodeURIComponent(resolverId)}${identity.kind === 'user' ? '&authSource=cookie' : ''}`;
 		const credentialUrl = `${this.restBaseUrl()}/credentials/${encodeURIComponent(credential.id)}`;
 
-		if (stored === null) {
-			return {
-				...base,
-				credentialStatus: 'missing',
-				authorizationUrl: `${credentialUrl}/authorize?${query}`,
-			};
-		}
+		// Both links are always offered: authorizing again reconnects, revoking a missing entry is a no-op.
 		return {
 			...base,
-			credentialStatus: 'configured',
+			credentialStatus: stored === null ? 'missing' : 'configured',
+			authorizationUrl: `${credentialUrl}/authorize?${query}`,
 			revokeUrl: `${credentialUrl}/revoke?${query}`,
 		};
 	}

@@ -7,7 +7,6 @@ import type {
 	ICredentialContext,
 	CredentialCheckStatus,
 	DynamicCredentialCheckProxyProvider,
-	INode,
 } from 'n8n-workflow';
 import { toCredentialContext } from 'n8n-workflow';
 
@@ -16,6 +15,7 @@ import { OAuthTokenVerifierProxy } from '@/services/oauth-token-verifier-proxy.s
 import { SYSTEM_RESOLVER_ID } from '../constants';
 import { N8NIdentifier } from '../credential-resolvers/identifiers/n8n-identifier';
 import { DynamicCredentialUserEntryStorage } from '../credential-resolvers/storage/dynamic-credential-user-entry-storage';
+import { collectCredentialIds } from './collect-credential-ids';
 import { DynamicCredentialAuthorizationService } from './dynamic-credential-authorization.service';
 
 /**
@@ -74,6 +74,7 @@ export class CredentialCheckService implements DynamicCredentialCheckProxyProvid
 								resolverId,
 								authorizationHeader: caller.authorizationHeader,
 								source: caller.source,
+								resource: caller.resource,
 								userId: caller.userId,
 							}),
 						}
@@ -109,7 +110,12 @@ export class CredentialCheckService implements DynamicCredentialCheckProxyProvid
 	private async resolveCaller(
 		executionContext: { credentials?: string },
 		workflowId: string,
-	): Promise<{ userId: string; authorizationHeader: string; source: string } | null> {
+	): Promise<{
+		userId: string;
+		authorizationHeader: string;
+		source: string;
+		resource?: string;
+	} | null> {
 		if (!executionContext.credentials) return null;
 
 		try {
@@ -117,12 +123,14 @@ export class CredentialCheckService implements DynamicCredentialCheckProxyProvid
 				await this.cipher.decryptV2(executionContext.credentials),
 			);
 			const source = context.metadata?.source;
+			const resource = context.metadata?.resource;
 			const userId = await this.resolveUserId(context);
 			if (userId === null) return null;
 			return {
 				userId,
 				authorizationHeader: `Bearer ${context.identity.replace(/^Bearer\s+/i, '')}`,
 				source: typeof source === 'string' ? source : 'manual-execution',
+				...(typeof resource === 'string' ? { resource } : {}),
 			};
 		} catch (error) {
 			this.logger.debug('Could not identify the user behind a credential-status check', {
@@ -148,14 +156,4 @@ export class CredentialCheckService implements DynamicCredentialCheckProxyProvid
 		}
 		return await this.n8nIdentifier.resolve(context, {});
 	}
-}
-
-export function collectCredentialIds(nodes: INode[]): string[] {
-	const ids = new Set<string>();
-	for (const node of nodes) {
-		for (const credential of Object.values(node.credentials ?? {})) {
-			if (credential.id) ids.add(credential.id);
-		}
-	}
-	return [...ids];
 }

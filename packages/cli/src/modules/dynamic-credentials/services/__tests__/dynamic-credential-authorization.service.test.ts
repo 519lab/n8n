@@ -114,7 +114,7 @@ const setup = () => {
 
 describe('DynamicCredentialAuthorizationService', () => {
 	describe('getExecutionStatus', () => {
-		it('reports a missing external credential with an authorize URL from the configured base', async () => {
+		it('reports a missing external credential with authorize and revoke URLs from the configured base', async () => {
 			const { service, workflowRepository, credentialsRepository, entryStorage } = setup();
 			workflowRepository.findById.mockResolvedValue(workflowUsing('resolver-1'));
 			credentialsRepository.getManyByIds.mockResolvedValue([credential]);
@@ -129,6 +129,7 @@ describe('DynamicCredentialAuthorizationService', () => {
 					credentialStatus: 'missing',
 					authorizationUrl:
 						'https://n8n.example.com/rest/credentials/cred-1/authorize?resolverId=resolver-1',
+					revokeUrl: 'https://n8n.example.com/rest/credentials/cred-1/revoke?resolverId=resolver-1',
 				}),
 			]);
 			// Looked up under the verified subject, never the raw token.
@@ -151,6 +152,9 @@ describe('DynamicCredentialAuthorizationService', () => {
 			expect(status.readyToExecute).toBe(true);
 			expect(status.credentials?.[0]).toMatchObject({
 				credentialStatus: 'configured',
+				authorizationUrl: expect.stringContaining(
+					'/rest/credentials/cred-1/authorize?resolverId=system-n8n',
+				),
 				revokeUrl: expect.stringContaining('/rest/credentials/cred-1/revoke?resolverId=system-n8n'),
 			});
 		});
@@ -305,6 +309,26 @@ describe('DynamicCredentialAuthorizationService', () => {
 			expect(csrf).toMatchObject({
 				bindingHash: 'binding-hash',
 				authMetadata: { source: 'external' },
+			});
+		});
+
+		it('hands the token resource of an n8n-oauth link on to the OAuth callback', async () => {
+			const { service, oauthService } = setup();
+			const token = new URL(
+				await service.issueAuthorizeLink({
+					...link,
+					resolverId: SYSTEM_RESOLVER_ID,
+					source: 'n8n-oauth',
+					resource: 'https://n8n.example.com/webhook/p',
+					userId: 'user-1',
+				}),
+			).searchParams.get('token')!;
+
+			await service.consumeAuthorizeLink('cred-1', token, browser, user);
+
+			const [, csrf] = oauthService.generateAOauth2AuthUri.mock.calls[0];
+			expect(csrf).toMatchObject({
+				authMetadata: { source: 'n8n-oauth', resource: 'https://n8n.example.com/webhook/p' },
 			});
 		});
 
