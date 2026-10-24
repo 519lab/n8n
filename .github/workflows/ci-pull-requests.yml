@@ -134,13 +134,24 @@ jobs:
 
       - name: Generate shard matrix
         id: generate-matrix
-        if: fromJSON(steps.ci-filter.outputs.results).ci || fromJSON(steps.ci-filter.outputs.results).e2e
+        # force-e2e must generate a matrix too: the e2e job passes this output to
+        # test-e2e-reusable, and an empty string fails its fromJSON before any shard starts.
+        if: >-
+          fromJSON(steps.ci-filter.outputs.results).ci ||
+          fromJSON(steps.ci-filter.outputs.results).e2e ||
+          contains(github.event.pull_request.labels.*.name, 'force-e2e')
         env:
           CHANGED_FILES: ${{ steps.ci-filter.outputs.changed-files }}
           MERGE_BASE: ${{ steps.ci-filter.outputs.merge-base }}
+          FORCE_E2E: ${{ contains(github.event.pull_request.labels.*.name, 'force-e2e') }}
         run: |
           FILES_CSV=$(echo "$CHANGED_FILES" | tr '\n' ',' | sed 's/,$//')
-          MATRIX=$(node packages/testing/playwright/scripts/distribute-tests.mjs --matrix 16 --orchestrate --impact "--files=$FILES_CSV" "--base=$MERGE_BASE")
+          # A forced run means "run everything", so skip impact selection.
+          if [ "$FORCE_E2E" = "true" ]; then
+            MATRIX=$(node packages/testing/playwright/scripts/distribute-tests.mjs --matrix 16 --orchestrate)
+          else
+            MATRIX=$(node packages/testing/playwright/scripts/distribute-tests.mjs --matrix 16 --orchestrate --impact "--files=$FILES_CSV" "--base=$MERGE_BASE")
+          fi
           echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
           echo "skip-tests=$(node -e "process.stdout.write(JSON.parse(process.argv[1])[0]?.skip === true ? 'true' : 'false')" "$MATRIX")" >> "$GITHUB_OUTPUT"
 
