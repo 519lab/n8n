@@ -42,7 +42,7 @@ describe('WorkflowShareModal', () => {
 	});
 
 	it('lets a user with the share scope share a personal-space workflow', async () => {
-		workflowsListStore.getWorkflowById.mockReturnValue(
+		workflowsListStore.fetchWorkflow.mockResolvedValue(
 			workflowIn({ id: 'personal-1', type: 'personal', name: 'Me' }, ['workflow:share']),
 		);
 
@@ -53,8 +53,19 @@ describe('WorkflowShareModal', () => {
 		expect(queryByTestId('workflow-share-personal-restricted')).not.toBeInTheDocument();
 	});
 
+	it('uses the fetched workflow, not a stale stub from the list cache', async () => {
+		workflowsListStore.getWorkflowById.mockReturnValue({ id: 'wf-1' } as IWorkflowDb);
+		workflowsListStore.fetchWorkflow.mockResolvedValue(
+			workflowIn({ id: 'personal-1', type: 'personal', name: 'Me' }, ['workflow:share']),
+		);
+
+		const { findByTestId } = renderComponent();
+
+		expect(await findByTestId('workflow-sharing-modal-save-button')).toBeInTheDocument();
+	});
+
 	it('explains the restriction to the owner when personal sharing is turned off', async () => {
-		workflowsListStore.getWorkflowById.mockReturnValue(
+		workflowsListStore.fetchWorkflow.mockResolvedValue(
 			workflowIn({ id: 'personal-1', type: 'personal', name: 'Me' }, ['workflow:read']),
 		);
 
@@ -65,7 +76,7 @@ describe('WorkflowShareModal', () => {
 	});
 
 	it('shares a team-project workflow through membership, without a selector', async () => {
-		workflowsListStore.getWorkflowById.mockReturnValue(
+		workflowsListStore.fetchWorkflow.mockResolvedValue(
 			workflowIn({ id: 'team-1', type: 'team', name: 'Ops' }, ['workflow:share']),
 		);
 

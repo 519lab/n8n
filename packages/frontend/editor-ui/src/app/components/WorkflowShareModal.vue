@@ -85,12 +85,11 @@ const ownerName = computed(() =>
 
 onMounted(async () => {
 	try {
-		const cached = workflowsListStore.getWorkflowById(props.data.id);
-		workflow.value = cached ?? (await workflowsListStore.fetchWorkflow(props.data.id));
-		if (!cached) {
-			// Ensure the freshly fetched record is available for owner-name lookups.
-			workflowsListStore.addWorkflow(workflow.value);
-		}
+		// Fetch rather than trust the list cache: a workflow opened in the editor can be
+		// cached as a stub without its name, home project or scopes.
+		workflow.value = await workflowsListStore.fetchWorkflow(props.data.id);
+		// Keep the fresh record available for owner-name lookups.
+		workflowsListStore.addWorkflow(workflow.value);
 		sharedWith.value = [...(workflow.value.sharedWithProjects ?? [])];
 		if (isHomeProjectTeam.value && homeProject.value) {
 			try {
@@ -140,52 +139,54 @@ async function onSave() {
 		</template>
 		<template #content>
 			<div v-loading="loading" :class="$style.content">
-				<N8nInfoTip
-					v-if="isPersonalSharingRestricted"
-					:bold="false"
-					data-test-id="workflow-share-personal-restricted"
-				>
-					{{ i18n.baseText('workflows.shareModal.info.personalSpaceRestricted') }}
-				</N8nInfoTip>
-				<N8nInfoTip
-					v-else-if="isHomeProjectTeam"
-					:bold="false"
-					data-test-id="workflow-share-team-info"
-				>
-					{{
-						i18n.baseText('workflows.shareModal.info.members', {
-							interpolate: {
-								projectName: homeProject?.name ?? '',
-								members: i18n.baseText('workflows.shareModal.info.members.number', {
-									interpolate: { number: String(teamMemberCount) },
-									adjustToNumber: teamMemberCount,
-								}),
-							},
-						})
-					}}
-				</N8nInfoTip>
-				<template v-else>
-					<ProjectSharing
-						v-model="sharedWith"
-						:home-project="homeProject"
-						:search-fn="searchFn"
-						:readonly="isReadOnly"
-						:static="isReadOnly"
-						:placeholder="i18n.baseText('workflows.shareModal.select.placeholder')"
-						:empty-options-text="i18n.baseText('projects.sharing.noMatchingProjects')"
-					/>
-					<N8nText v-if="isReadOnly" size="small" color="text-light">
+				<template v-if="workflow">
+					<N8nInfoTip
+						v-if="isPersonalSharingRestricted"
+						:bold="false"
+						data-test-id="workflow-share-personal-restricted"
+					>
+						{{ i18n.baseText('workflows.shareModal.info.personalSpaceRestricted') }}
+					</N8nInfoTip>
+					<N8nInfoTip
+						v-else-if="isHomeProjectTeam"
+						:bold="false"
+						data-test-id="workflow-share-team-info"
+					>
 						{{
-							i18n.baseText('workflows.shareModal.info.sharee', {
-								interpolate: { workflowOwnerName: ownerName },
+							i18n.baseText('workflows.shareModal.info.members', {
+								interpolate: {
+									projectName: homeProject?.name ?? '',
+									members: i18n.baseText('workflows.shareModal.info.members.number', {
+										interpolate: { number: String(teamMemberCount) },
+										adjustToNumber: teamMemberCount,
+									}),
+								},
 							})
 						}}
-					</N8nText>
+					</N8nInfoTip>
+					<template v-else>
+						<ProjectSharing
+							v-model="sharedWith"
+							:home-project="homeProject"
+							:search-fn="searchFn"
+							:readonly="isReadOnly"
+							:static="isReadOnly"
+							:placeholder="i18n.baseText('workflows.shareModal.select.placeholder')"
+							:empty-options-text="i18n.baseText('projects.sharing.noMatchingProjects')"
+						/>
+						<N8nText v-if="isReadOnly" size="small" color="text-light">
+							{{
+								i18n.baseText('workflows.shareModal.info.sharee', {
+									interpolate: { workflowOwnerName: ownerName },
+								})
+							}}
+						</N8nText>
+					</template>
 				</template>
 			</div>
 		</template>
 		<template #footer>
-			<div v-if="!isReadOnly" :class="$style.footer">
+			<div v-if="workflow && !isReadOnly" :class="$style.footer">
 				<N8nText v-if="isDirty" size="small" color="text-light" :class="$style.changesHint">
 					{{ i18n.baseText('workflows.shareModal.changesHint') }}
 				</N8nText>
