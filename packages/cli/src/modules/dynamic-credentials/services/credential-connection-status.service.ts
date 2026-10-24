@@ -56,7 +56,9 @@ export class CredentialConnectionStatusService implements ICredentialConnectionS
 			: await this.userEntryRepository.findConnectedCredentialIdsForUsers(userIds, em);
 		if (credentialIds.length === 0) return;
 
-		const users = await this.userRepository.findManyByIds(userIds, { includeRole: true });
+		// Inside the caller's transaction: a query on the default connection here would
+		// need a second pooled connection while the transaction holds the first.
+		const users = await this.userRepository.findManyByIds(userIds, { includeRole: true }, em);
 
 		for (const id of credentialIds) {
 			const orphaned: string[] = [];
@@ -78,7 +80,10 @@ export class CredentialConnectionStatusService implements ICredentialConnectionS
 
 		const userIds = new Set<string>();
 		for (const projectId of projectIds) {
-			for (const userId of await this.projectRelationRepository.findUserIdsByProjectId(projectId)) {
+			for (const userId of await this.projectRelationRepository.findUserIdsByProjectId(
+				projectId,
+				em,
+			)) {
 				userIds.add(userId);
 			}
 		}
