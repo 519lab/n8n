@@ -22,8 +22,10 @@ export class UserRepository extends Repository<User> {
 		options?: {
 			includeRole: boolean;
 		},
+		em?: EntityManager,
 	) {
-		return await this.find({
+		const manager = em ?? this.manager;
+		return await manager.find(User, {
 			where: { id: In(userIds) },
 			relations: options?.includeRole ? ['role'] : undefined,
 		});

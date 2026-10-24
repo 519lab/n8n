@@ -48,7 +48,8 @@ beforeAll(async () => {
 });
 
 describe('TLS Syslog E2E', () => {
-	const destinationId = 'e2e-tls-test';
+	// Destination ids are a uuid column; Postgres rejects anything else (SQLite does not).
+	const destinationId = '3f6c1a52-9d4e-4b7a-8c2e-5a1f0d9b7e64';
 	const subscribedEvent = 'n8n.workflow.failed';
 
 	beforeEach(() => {

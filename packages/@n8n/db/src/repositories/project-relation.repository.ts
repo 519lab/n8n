@@ -146,8 +146,9 @@ export class ProjectRelationRepository extends Repository<ProjectRelation> {
 		);
 	}
 
-	async findUserIdsByProjectId(projectId: string): Promise<string[]> {
-		const rows = await this.find({
+	async findUserIdsByProjectId(projectId: string, em?: EntityManager): Promise<string[]> {
+		const manager = em ?? this.manager;
+		const rows = await manager.find(ProjectRelation, {
 			select: ['userId'],
 			where: { projectId },
 		});
