@@ -199,7 +199,7 @@ export class TestRunnerService {
 
 		const local = this.runningRuns.get(testRunId);
 		if (local) {
-			this.abortRun(testRunId, local);
+			this.abortRun(local);
 			return;
 		}
 
@@ -225,13 +225,10 @@ export class TestRunnerService {
 	@OnPubSubEvent('cancel-test-run', { instanceType: 'main' })
 	handleCancelTestRunCommand({ testRunId }: { testRunId: string }) {
 		const local = this.runningRuns.get(testRunId);
-		if (local) this.abortRun(testRunId, local);
+		if (local) this.abortRun(local);
 	}
 
-	private abortRun(
-		testRunId: string,
-		entry: { abort: AbortController; executionIds: Set<string> },
-	) {
+	private abortRun(entry: { abort: AbortController; executionIds: Set<string> }) {
 		entry.abort.abort();
 		// Stop in-flight executions so cancellation is prompt, not
 		// best-effort-after-the-case-finishes.

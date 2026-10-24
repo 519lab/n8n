@@ -4,7 +4,7 @@ import { testDb } from '@n8n/backend-test-utils';
 import { ProjectRepository } from '@n8n/db';
 import { RoleMappingRuleRepository, RoleRepository, UserRepository } from '@n8n/db';
 import { Container } from '@n8n/di';
-import { ALL_ROLES } from '@n8n/permissions';
+import { ALL_ROLES, type Scope } from '@n8n/permissions';
 
 import { BadRequestError } from '@/errors/response-errors/bad-request.error';
 import { NotFoundError } from '@/errors/response-errors/not-found.error';
@@ -962,7 +962,7 @@ describe('RoleService', () => {
 			const createRoleDto: CreateRoleDto = {
 				displayName: 'Invalid Scopes Role',
 				roleType: 'project',
-				scopes: ['invalid:scope', 'another:invalid:scope'],
+				scopes: ['invalid:scope', 'another:invalid:scope'] as unknown as Scope[],
 			};
 
 			//
@@ -1192,7 +1192,7 @@ describe('RoleService', () => {
 			//
 			const existingRole = await createRole();
 			const updateRoleDto: UpdateRoleDto = {
-				scopes: ['invalid:scope'],
+				scopes: ['invalid:scope'] as unknown as Scope[],
 			};
 
 			//
