@@ -20,6 +20,7 @@ import { ForbiddenError } from '@/errors/response-errors/forbidden.error';
 import { EventService } from '@/events/event.service';
 import { License } from '@/license';
 import { MfaService } from '@/mfa/mfa.service';
+import type { LdapAuthHandler } from '@/modules/ldap/ldap.auth-handler';
 import { LdapService } from '@/modules/ldap/ldap.service';
 import { PostHogClient } from '@/posthog';
 import type { AuthlessRequest } from '@/requests';
@@ -37,7 +38,8 @@ describe('AuthController', () => {
 	mockInstance(UserRepository);
 	mockInstance(PostHogClient);
 	mockInstance(License);
-	const ldapService = mockInstance(LdapService);
+	mockInstance(LdapService);
+	const ldapAuthHandler = mock<LdapAuthHandler>();
 	const authHandlerRegistry = mockInstance(AuthHandlerRegistry);
 	const emailAuthHandler = mock<EmailAuthHandler>();
 	const controller = Container.get(AuthController);
@@ -52,7 +54,7 @@ describe('AuthController', () => {
 			// Setup auth handler registry to return handlers
 			authHandlerRegistry.get.mockImplementation((method: string) => {
 				if (method === 'ldap') {
-					return ldapService;
+					return ldapAuthHandler;
 				}
 				if (method === 'email') {
 					return emailAuthHandler;
@@ -87,7 +89,7 @@ describe('AuthController', () => {
 
 			emailAuthHandler.handleLogin.mockResolvedValue(member);
 
-			ldapService.handleLogin.mockResolvedValue(member);
+			ldapAuthHandler.handleLogin.mockResolvedValue(member);
 
 			config.set('userManagement.authenticationMethod', 'ldap');
 
@@ -102,7 +104,10 @@ describe('AuthController', () => {
 				body.password,
 			);
 
-			expect(ldapService.handleLogin).toHaveBeenCalledWith(body.emailOrLdapLoginId, body.password);
+			expect(ldapAuthHandler.handleLogin).toHaveBeenCalledWith(
+				body.emailOrLdapLoginId,
+				body.password,
+			);
 
 			expect(authService.issueCookie).toHaveBeenCalledWith(res, member, false, browserId);
 			expect(eventsService.emit).toHaveBeenCalledWith('user-logged-in', {

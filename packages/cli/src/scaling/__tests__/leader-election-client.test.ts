@@ -39,7 +39,7 @@ describe('LeaderElectionClient', () => {
 
 	/** The value a client wrote on its last successful claim. */
 	const claimedValue = (mockedRedis: ReturnType<typeof mock<Redis>>) => {
-		const [, value] = mockedRedis.set.mock.calls.at(-1) as [string, string];
+		const [, value] = mockedRedis.set.mock.calls.at(-1) as unknown as [string, string];
 		return value;
 	};
 

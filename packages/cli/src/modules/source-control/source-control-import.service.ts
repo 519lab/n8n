@@ -9,7 +9,6 @@ import {
 	SharedWorkflowRepository,
 	TagRepository,
 	UserRepository,
-	VariablesRepository,
 	WorkflowRepository,
 	WorkflowTagMappingRepository,
 } from '@n8n/db';
@@ -17,7 +16,7 @@ import { Container, Service } from '@n8n/di';
 import glob from 'fast-glob';
 import isEqual from 'lodash/isEqual';
 import { ensureError } from '@n8n/utils/errors/ensure-error';
-import { Cipher, ErrorReporter, InstanceSettings } from 'n8n-core';
+import { Cipher, InstanceSettings } from 'n8n-core';
 import { jsonParse, PROJECT_ROOT, UnexpectedError } from 'n8n-workflow';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -37,7 +36,6 @@ import {
 	assertParentWithinFolder,
 	mergeCredentialData,
 } from './source-control-helper';
-import { SourceControlScopedService } from './source-control-scoped.service';
 import type { ExportableCredential } from './types/exportable-credential';
 import type { ExportableDataTable } from './types/exportable-data-table';
 import type { ExportableFolder, FolderExportFile } from './types/exportable-folders';
@@ -45,19 +43,10 @@ import type { RemoteResourceOwner } from './types/resource-owner';
 
 import { ActiveWorkflowManager } from '@/active-workflow-manager';
 import { CredentialsService } from '@/credentials/credentials.service';
-import { EventService } from '@/events/event.service';
-import { ExecutionPersistence } from '@/executions/execution-persistence';
 import type { IWorkflowToImport } from '@/interfaces';
-import { DataTableSizeValidator } from '@/modules/data-table/data-table-size-validator.service';
 import { DataTableService } from '@/modules/data-table/data-table.service';
-import { RedactionEnforcementService } from '@/modules/redaction/redaction-enforcement.service';
 import { FolderService } from '@/services/folder.service';
-import { ProjectService } from '@/services/project.service';
-import { TagService } from '@/services/tag.service';
-import { VariablesService } from '@/variables/variables.service';
 import { WorkflowHistoryService } from '@/workflows/workflow-history/workflow-history.service';
-import { WorkflowMutationHooksProxy } from '@/workflows/workflow-mutation-hooks-proxy.service';
-import { WorkflowPublishGuardProxy } from '@/workflows/workflow-publish-guard-proxy.service';
 import { WorkflowService } from '@/workflows/workflow.service';
 
 /** A workflow's identity in the work folder or the local database. */
@@ -124,35 +113,23 @@ export class SourceControlImportService {
 
 	constructor(
 		private readonly logger: Logger,
-		private readonly errorReporter: ErrorReporter,
-		private readonly eventService: EventService,
 		private readonly credentialsRepository: CredentialsRepository,
 		private readonly projectRepository: ProjectRepository,
-		private readonly variablesRepository: VariablesRepository,
 		private readonly tagRepository: TagRepository,
 		private readonly sharedWorkflowRepository: SharedWorkflowRepository,
 		private readonly sharedCredentialsRepository: SharedCredentialsRepository,
 		private readonly userRepository: UserRepository,
-		private readonly variablesService: VariablesService,
 		private readonly workflowRepository: WorkflowRepository,
 		private readonly workflowTagMappingRepository: WorkflowTagMappingRepository,
 		private readonly dataTableService: DataTableService,
 		private readonly folderService: FolderService,
-		private readonly tagService: TagService,
 		private readonly folderRepository: FolderRepository,
 		instanceSettings: InstanceSettings,
 		private readonly sourceControlContextFactory: SourceControlContextFactory,
-		private readonly sourceControlScopedService: SourceControlScopedService,
 		private readonly workflowHistoryService: WorkflowHistoryService,
 		private readonly workflowService: WorkflowService,
-		private readonly projectService: ProjectService,
 		private readonly credentialsService: CredentialsService,
-		private readonly redactionEnforcementService: RedactionEnforcementService,
-		private readonly dataTableSizeValidator: DataTableSizeValidator,
 		private readonly activeWorkflowManager: ActiveWorkflowManager,
-		private readonly executionPersistence: ExecutionPersistence,
-		private readonly workflowPublishGuard: WorkflowPublishGuardProxy,
-		private readonly workflowMutationHooks: WorkflowMutationHooksProxy,
 	) {
 		this.gitFolder = path.join(instanceSettings.n8nFolder, SOURCE_CONTROL_GIT_FOLDER);
 	}

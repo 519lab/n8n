@@ -52,7 +52,7 @@ describe('RoleController', () => {
 					description: 'Global administrator',
 					systemRole: true,
 					roleType: 'global',
-					scopes: ['user:manage', 'workflow:create'],
+					scopes: ['user:update', 'workflow:create'],
 					licensed: true,
 				},
 				{
@@ -61,7 +61,7 @@ describe('RoleController', () => {
 					description: 'Project editor role',
 					systemRole: true,
 					roleType: 'project',
-					scopes: ['workflow:create', 'workflow:edit'],
+					scopes: ['workflow:create', 'workflow:update'],
 					licensed: true,
 				},
 				{
@@ -70,7 +70,7 @@ describe('RoleController', () => {
 					description: 'Credential owner',
 					systemRole: true,
 					roleType: 'credential',
-					scopes: ['credential:read', 'credential:write'],
+					scopes: ['credential:read', 'credential:update'],
 					licensed: true,
 				},
 				{
@@ -79,7 +79,7 @@ describe('RoleController', () => {
 					description: 'Workflow editor',
 					systemRole: true,
 					roleType: 'workflow',
-					scopes: ['workflow:read', 'workflow:edit'],
+					scopes: ['workflow:read', 'workflow:update'],
 					licensed: true,
 				},
 			];
@@ -118,7 +118,7 @@ describe('RoleController', () => {
 						description: 'Global administrator',
 						systemRole: true,
 						roleType: 'global',
-						scopes: ['user:manage', 'workflow:create'],
+						scopes: ['user:update', 'workflow:create'],
 						licensed: true,
 						usedByUsers: 5,
 					},
@@ -128,7 +128,7 @@ describe('RoleController', () => {
 						description: 'Project editor role',
 						systemRole: true,
 						roleType: 'project',
-						scopes: ['workflow:create', 'workflow:edit'],
+						scopes: ['workflow:create', 'workflow:update'],
 						licensed: true,
 						usedByUsers: 12,
 					},
@@ -167,7 +167,7 @@ describe('RoleController', () => {
 						description: 'Global administrator',
 						systemRole: true,
 						roleType: 'global',
-						scopes: ['user:manage', 'workflow:create'],
+						scopes: ['user:update', 'workflow:create'],
 						licensed: true,
 					},
 					{
@@ -176,7 +176,7 @@ describe('RoleController', () => {
 						description: 'Project editor role',
 						systemRole: true,
 						roleType: 'project',
-						scopes: ['workflow:create', 'workflow:edit'],
+						scopes: ['workflow:create', 'workflow:update'],
 						licensed: true,
 					},
 				];
@@ -214,7 +214,7 @@ describe('RoleController', () => {
 						description: 'Global administrator',
 						systemRole: true,
 						roleType: 'global',
-						scopes: ['user:manage', 'workflow:create'],
+						scopes: ['user:update', 'workflow:create'],
 						licensed: true,
 					},
 				];
@@ -252,7 +252,7 @@ describe('RoleController', () => {
 						description: 'Global administrator',
 						systemRole: true,
 						roleType: 'global',
-						scopes: ['user:manage', 'workflow:create'],
+						scopes: ['user:update', 'workflow:create'],
 						licensed: true,
 						usedByUsers: 3,
 					},
@@ -262,7 +262,7 @@ describe('RoleController', () => {
 						description: 'Project editor role',
 						systemRole: true,
 						roleType: 'project',
-						scopes: ['workflow:create', 'workflow:edit'],
+						scopes: ['workflow:create', 'workflow:update'],
 						licensed: true,
 						usedByUsers: 8,
 					},
@@ -272,7 +272,7 @@ describe('RoleController', () => {
 						description: 'Credential owner',
 						systemRole: true,
 						roleType: 'credential',
-						scopes: ['credential:read', 'credential:write'],
+						scopes: ['credential:read', 'credential:update'],
 						licensed: true,
 						usedByUsers: 15,
 					},
@@ -282,7 +282,7 @@ describe('RoleController', () => {
 						description: 'Workflow editor',
 						systemRole: true,
 						roleType: 'workflow',
-						scopes: ['workflow:read', 'workflow:edit'],
+						scopes: ['workflow:read', 'workflow:update'],
 						licensed: true,
 						usedByUsers: 7,
 					},
@@ -332,7 +332,7 @@ describe('RoleController', () => {
 						description: 'Project administrator',
 						systemRole: true,
 						roleType: 'project',
-						scopes: ['project:manage'],
+						scopes: ['project:update'],
 						licensed: true,
 						usedByUsers: 4,
 					},
@@ -398,7 +398,7 @@ describe('RoleController', () => {
 					description: 'Project administrator',
 					systemRole: true,
 					roleType: 'project',
-					scopes: ['project:manage'],
+					scopes: ['project:update'],
 					licensed: true,
 				},
 			];
@@ -434,7 +434,7 @@ describe('RoleController', () => {
 				description: 'Project administrator role',
 				systemRole: true,
 				roleType: 'project',
-				scopes: ['project:manage', 'workflow:create'],
+				scopes: ['project:update', 'workflow:create'],
 				licensed: true,
 			};
 
@@ -508,7 +508,7 @@ describe('RoleController', () => {
 					description: 'Project administrator role',
 					systemRole: true,
 					roleType: 'project',
-					scopes: ['project:manage', 'workflow:create'],
+					scopes: ['project:update', 'workflow:create'],
 					licensed: true,
 					usedByUsers: 8,
 				};
@@ -541,7 +541,7 @@ describe('RoleController', () => {
 					description: 'Project administrator role',
 					systemRole: true,
 					roleType: 'project',
-					scopes: ['project:manage', 'workflow:create'],
+					scopes: ['project:update', 'workflow:create'],
 					licensed: true,
 				};
 
@@ -573,7 +573,7 @@ describe('RoleController', () => {
 					description: 'Project administrator role',
 					systemRole: true,
 					roleType: 'project',
-					scopes: ['project:manage', 'workflow:create'],
+					scopes: ['project:update', 'workflow:create'],
 					licensed: true,
 				};
 
@@ -603,7 +603,7 @@ describe('RoleController', () => {
 					description: 'Project editor role',
 					systemRole: true,
 					roleType: 'project',
-					scopes: ['workflow:create', 'workflow:edit'],
+					scopes: ['workflow:create', 'workflow:update'],
 					licensed: true,
 					usedByUsers: 15,
 				};
@@ -717,7 +717,7 @@ describe('RoleController', () => {
 					description: 'Credential owner role',
 					systemRole: true,
 					roleType: 'credential',
-					scopes: ['credential:read', 'credential:write'],
+					scopes: ['credential:read', 'credential:update'],
 					licensed: true,
 					usedByUsers: 7,
 				};
@@ -1303,7 +1303,7 @@ describe('RoleController', () => {
 				const roleSlug = 'project:test-role';
 				const updateRoleDto = {
 					displayName: 'Updated Role',
-					scopes: ['workflow:read', 'workflow:edit'],
+					scopes: ['workflow:read', 'workflow:update'],
 				};
 
 				//
@@ -1341,14 +1341,14 @@ describe('RoleController', () => {
 			//
 			testServer.license.disable('feat:customRoles');
 
-			const mockRoles = [
+			const mockRoles: Role[] = [
 				{
 					slug: 'project:admin',
 					displayName: 'Project Admin',
 					description: 'Project administrator',
 					systemRole: true,
 					roleType: 'project' as const,
-					scopes: ['project:manage'],
+					scopes: ['project:update'],
 					licensed: true,
 				},
 			];

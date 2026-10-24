@@ -42,7 +42,6 @@ import { mock } from 'vitest-mock-extended';
 import type { IWorkflowToImport } from '@/interfaces';
 import { SourceControlContextFactory } from '@/modules/source-control/source-control-context.factory';
 import { SourceControlImportService } from '@/modules/source-control/source-control-import.service';
-import { SourceControlScopedService } from '@/modules/source-control/source-control-scoped.service';
 import type { ExportableCredential } from '@/modules/source-control/types/exportable-credential';
 import { WorkflowHistoryService } from '@/workflows/workflow-history/workflow-history.service';
 import { createFolder } from '@test-integration/db/folders';
@@ -76,7 +75,6 @@ describe('SourceControlImportService', () => {
 	let workflowHistoryRepository: WorkflowHistoryRepository;
 	let workflowHistoryService: WorkflowHistoryService;
 	let sourceControlContextFactory: SourceControlContextFactory;
-	let sourceControlScopedService: SourceControlScopedService;
 
 	const cipher = mockInstance(Cipher);
 	const mockFileData = new Map<string, string>();
@@ -96,38 +94,25 @@ describe('SourceControlImportService', () => {
 		workflowHistoryRepository = Container.get(WorkflowHistoryRepository);
 		workflowHistoryService = Container.get(WorkflowHistoryService);
 		sourceControlContextFactory = Container.get(SourceControlContextFactory);
-		sourceControlScopedService = Container.get(SourceControlScopedService);
 		service = new SourceControlImportService(
-			mock(),
-			mock(),
 			mock(),
 			credentialsRepository,
 			projectRepository,
-			mock(),
 			tagRepository,
 			sharedWorkflowRepository,
 			sharedCredentialsRepository,
 			userRepository,
-			mock(),
 			workflowRepository,
 			workflowTagMappingRepository,
-			mock(),
 			mock(),
 			mock(),
 			folderRepository,
 			mock<InstanceSettings>({ n8nFolder: '/some-path' }),
 			sourceControlContextFactory,
-			sourceControlScopedService,
 			workflowHistoryService,
 			mock(),
 			mock(),
-			mock(),
-			mock(), // redactionEnforcementService
-			mock(), // dataTableSizeValidator
 			mock(), // activeWorkflowManager
-			mock(), // executionPersistence
-			mock(), // workflowPublishGuard
-			mock(), // workflowMutationHooks
 		);
 	});
 
@@ -1370,6 +1355,7 @@ describe('SourceControlImportService', () => {
 					name: 'My Credential',
 					type: 'someCredentialType',
 					data: {},
+					isGlobal: false,
 					ownedBy: member.email, // user at source instance owns credential
 				};
 
@@ -1407,6 +1393,7 @@ describe('SourceControlImportService', () => {
 					name: 'My Credential',
 					type: 'someCredentialType',
 					data: {},
+					isGlobal: false,
 					ownedBy: null,
 				};
 
@@ -1444,6 +1431,7 @@ describe('SourceControlImportService', () => {
 					name: 'My Credential',
 					type: 'someCredentialType',
 					data: {},
+					isGlobal: false,
 					ownedBy: 'user@test.com', // user at source instance owns credential
 				};
 
@@ -1482,6 +1470,7 @@ describe('SourceControlImportService', () => {
 				name: 'My Credential',
 				type: 'someCredentialType',
 				data: {},
+				isGlobal: false,
 				ownedBy: {
 					type: 'personal',
 					personalEmail: 'test@example.com',
@@ -1520,6 +1509,7 @@ describe('SourceControlImportService', () => {
 				name: 'My Credential',
 				type: 'someCredentialType',
 				data: {},
+				isGlobal: false,
 				ownedBy: {
 					type: 'team',
 					teamId: '1234-asdf',
@@ -1581,6 +1571,7 @@ describe('SourceControlImportService', () => {
 				name: 'My Credential',
 				type: 'someCredentialType',
 				data: {},
+				isGlobal: false,
 				ownedBy: {
 					type: 'team',
 					teamId: project.id,
@@ -1626,6 +1617,7 @@ describe('SourceControlImportService', () => {
 				name: 'My Credential',
 				type: 'someCredentialType',
 				data: {},
+				isGlobal: false,
 				ownedBy: {
 					type: 'team',
 					teamId: sourceProjectId,
