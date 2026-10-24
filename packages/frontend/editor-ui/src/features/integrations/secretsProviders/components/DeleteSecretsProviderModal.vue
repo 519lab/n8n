@@ -7,7 +7,7 @@ import { createEventBus } from '@n8n/utils/event-bus';
 import Modal from '@/app/components/Modal.vue';
 import { useUIStore } from '@/app/stores/ui.store';
 import { DELETE_SECRETS_PROVIDER_MODAL_KEY } from '@/app/constants';
-import { N8nButton, N8nInput, N8nInputLabel, N8nNotice, N8nText } from '@n8n/design-system';
+import { N8nButton, N8nInput, N8nInputLabel, N8nText } from '@n8n/design-system';
 
 import { useSecretsProviderConnection } from '../composables/useSecretsProviderConnection';
 
@@ -16,7 +16,8 @@ const props = defineProps<{
 	data: {
 		providerKey: string;
 		name: string;
-		secretsInUse?: number;
+		/** How many secrets the vault currently exposes; credentials using them stop resolving. */
+		secretsCount?: number;
 		projectId?: string;
 		onDeleted?: () => Promise<void> | void;
 		onClose?: () => void;
@@ -32,8 +33,7 @@ const modalBus = createEventBus();
 const confirmText = ref('');
 const isDeleting = ref(false);
 
-const secretsInUse = computed(() => props.data.secretsInUse ?? 0);
-const hasImpact = computed(() => secretsInUse.value > 0);
+const secretsCount = computed(() => props.data.secretsCount ?? 0);
 const canDelete = computed(() => confirmText.value === props.data.name && !isDeleting.value);
 
 const title = computed(() =>
@@ -42,17 +42,28 @@ const title = computed(() =>
 	}),
 );
 
-const description = computed(() =>
-	hasImpact.value
-		? i18n.baseText('settings.secretsProviderConnections.delete.description', {
-				interpolate: { secretsCount: secretsInUse.value },
-			})
-		: i18n.baseText('settings.secretsProviderConnections.delete.description.noImpact'),
-);
+const description = computed(() => {
+	if (secretsCount.value === 0) {
+		return i18n.baseText('settings.secretsProviderConnections.delete.description.noImpact');
+	}
+	const secrets =
+		secretsCount.value === 1
+			? i18n.baseText('settings.secretsProviderConnections.oneSecret')
+			: i18n.baseText('settings.secretsProviderConnections.secrets', {
+					interpolate: { count: String(secretsCount.value) },
+				});
+	return i18n.baseText('settings.secretsProviderConnections.delete.description', {
+		interpolate: { secretsCount: secrets },
+	});
+});
+
+function onBeforeClose(): boolean {
+	props.data.onClose?.();
+	return true;
+}
 
 function closeModal() {
-	props.data.onClose?.();
-	uiStore.closeModal(DELETE_SECRETS_PROVIDER_MODAL_KEY);
+	modalBus.emit('close');
 }
 
 async function onDelete() {
@@ -77,35 +88,18 @@ async function onDelete() {
 </script>
 
 <template>
+	<!-- No explicit data-test-id: Modal derives `${name}-modal`, which the E2E page object targets. -->
 	<Modal
 		:name="modalName"
 		:event-bus="modalBus"
+		:before-close="onBeforeClose"
 		:title="title"
 		:center="true"
 		width="480px"
-		data-test-id="delete-secrets-provider-modal"
 	>
 		<template #content>
 			<div :class="$style.content">
 				<N8nText>{{ description }}</N8nText>
-
-				<N8nNotice v-if="hasImpact" theme="warning">
-					<div :class="$style.impact">
-						<N8nText bold size="small">
-							{{ i18n.baseText('settings.secretsProviderConnections.delete.impact.title') }}
-						</N8nText>
-						<N8nText size="small">
-							{{
-								secretsInUse === 1
-									? i18n.baseText('settings.secretsProviderConnections.delete.impact.oneCredential')
-									: i18n.baseText('settings.secretsProviderConnections.delete.impact.credentials', {
-											interpolate: { count: secretsInUse },
-										})
-							}}
-							{{ i18n.baseText('settings.secretsProviderConnections.delete.impact.description') }}
-						</N8nText>
-					</div>
-				</N8nNotice>
 
 				<N8nInputLabel
 					:label="
@@ -115,7 +109,7 @@ async function onDelete() {
 					"
 					:bold="false"
 				>
-					<N8nInput v-model="confirmText" data-test-id="delete-secrets-provider-confirm-input" />
+					<N8nInput v-model="confirmText" data-test-id="delete-confirmation-input" />
 				</N8nInputLabel>
 			</div>
 		</template>
@@ -132,7 +126,7 @@ async function onDelete() {
 					variant="destructive"
 					:loading="isDeleting"
 					:disabled="!canDelete"
-					data-test-id="delete-secrets-provider-confirm-button"
+					data-test-id="confirm-delete-button"
 					@click="onDelete"
 				>
 					{{ i18n.baseText('generic.delete') }}
@@ -147,12 +141,6 @@ async function onDelete() {
 	display: flex;
 	flex-direction: column;
 	gap: var(--spacing--sm);
-}
-
-.impact {
-	display: flex;
-	flex-direction: column;
-	gap: var(--spacing--4xs);
 }
 
 .footer {

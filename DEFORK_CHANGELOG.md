@@ -16,6 +16,44 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-10-24 — Secret-provider connections UI matches its contract; edits keep stored passwords
+
+**Fix; no `.ee` source involved.**
+
+- **Changed (operators): `N8N_EXTERNAL_SECRETS_FOR_PROJECTS` is now
+  `N8N_ENV_FEAT_EXTERNAL_SECRETS_FOR_PROJECTS`.** That is the name the E2E
+  capability (the fair-code consumer) pins. Likewise
+  `N8N_EXTERNAL_SECRETS_MULTIPLE_CONNECTIONS` becomes
+  `N8N_ENV_FEAT_EXTERNAL_SECRETS_MULTIPLE_CONNECTIONS`.
+  - A deployment still setting the old names falls back silently to the legacy
+    single-connection settings page, so rename the variable on upgrade.
+  - The `N8N_ENV_FEAT_` prefix also exposes both flags to the frontend's
+    `envFeatureFlags`.
+- **Fixed: editing a saved connection replaced its stored passwords with the
+  blanking placeholder (#151).** `update()` now restores blanked password fields
+  from the stored settings, unless the provider type changes.
+- **Fixed: the connections settings page, connection modal and delete modal
+  didn't match their page objects.**
+  - Saving a new connection now keeps the modal open in edit mode, so a second
+    save is a PATCH, not a duplicate create.
+  - Every save is followed by a connection test, which shows a success callout
+    or an error banner.
+  - Fields render from the provider's property descriptions, so
+    `displayOptions` apply.
+  - Scope is a single select: Global, or one project.
+  - The card menu reads Edit / Share / Delete; it read "Impact:" before.
+  - The delete modal uses its default `deleteSecretsProvider-modal` id and
+    states the number of secrets removed.
+- **Fixed: the masked `$secrets` hint in credentials.** A referenced secret now
+  shows as `*********` in project-scoped mode too, and `$secrets` completions
+  include global and project secrets.
+
+Clean-room sources:
+- `secret-providers-connections-ui.spec.ts` and its page objects.
+- `fixtures/capabilities.ts`.
+- The fair-code `ParameterInputExpanded` / `CredentialInputs` pattern.
+- `settings-redaction.ts`.
+
 ### 2026-10-24 — Dynamic (end-user) credentials without a license; external endpoints rebuilt (#133 wave 5)
 
 **Rebuild + ungate; no `.ee` source involved.** The four external
