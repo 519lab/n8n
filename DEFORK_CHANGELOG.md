@@ -16,6 +16,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-10-24 — Data and infrastructure features on without a license (#133 wave 3)
+
+**Ungate; no `.ee` source involved.** Log streaming (E9), variables (E2),
+external secrets (E8), source control (E3), worker view (E10), the S3/Azure
+binary- and execution-data stores (PR #2), data redaction, OTel custom span
+attributes and custom community-node registries are now in
+`FAIR_CODE_LICENSED_FEATURES`. Before, their routes were license-rejected and
+choosing S3 or Azure storage made the process exit at startup. Storage modes still
+only apply once an admin configures them. Source control remains single-main
+only until its cluster lock lands (#133 wave 5). Their E2E specs drop `@licensed`.
+
 ### 2026-10-24 — LDAP, SAML and OIDC on without a license (#133 wave 2)
 
 **Ungate; no `.ee` source involved.** The SSO backends rebuilt in E5–E7 were
