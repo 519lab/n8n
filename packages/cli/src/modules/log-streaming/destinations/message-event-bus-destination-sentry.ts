@@ -75,17 +75,35 @@ export class MessageEventBusDestinationSentry extends MessageEventBusDestination
 
 		const body = [envelopeHeader, itemHeader, event].map((part) => JSON.stringify(part)).join('\n');
 
-		const response = await this.httpClient.request({
-			url,
-			method: 'POST',
-			qs,
-			headers: { 'Content-Type': 'application/x-sentry-envelope' },
-			body,
-			returnFullResponse: true,
-			ignoreHttpStatusErrors: true,
-		});
+		// Like the Sentry SDK's capture, delivery is fire-and-forget: the event counts
+		// as sent once it is built (a malformed DSN throws above); ingestion
+		// failures are logged rather than retried.
+		void this.httpClient
+			.request({
+				url,
+				method: 'POST',
+				qs,
+				headers: { 'Content-Type': 'application/x-sentry-envelope' },
+				body,
+				returnFullResponse: true,
+				ignoreHttpStatusErrors: true,
+			})
+			.then((response) => {
+				if (response.statusCode < 200 || response.statusCode >= 300) {
+					this.logger.warn('Sentry rejected a log-streaming event', {
+						destinationId: this.id,
+						statusCode: response.statusCode,
+					});
+				}
+			})
+			.catch((error: unknown) => {
+				this.logger.warn('Could not deliver a log-streaming event to Sentry', {
+					destinationId: this.id,
+					error: error instanceof Error ? error.message : String(error),
+				});
+			});
 
-		return response.statusCode >= 200 && response.statusCode < 300;
+		return true;
 	}
 
 	serialize(options?: SerializeOptions): MessageEventBusDestinationSentryOptions {
