@@ -24,12 +24,12 @@ RUN apk add --no-cache python3 make g++ && \
     node /usr/local/lib/node_modules/npm/node_modules/node-gyp/bin/node-gyp.js rebuild --release -j max
 
 # Pinned to multi-arch index digest (linux/amd64 + linux/arm64) for reproducible builds.
-# n8nio/base is republished by a separate workflow (docker/images/n8n-base) on every
-# base change, so a base rebuild does not reach this image until the digest is
-# manually re-pinned here. Bump the digest together with the tag whenever the base
+# ghcr.io/519lab/base is republished by build-base-image.yml (docker/images/n8n-base)
+# on every base change, so a base rebuild does not reach this image until the digest
+# is manually re-pinned here. Bump the digest together with the tag whenever the base
 # image is intentionally updated.
-# Digest pins to n8nio/base:24.18.1 (Node 24.18.1, Alpine 3.24).
-FROM n8nio/base:24.18.1@sha256:f7a23e449f093b8b203467919e969ca35d12ba959442aadc1f69bb174b160ad2
+# Digest pins to ghcr.io/519lab/base:24.18.1 (Node 24.18.1, Alpine 3.24).
+FROM ghcr.io/519lab/base:24.18.1@sha256:b0db56455ee62d6a248b9721dc5db1d5959ccfa7ba54a771d2de7446531f5836
 
 ARG N8N_VERSION
 ARG N8N_RELEASE_TYPE=dev
