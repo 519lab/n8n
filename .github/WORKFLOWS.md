@@ -393,6 +393,13 @@ only); push runs are never cancelled. The Slack alert fires on push only — a
 failing PR is visible on the PR, and `github.ref_name` is a merge ref on
 `pull_request` events.
 
+Because of that `paths-ignore`, a Python-only PR never reports the ci-master
+checks the develop ruleset requires (`Lint / Lint`,
+`Unit tests (<node>) / Unit tests`). `ci-master-python-only.yml` reports them as
+passing stubs, but only when every changed file is under
+`packages/@n8n/task-runner-python/`; on mixed PRs the stub jobs take a
+non-required name so the real checks stay authoritative.
+
 ```
 Push to master/develop  ·  PR → master/develop
 ├─ build-github (populate cache)
