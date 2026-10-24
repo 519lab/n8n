@@ -228,8 +228,9 @@ export class CredentialResolverService
 
 		if (source === 'n8n-oauth') {
 			const resource = credentialContext.metadata?.resource;
+			// Links and callbacks carry the identity as an Authorization header; the verifier wants the bare token.
 			const { user } = await this.oauthTokenVerifier.verifyOAuthAccessToken(
-				credentialContext.identity,
+				credentialContext.identity.replace(/^Bearer\s+/i, ''),
 				typeof resource === 'string' ? resource : undefined,
 			);
 			if (!user) throw new CredentialResolutionError(UNRESOLVED_MESSAGE);

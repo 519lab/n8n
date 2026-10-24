@@ -120,3 +120,46 @@ describe('CredentialResolverService identity sources', () => {
 		expect(identifier.resolve).not.toHaveBeenCalled();
 	});
 });
+
+describe('CredentialResolverService.storeIfNeeded with an n8n-issued OAuth token', () => {
+	it('verifies the bare token against its resource and stores under that n8n user', async () => {
+		const cipher = mock<Cipher>();
+		cipher.encryptV2.mockResolvedValue('encrypted-data');
+		const verifier = mock<OAuthTokenVerifierProxy>();
+		verifier.verifyOAuthAccessToken.mockResolvedValue({ user: { id: 'user-1' } } as never);
+		const userEntryStorage = mock<DynamicCredentialUserEntryStorage>();
+		const service = new CredentialResolverService(
+			mock<Logger>(),
+			cipher,
+			mock<N8NIdentifier>(),
+			mock<OAuth2UserinfoIdentifier>(),
+			verifier,
+			mock<DynamicCredentialResolverRepository>(),
+			userEntryStorage,
+			mock<DynamicCredentialEntryStorage>(),
+		);
+
+		// The connect callback hands the identity back in Authorization-header form.
+		await service.storeIfNeeded(
+			{ id: 'cred-1', name: 'c', type: 'oAuth2Api', isResolvable: true, resolverId: 'system-n8n' },
+			{ access_token: 'provider-token' },
+			{
+				version: 1,
+				identity: 'Bearer n8n-token',
+				metadata: { source: 'n8n-oauth', resource: 'https://n8n.example.com/webhook/p' },
+			},
+		);
+
+		expect(verifier.verifyOAuthAccessToken).toHaveBeenCalledWith(
+			'n8n-token',
+			'https://n8n.example.com/webhook/p',
+		);
+		expect(userEntryStorage.setCredentialData).toHaveBeenCalledWith(
+			'cred-1',
+			'user-1',
+			'system-n8n',
+			'encrypted-data',
+			{},
+		);
+	});
+});
