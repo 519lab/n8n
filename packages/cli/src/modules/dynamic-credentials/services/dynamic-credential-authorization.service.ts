@@ -10,7 +10,7 @@ import {
 } from '@n8n/db';
 import { Service } from '@n8n/di';
 import type { Request, Response } from 'express';
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 
 import { CredentialsFinderService } from '@/credentials/credentials-finder.service';
 import { BadRequestError } from '@/errors/response-errors/bad-request.error';
@@ -198,16 +198,29 @@ export class DynamicCredentialAuthorizationService {
 		credentialId: string,
 		token: string,
 		browser: BrowserContext,
+		openerUser?: User,
 	): Promise<string> {
 		const key = `${LINK_CACHE_PREFIX}${token}`;
-		// Claim under a lease so two concurrent requests (on any main) can't both
-		// read the link before it is deleted.
-		const link = await this.lockService.withLease(LockNamespace.KNOWN_LOCKS, key, async () => {
+		// Claim under a lease (Redis under multi-main) so two concurrent requests
+		// can't both read the link before it is deleted. The lease key is hashed so
+		// the link token never sits in the lock keyspace.
+		const leaseKey = createHash('sha256').update(key).digest('hex');
+		const link = await this.lockService.withLease(LockNamespace.KNOWN_LOCKS, leaseKey, async () => {
 			const found = await this.cacheService.get<AuthorizeLink>(key);
 			await this.cacheService.delete(key);
 			return found;
 		});
 		if (!link || link.credentialId !== credentialId) {
+			throw new NotFoundError('This authorization link is invalid or has expired.');
+		}
+		// A link minted for an n8n user connects that user's account, so only that
+		// user may open it — a forwarded link can't land someone else's provider
+		// tokens under them.
+		if (link.userId && openerUser?.id !== link.userId) {
+			throw new NotFoundError('This authorization link is invalid or has expired.');
+		}
+		// Only an external caller's own token is ever sent to a non-n8n resolver.
+		if (link.resolverId !== SYSTEM_RESOLVER_ID && link.source !== EXTERNAL_IDENTITY_SOURCE) {
 			throw new NotFoundError('This authorization link is invalid or has expired.');
 		}
 

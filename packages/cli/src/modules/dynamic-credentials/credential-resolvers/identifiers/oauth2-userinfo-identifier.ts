@@ -86,8 +86,12 @@ export class OAuth2UserinfoIdentifier {
 
 		const document = await this.getJson(metadataUri, {});
 		const endpoint = isRecord(document) ? document.userinfo_endpoint : undefined;
-		if (typeof endpoint !== 'string') {
-			this.logger.warn('OIDC discovery document has no userinfo_endpoint', { metadataUri });
+		if (typeof endpoint !== 'string' || !sameOrigin(endpoint, metadataUri)) {
+			// The caller's token goes to this URL: a provider may only point it at its
+			// own origin, not at another host (or an internal one).
+			this.logger.warn('OIDC discovery document has no usable userinfo_endpoint', {
+				metadataUri,
+			});
 			throw new CredentialResolutionError(NOT_IDENTIFIED);
 		}
 
@@ -102,11 +106,15 @@ export class OAuth2UserinfoIdentifier {
 	private async getJson(url: string, headers: Record<string, string>): Promise<unknown> {
 		try {
 			validateOAuthUrl(url);
+			if (new URL(url).protocol !== 'https:') throw new Error('Only https is allowed');
 			return await this.http.request({
 				url,
 				method: 'GET',
 				headers: { ...headers, Accept: 'application/json' },
 				json: true,
+				// Never follow a redirect: the request may carry the caller's token.
+				maxRedirects: 0,
+				sendCredentialsOnCrossOriginRedirect: false,
 			});
 		} catch (error) {
 			// The request carried the caller's token: log the URL and reason only.
@@ -128,6 +136,14 @@ function bearerToken(identity: string): string | undefined {
 	const match = /^Bearer\s+(\S+)$/i.exec(trimmed);
 	if (match) return match[1];
 	return trimmed.length > 0 && !/\s/.test(trimmed) ? trimmed : undefined;
+}
+
+function sameOrigin(a: string, b: string): boolean {
+	try {
+		return new URL(a).origin === new URL(b).origin;
+	} catch {
+		return false;
+	}
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

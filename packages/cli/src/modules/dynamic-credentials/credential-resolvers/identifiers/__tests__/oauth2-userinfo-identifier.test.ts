@@ -117,6 +117,35 @@ describe('OAuth2UserinfoIdentifier', () => {
 		expect(request).not.toHaveBeenCalled();
 	});
 
+	it('refuses plain http', async () => {
+		await expect(
+			identifier.resolve('Bearer t', {
+				...config,
+				metadataUri: 'http://idp.example.com/.well-known/openid-configuration',
+			}),
+		).rejects.toThrow(CredentialResolutionError);
+		expect(request).not.toHaveBeenCalled();
+	});
+
+	it('refuses a userinfo_endpoint on another origin than the discovery document', async () => {
+		respond(
+			() => ({ sub: 'x' }),
+			() => ({ userinfo_endpoint: 'https://attacker.example/userinfo' }),
+		);
+
+		await expect(identifier.resolve('Bearer t', config)).rejects.toThrow(CredentialResolutionError);
+		expect(callsTo('https://attacker.example/userinfo')).toHaveLength(0);
+	});
+
+	it('never follows redirects with the token attached', async () => {
+		await identifier.resolve('Bearer t', config);
+
+		expect(callsTo(USERINFO)[0][0]).toMatchObject({
+			maxRedirects: 0,
+			sendCredentialsOnCrossOriginRedirect: false,
+		});
+	});
+
 	it('refuses when the provider cannot be reached', async () => {
 		request.mockRejectedValue(new Error('ECONNREFUSED'));
 

@@ -308,6 +308,41 @@ describe('DynamicCredentialAuthorizationService', () => {
 			});
 		});
 
+		it('only lets the n8n user a link was minted for open it', async () => {
+			const { service } = setup();
+			const userLink = {
+				...link,
+				resolverId: SYSTEM_RESOLVER_ID,
+				source: 'n8n-oauth',
+				userId: 'user-1',
+			};
+			const tokenFor = async () =>
+				new URL(await service.issueAuthorizeLink(userLink)).searchParams.get('token')!;
+
+			const other = { id: 'user-2' } as User;
+			await expect(
+				service.consumeAuthorizeLink('cred-1', await tokenFor(), browser, other),
+			).rejects.toThrow(NotFoundError);
+			await expect(
+				service.consumeAuthorizeLink('cred-1', await tokenFor(), browser),
+			).rejects.toThrow(NotFoundError);
+			await expect(
+				service.consumeAuthorizeLink('cred-1', await tokenFor(), browser, user),
+			).resolves.toBe('https://idp.example.com/auth?x=1');
+		});
+
+		it('refuses a non-n8n resolver link whose identity is not external', async () => {
+			const { service, resolverService } = setup();
+			const token = new URL(
+				await service.issueAuthorizeLink({ ...link, source: 'manual-execution' }),
+			).searchParams.get('token')!;
+
+			await expect(service.consumeAuthorizeLink('cred-1', token, browser)).rejects.toThrow(
+				NotFoundError,
+			);
+			expect(resolverService.resolveExternalSubject).not.toHaveBeenCalled();
+		});
+
 		it('refuses a link presented for a different credential', async () => {
 			const { service } = setup();
 			const token = new URL(await service.issueAuthorizeLink(link)).searchParams.get('token')!;

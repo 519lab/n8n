@@ -97,12 +97,16 @@ rebuild because no consumer pins it.
   token-only external caller may only see workflows that use a non-system resolver.
 - **Resolver binding:** a non-system resolver may connect a credential only if it is the
   credential's own resolver or one selected by a workflow that uses the credential.
-- **SSRF:** discovery and UserInfo requests go through the SSRF-guarded outbound client
-  (same policy as OAuth discovery) after an http(s) check. No origin check between
-  `userinfo_endpoint` and `metadataUri` — providers commonly advertise a public host
-  that differs from an internal discovery URL.
-- **Single-use links:** consumed under a `LockService` lease (Redis under multi-main),
-  so two concurrent requests can't both use one.
+- **SSRF / token exfiltration:** discovery and UserInfo requests go through the
+  SSRF-guarded outbound client, must be `https`, never follow redirects, and the
+  provider-advertised `userinfo_endpoint` must share the `metadataUri` origin (the
+  caller's token is attached). Providers whose public UserInfo host differs from the
+  discovery host must be configured with a discovery URL on that same host.
+- **Single-use links:** consumed under a `LockService` lease (Redis under multi-main,
+  key hashed), so two concurrent requests can't both use one. A link minted for an n8n
+  user (gate, system resolver) only opens in that user's signed-in session, so a
+  forwarded link can't land another person's provider tokens under them; a link for a
+  non-n8n resolver must carry an `external` identity.
 - **Webhook identity:** `BearerTokenExtractor` removes the `Authorization` header from
   the trigger item so the token is held only in the encrypted execution context.
 

@@ -65,10 +65,13 @@ export class DynamicCredentialsController {
 		);
 	}
 
-	/** Opens a gate-issued single-use link: admitted by the link token alone. */
-	@Get('/credentials/:credentialId/authorize', { skipAuth: true })
+	/**
+	 * Opens a gate-issued single-use link: admitted by the link token, and — for a
+	 * link minted for an n8n user — only in that user's signed-in session.
+	 */
+	@Get('/credentials/:credentialId/authorize', { allowUnauthenticated: true })
 	async followAuthorizeLink(
-		req: Request,
+		req: AuthenticatedRequest,
 		res: Response,
 		@Param('credentialId') credentialId: string,
 		@Query query: { token?: string },
@@ -80,6 +83,7 @@ export class DynamicCredentialsController {
 			credentialId,
 			query.token,
 			{ req, res },
+			req.user,
 		);
 		// The link token is in this URL: keep it out of caches and Referer headers.
 		res.setHeader('Referrer-Policy', 'no-referrer');
