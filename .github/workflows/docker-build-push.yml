@@ -131,7 +131,6 @@ jobs:
           enable-docker-cache: 'true'
         env:
           RELEASE: ${{ needs.determine-build-context.outputs.n8n_version }}
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
       - name: Determine Docker tags for all images
         id: determine-tags
@@ -590,21 +589,3 @@ jobs:
     with:
       image_ref: ${{ needs.build-and-push-docker.outputs.runners_primary_ghcr_manifest_tag }}
     secrets: inherit
-
-  notify-on-failure:
-    name: Notify Cats on nightly build failure
-    runs-on: blacksmith-4vcpu-ubuntu-2404
-    needs: [build-and-push-docker]
-    if: needs.build-and-push-docker.result == 'failure' && github.event_name == 'schedule'
-    steps:
-      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
-        with:
-          sparse-checkout: .github/scripts/slack
-          sparse-checkout-cone-mode: false
-      - name: Notify Slack
-        env:
-          SLACK_TOKEN: ${{ secrets.QBOT_SLACK_TOKEN }}
-        run: |
-          node .github/scripts/slack/notify.mjs \
-            --channel '#team-catalysts' \
-            --text 'Nightly Docker build failed - ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'

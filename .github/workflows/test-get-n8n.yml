@@ -78,22 +78,3 @@ jobs:
       - name: Run test harness (no containers)
         shell: bash
         run: sh docker/test-get-n8n.sh
-
-  notify-on-failure:
-    name: Notify Slack on failure
-    runs-on: blacksmith-4vcpu-ubuntu-2404
-    needs: [lint, e2e, fast-checks-windows]
-    if: ${{ always() && github.event_name == 'schedule' && contains(needs.*.result, 'failure') }}
-    steps:
-      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
-        with:
-          persist-credentials: false
-          sparse-checkout: .github/scripts/slack
-          sparse-checkout-cone-mode: false
-      - name: Notify Slack
-        env:
-          SLACK_TOKEN: ${{ secrets.QBOT_SLACK_TOKEN }}
-        run: |
-          node .github/scripts/slack/notify.mjs \
-            --channel '#alerts-build' \
-            --text 'get-n8n.sh installer nightly failed - ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
