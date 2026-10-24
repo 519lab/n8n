@@ -18,7 +18,6 @@ on:
       - 'docker/images/runners/**'
       - 'scripts/build-n8n.mjs'
       - 'scripts/dockerize-n8n.mjs'
-      - 'scripts/smoke-n8n-image.mjs'
   workflow_dispatch:
 
 concurrency:
@@ -38,21 +37,3 @@ jobs:
         with:
           build-command: 'pnpm build:docker:clean'
           enable-docker-cache: true
-
-  notify-on-failure:
-    name: Notify on nightly smoke test failure
-    runs-on: blacksmith-4vcpu-ubuntu-2404
-    needs: [docker-smoke-test]
-    if: needs.docker-smoke-test.result == 'failure' && github.event_name == 'schedule'
-    steps:
-      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
-        with:
-          sparse-checkout: .github/scripts/slack
-          sparse-checkout-cone-mode: false
-      - name: Notify Slack
-        env:
-          SLACK_TOKEN: ${{ secrets.QBOT_SLACK_TOKEN }}
-        run: |
-          node .github/scripts/slack/notify.mjs \
-            --channel C0A9RLY8Y20 \
-            --text '🚨 Nightly Docker smoke test failed (no-cache build) - ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'

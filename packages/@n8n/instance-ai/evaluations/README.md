@@ -322,6 +322,8 @@ The CI PR-comment step uses `eval-pr-comment.md` as the entire comment body (no 
 
 ### Re-running on a PR
 
+> **Fork note (2026-10-24):** The PR eval gate was removed from this fork's CI (it needs n8n-io secrets). Run it locally with the commands in this doc.
+
 Evals auto-run when a PR is **opened / reopened / marked ready** (path-filtered), but **not on new pushes** — `synchronize` is intentionally off (full runs are expensive). To exercise the latest push, re-run against the PR head on demand:
 
 ```bash
@@ -984,6 +986,8 @@ status.
 **Debugging a specific failure.** Open the `.data/workflow-eval-report.html` artifact — it has per-node execution traces, the exact intercepted request, the mock response the LLM generated, and the verifier's reasoning. Start from the failing node.
 
 ## CI
+
+> **Fork note (2026-10-24):** The eval CI (`ci-instance-ai-evals.yml`, `test-evals-instance-ai.yml`, `ci-mcp-evals.yml`, `test-evals-mcp.yml`) was removed from this fork's CI (it needs n8n-io secrets). Run it locally with the commands in this doc. The rest of this section describes upstream.
 
 Evals run automatically on PRs that change Instance AI code (path-filtered). The workflow boots a set of n8n lane containers, pulls the test-case suite from LangTracer (`--source langtracer --suite baseline`), and runs the CLI against the lanes. See `.github/workflows/test-evals-instance-ai.yml`.
 

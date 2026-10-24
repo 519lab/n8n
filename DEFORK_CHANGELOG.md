@@ -16,6 +16,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-10-24 — Remove upstream-only CI workflows and dead secret steps
+
+**Infrastructure; no `.ee` source involved.** Removed 60 GitHub Actions
+workflows that only serve `n8n-io` infrastructure — the release/npm-publish/
+n8n-cloud chain, backport and release-branch utilities, 3.x sync and v3
+nightly, security-fix publishing and public→private sync, Azure and CodSpeed
+benchmarks, E2E performance/infrastructure sizing, AI evals, Chromatic/
+Storybook/API-schema publishing, owner and assistant-app bots, the Claude task
+runner, node-popularity, mutation health, and PR-status/QA-metrics webhooks.
+Each depended on secrets, GitHub Apps or `github.repository == 'n8n-io/n8n'`
+gates absent here, so it only produced failed, skipped or `startup_failure`
+runs. Also stripped the Slack failure notifiers, Codecov uploads, QA-metrics
+"send stats" steps and the Sentry token from the workflows kept, and deleted
+the `.github/scripts` helpers (plus tests and the now-unused
+`conventional-changelog`/`tempfile` deps) and the n8n-cloud
+`scripts/smoke-n8n-image.mjs` that nothing calls any more. `.github/actionlint.yml`
+gains the Blacksmith `ubuntu-2404` / `windows-2025` labels so the
+`actionlint_check` pre-commit hook passes on migrated workflows.
+`WORKFLOWS.md` and `CI-TELEMETRY.md` were rewritten for the fork; eval,
+perf, mutation-health and v3 docs carry a fork note.
+
 ### 2026-10-24 — n8n image built on this fork's GHCR base
 
 **Infrastructure; no `.ee` source involved.** `docker/images/n8n/Dockerfile`

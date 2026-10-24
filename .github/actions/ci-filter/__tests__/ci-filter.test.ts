@@ -313,7 +313,6 @@ describe('runtime filter', () => {
 	it('still triggers on build/release-relevant scripts', () => {
 		assert.equal(evaluateFilter(['scripts/build-n8n.mjs'], runtimePatterns), true);
 		assert.equal(evaluateFilter(['scripts/dockerize-n8n.mjs'], runtimePatterns), true);
-		assert.equal(evaluateFilter(['scripts/smoke-n8n-image.mjs'], runtimePatterns), true);
 	});
 });
 

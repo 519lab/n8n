@@ -276,8 +276,5 @@ runs:
       if: ${{ inputs.build-command != '' }}
       env:
         BUILD_COMMAND: ${{ inputs.build-command }}
-      run: |
-        $BUILD_COMMAND --summarize
-        node .github/scripts/send-build-stats.mjs || true
-        node .github/scripts/send-docker-stats.mjs || true
+      run: $BUILD_COMMAND --summarize
       shell: bash

@@ -65,13 +65,3 @@ jobs:
       # tbls runs as a Docker image in CI.
       - name: Verify schema docs are up to date
         run: ${{ matrix.schema-check-cmd }}
-
-      - name: Upload coverage to Codecov
-        if: env.COVERAGE_ENABLED == 'true'
-        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          flags: backend-integration-postgres
-          name: backend-integration-postgres
-          files: ./packages/cli/coverage/lcov.info
-          fail_ci_if_error: false

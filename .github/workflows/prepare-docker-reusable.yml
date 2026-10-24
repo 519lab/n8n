@@ -43,7 +43,3 @@ jobs:
         uses: ./.github/actions/build-n8n-docker
         with:
           build-variant: ${{ inputs.build-variant }}
-        env:
-          QA_METRICS_WEBHOOK_URL: ${{ secrets.QA_METRICS_WEBHOOK_URL }}
-          QA_METRICS_WEBHOOK_USER: ${{ secrets.QA_METRICS_WEBHOOK_USER }}
-          QA_METRICS_WEBHOOK_PASSWORD: ${{ secrets.QA_METRICS_WEBHOOK_PASSWORD }}

@@ -12,9 +12,6 @@ on:
         description: 'Git reference to checkout (e.g. n8n@1.2.3)'
         required: true
         type: string
-    secrets:
-      QBOT_SLACK_TOKEN:
-        required: true
 
   workflow_dispatch:
     inputs:
@@ -91,14 +88,3 @@ jobs:
           echo "  - SBOM: all components carry a resolved SPDX license (gated before attest)"
           echo "  - VEX: $VEX_STATEMENTS CVE statements"
           echo "  - THIRD_PARTY_LICENSES.md: rendered from SBOM (same artefact served by /third-party-licenses endpoint)"
-
-      - name: Notify Slack on failure
-        if: failure()
-        env:
-          SLACK_TOKEN: ${{ secrets.QBOT_SLACK_TOKEN }}
-          RELEASE_TAG_REF: ${{ inputs.release_tag_ref }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          node .github/scripts/slack/notify.mjs \
-            --channel '#alerts-build' \
-            --text "<${RUN_URL}|SBOM generation and attachment failed for release ${RELEASE_TAG_REF}>"

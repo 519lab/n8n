@@ -72,31 +72,6 @@ jobs:
         if: ${{ !cancelled() }}
         run: pnpm turbo test:unit:changed --filter=n8n --summarize
 
-      - name: Send Test Stats
-        if: ${{ !cancelled() }}
-        run: node .github/scripts/send-build-stats.mjs || true
-        env:
-          QA_METRICS_WEBHOOK_URL: ${{ secrets.QA_METRICS_WEBHOOK_URL }}
-          QA_METRICS_WEBHOOK_USER: ${{ secrets.QA_METRICS_WEBHOOK_USER }}
-          QA_METRICS_WEBHOOK_PASSWORD: ${{ secrets.QA_METRICS_WEBHOOK_PASSWORD }}
-
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          report_type: test_results
-          name: backend-unit-tests
-
-      - name: Upload coverage to Codecov
-        if: env.COVERAGE_ENABLED == 'true'
-        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          flags: backend-unit
-          name: backend-unit
-          files: ./packages/**/coverage/lcov.info
-
   integration-test-backend:
     name: Backend Integration Tests
     runs-on: ${{ vars.RUNNER_PROVIDER == 'github' && 'ubuntu-latest' || 'blacksmith-4vcpu-ubuntu-2204' }}
@@ -132,31 +107,6 @@ jobs:
         if: ${{ !cancelled() }}
         run: pnpm turbo test:integration:changed --filter=n8n --summarize
 
-      - name: Send Test Stats
-        if: ${{ !cancelled() }}
-        run: node .github/scripts/send-build-stats.mjs || true
-        env:
-          QA_METRICS_WEBHOOK_URL: ${{ secrets.QA_METRICS_WEBHOOK_URL }}
-          QA_METRICS_WEBHOOK_USER: ${{ secrets.QA_METRICS_WEBHOOK_USER }}
-          QA_METRICS_WEBHOOK_PASSWORD: ${{ secrets.QA_METRICS_WEBHOOK_PASSWORD }}
-
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          report_type: test_results
-          name: backend-integration-tests
-
-      - name: Upload coverage to Codecov
-        if: env.COVERAGE_ENABLED == 'true'
-        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          flags: backend-integration
-          name: backend-integration
-          files: ./packages/**/coverage/lcov.info
-
   unit-test-nodes:
     name: Nodes Unit Tests
     runs-on: ${{ vars.RUNNER_PROVIDER == 'github' && 'ubuntu-latest' || 'blacksmith-4vcpu-ubuntu-2204' }}
@@ -176,31 +126,6 @@ jobs:
 
       - name: Test Nodes
         run: pnpm turbo test:changed --filter=n8n-nodes-base --summarize
-
-      - name: Send Test Stats
-        if: ${{ !cancelled() }}
-        run: node .github/scripts/send-build-stats.mjs || true
-        env:
-          QA_METRICS_WEBHOOK_URL: ${{ secrets.QA_METRICS_WEBHOOK_URL }}
-          QA_METRICS_WEBHOOK_USER: ${{ secrets.QA_METRICS_WEBHOOK_USER }}
-          QA_METRICS_WEBHOOK_PASSWORD: ${{ secrets.QA_METRICS_WEBHOOK_PASSWORD }}
-
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          report_type: test_results
-          name: nodes-unit-tests
-
-      - name: Upload coverage to Codecov
-        if: env.COVERAGE_ENABLED == 'true'
-        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          flags: nodes-unit
-          name: nodes-unit
-          files: ./packages/**/coverage/lcov.info
 
   unit-test-frontend:
     name: Frontend (${{ matrix.shard }}/2)
@@ -227,31 +152,6 @@ jobs:
         run: pnpm test:ci:frontend:changed --summarize -- --shard=${{ matrix.shard }}/2
         env:
           VITEST_SHARD: ${{ matrix.shard }}/2
-
-      - name: Send Test Stats
-        if: ${{ !cancelled() }}
-        run: node .github/scripts/send-build-stats.mjs || true
-        env:
-          QA_METRICS_WEBHOOK_URL: ${{ secrets.QA_METRICS_WEBHOOK_URL }}
-          QA_METRICS_WEBHOOK_USER: ${{ secrets.QA_METRICS_WEBHOOK_USER }}
-          QA_METRICS_WEBHOOK_PASSWORD: ${{ secrets.QA_METRICS_WEBHOOK_PASSWORD }}
-
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          report_type: test_results
-          name: frontend-shard-${{ matrix.shard }}-tests
-
-      - name: Upload coverage to Codecov
-        if: env.COVERAGE_ENABLED == 'true'
-        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          flags: frontend
-          name: frontend-shard-${{ matrix.shard }}
-          files: ./packages/**/coverage/lcov.info
 
   unit-test:
     name: Unit tests

@@ -319,6 +319,8 @@ execution report for diagnosis.
 
 ### When it runs
 
+> **Fork note (2026-10-24):** `test-e2e-performance-reusable.yml` and the PR `e2e-performance` job were removed from this fork's CI (license + QA-metrics secrets). The schedule below is upstream's; run the suite locally.
+
 - **Nightly**: `0 0 * * *` via `test-e2e-performance-reusable.yml` — full
   coverage of every tier × spec, sentinel script gates the job.
 - **PR opt-in**: add the `run-perf-tests` label to a PR to trigger the

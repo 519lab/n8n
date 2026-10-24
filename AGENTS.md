@@ -54,9 +54,9 @@ clean-room. To keep it that way:
   suggested by Linear, **unless it is a security fix** (see Security Fix
   Hygiene below)
 - Use mermaid diagrams in MD files when you need to visualise something
-- **Developing v3 features:** land normal feature work on `master` behind an
-  opt-in flag; introduce breaking changes only on the `3.x` branch. See
-  [.github/DEVELOPING_V3.md](.github/DEVELOPING_V3.md).
+- **Branches:** this fork has no `3.x` branch — all work lands on `develop`
+  and is promoted to `master`. [.github/DEVELOPING_V3.md](.github/DEVELOPING_V3.md)
+  describes upstream's v3 model for reference only.
 
 ## Agent Skills and Claude Code Plugin
 
@@ -138,7 +138,7 @@ not — all three have silently shipped vulnerable versions before:
 - **`.github/scripts` is not a workspace member.** It has its own
   `package.json` and `pnpm-lock.yaml`, and a plain `pnpm install` from inside
   it resolves the *root* workspace ("Scope: all 78 workspace projects") and
-  leaves that lockfile untouched. Use the form the 21 workflows use:
+  leaves that lockfile untouched. Use the form the workflows use:
   `pnpm install --dir ./.github/scripts --ignore-workspace`.
 
 Version-scoped pins (`ip-address@10`, `linkify-it@<=5.0.2`) only rewrite the

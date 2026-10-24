@@ -2,14 +2,16 @@
 
 ## .github Quick Reference
 
-This folder contains n8n's GitHub Actions infrastructure.
+This folder contains this fork's GitHub Actions infrastructure. Upstream-only
+workflows (release, backport, 3.x sync, evals, benchmarks, Slack/Codecov/QA-metrics
+notifiers) were removed; see `WORKFLOWS.md` before adding any back.
 
 ### Key Files
 
 | File/Folder | Purpose |
 |-------------|---------|
 | `WORKFLOWS.md` | Complete CI/CD documentation |
-| `DEVELOPING_V3.md` | How to develop v3 features (master + 3.x branch model, opt-in flags) |
+| `DEVELOPING_V3.md` | Upstream's v3 model (master + 3.x) — reference only; this fork has no `3.x` |
 | `workflows/` | GitHub Actions workflows |
 | `actions/` | Reusable composite actions |
 | `scripts/` | Release & Docker automation |
@@ -21,9 +23,8 @@ This folder contains n8n's GitHub Actions infrastructure.
 |--------|---------|
 | `test-` | Testing (unit, E2E, visual) |
 | `ci-` | Continuous integration |
-| `util-` | Utilities (notifications) |
+| `util-` | Maintenance utilities |
 | `build-` | Build processes |
-| `release-` | Release automation |
 | `sec-` | Security scanning |
 
 Reusable workflows: add `-reusable` or `-callable` suffix.
