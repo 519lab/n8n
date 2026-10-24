@@ -16,6 +16,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-10-24 — Remove dead `test-evals-python` workflow
+
+**Cleanup; no `.ee` source read.** `.github/workflows/test-evals-python.yml`
+only triggered on, and ran inside,
+`packages/@n8n/ai-workflow-builder.ee/evaluations/programmatic/python`, which was
+removed with the `.ee` code. Any PR editing the workflow file failed it at the
+first `run:` step (missing working directory). Removed the workflow and its
+`WORKFLOWS.md` path-trigger row.
+
 ### 2026-10-16 — Dependabot config + auto-merge workflow
 
 **Infrastructure, not de-fork work; no `.ee` source involved.** Dependabot now
