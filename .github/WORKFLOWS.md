@@ -228,7 +228,7 @@ Composite actions in `.github/actions/`:
 | Action                  | Purpose                                         |
 |-------------------------|-------------------------------------------------|
 | `setup-nodejs`          | pnpm + Node.js + Turbo cache + Docker (opt)     |
-| `docker-registry-login` | GHCR + DockerHub + DHI authentication           |
+| `docker-registry-login` | GHCR authentication                             |
 | `build-n8n-docker`      | Build the n8n image for E2E                     |
 | `load-n8n-docker`       | Load a cached n8n image                         |
 | `ci-filter`             | Path filtering and required-job validation      |
@@ -337,7 +337,6 @@ workflows still reference some secrets that are unset here:
 
 | Secret                                           | Referenced by                        | Effect when unset                  |
 |--------------------------------------------------|--------------------------------------|------------------------------------|
-| `DOCKER_USERNAME`, `DOCKER_PASSWORD`             | Docker workflows (Docker Hub / DHI login) | Optional login is skipped / fails |
 | `CURRENTS_RECORD_KEY`, `CURRENTS_API_KEY`        | `test-e2e-reusable`, `test-workflows-callable` | No Currents recording       |
 | `N8N_LICENSE_ACTIVATION_KEY`, `N8N_LICENSE_CERT`, `N8N_ENCRYPTION_KEY` | `test-e2e-reusable` | `@licensed` E2E specs cannot pass |
 | `ENCRYPTION_KEY`                                 | `test-workflows-callable`            | Passed through as an empty `N8N_ENCRYPTION_KEY` |
