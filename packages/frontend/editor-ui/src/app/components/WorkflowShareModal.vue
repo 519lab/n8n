@@ -15,6 +15,7 @@ import {
 import { useRemoteProjectSearch } from '@/features/collaboration/projects/projects.utils';
 import { useWorkflowsListStore } from '@/app/stores/workflowsList.store';
 import { useWorkflowSharingStore } from '@/app/stores/workflowsSharing.store';
+import { useProjectsStore } from '@/features/collaboration/projects/projects.store';
 import type { IWorkflowDb } from '@/Interface';
 
 const props = defineProps<{
@@ -31,21 +32,32 @@ const searchFn = useRemoteProjectSearch();
 
 const workflowsListStore = useWorkflowsListStore();
 const workflowSharingStore = useWorkflowSharingStore();
+const projectsStore = useProjectsStore();
 
 const loading = ref(true);
 const saving = ref(false);
 const workflow = ref<IWorkflowDb | null>(null);
 const sharedWith = ref<ProjectSharingData[]>([]);
+const teamMemberCount = ref(0);
 
 const homeProject = computed(() => workflow.value?.homeProject);
 
 const workflowPermissions = computed(() => getResourcePermissions(workflow.value?.scopes).workflow);
 
 const isHomeProjectPersonal = computed(() => homeProject.value?.type === ProjectTypes.Personal);
+const isHomeProjectTeam = computed(() => homeProject.value?.type === ProjectTypes.Team);
 
-// Sharing can only be edited by users with the share scope and only for
-// workflows that live in a team project.
-const isReadOnly = computed(() => !workflowPermissions.value.share || isHomeProjectPersonal.value);
+// Team-project workflows are shared through project membership, not per workflow.
+const isReadOnly = computed(() => !workflowPermissions.value.share || isHomeProjectTeam.value);
+
+// Personal-space sharing is an instance policy, surfaced as the personal owner's
+// `workflow:share` scope; only the space's owner gets the notice explaining it.
+const isPersonalSharingRestricted = computed(
+	() =>
+		isHomeProjectPersonal.value &&
+		!workflowPermissions.value.share &&
+		homeProject.value?.id === projectsStore.personalProject?.id,
+);
 
 const isDirty = computed(() => {
 	const original = (workflow.value?.sharedWithProjects ?? []).map((project) => project.id).sort();
@@ -80,6 +92,14 @@ onMounted(async () => {
 			workflowsListStore.addWorkflow(workflow.value);
 		}
 		sharedWith.value = [...(workflow.value.sharedWithProjects ?? [])];
+		if (isHomeProjectTeam.value && homeProject.value) {
+			try {
+				const project = await projectsStore.fetchProject(homeProject.value.id);
+				teamMemberCount.value = project.relations.length;
+			} catch {
+				// The member count is informational only.
+			}
+		}
 	} catch (error) {
 		toast.showError(error, i18n.baseText('workflows.shareModal.onSave.error.title'));
 	} finally {
@@ -114,24 +134,35 @@ async function onSave() {
 </script>
 
 <template>
-	<Modal
-		width="460px"
-		:name="modalName"
-		:event-bus="modalBus"
-		:center="true"
-		data-test-id="workflow-share-modal"
-	>
+	<Modal width="460px" :name="modalName" :event-bus="modalBus" :center="true">
 		<template #header>
 			<N8nHeading tag="h2" size="xlarge">{{ modalTitle }}</N8nHeading>
 		</template>
 		<template #content>
 			<div v-loading="loading" :class="$style.content">
 				<N8nInfoTip
-					v-if="isHomeProjectPersonal"
+					v-if="isPersonalSharingRestricted"
 					:bold="false"
 					data-test-id="workflow-share-personal-restricted"
 				>
 					{{ i18n.baseText('workflows.shareModal.info.personalSpaceRestricted') }}
+				</N8nInfoTip>
+				<N8nInfoTip
+					v-else-if="isHomeProjectTeam"
+					:bold="false"
+					data-test-id="workflow-share-team-info"
+				>
+					{{
+						i18n.baseText('workflows.shareModal.info.members', {
+							interpolate: {
+								projectName: homeProject?.name ?? '',
+								members: i18n.baseText('workflows.shareModal.info.members.number', {
+									interpolate: { number: String(teamMemberCount) },
+									adjustToNumber: teamMemberCount,
+								}),
+							},
+						})
+					}}
 				</N8nInfoTip>
 				<template v-else>
 					<ProjectSharing
@@ -162,7 +193,7 @@ async function onSave() {
 					:loading="saving"
 					:disabled="!isDirty || loading"
 					:label="i18n.baseText('workflows.shareModal.save')"
-					data-test-id="workflow-share-modal-save-button"
+					data-test-id="workflow-sharing-modal-save-button"
 					@click="onSave"
 				/>
 			</div>
