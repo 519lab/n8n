@@ -138,7 +138,7 @@ async function buildSignedResponse(
 	});
 
 	const xml = buildResponseXml(requestId, overrides);
-	const context = await idp.createLoginResponse(sp, null, 'post', {}, () => ({
+	const context = await idp.createLoginResponse(sp, null as never, 'post', {}, () => ({
 		id: 'ignored',
 		context: xml,
 	}));
@@ -219,6 +219,8 @@ describe('SAML login response binding', () => {
 			outboundHttp,
 			provisioningService,
 			flowState,
+			mock(),
+			mock(),
 		);
 
 		await service.setSamlPreferences({
@@ -551,7 +553,7 @@ describe('SAML login response binding', () => {
 				expect.any(String),
 				expect.objectContaining({ httpOnly: true }),
 			);
-			const [, flowId] = res.cookie.mock.calls[0] as [string, string, unknown];
+			const [, flowId] = res.cookie.mock.calls[0] as unknown as [string, string, unknown];
 
 			const samlRequest = new URL(loginUrl).searchParams.get('SAMLRequest');
 			const requestXml = inflateRawSync(Buffer.from(samlRequest!, 'base64')).toString();

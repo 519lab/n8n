@@ -228,7 +228,7 @@ describe('AddOpenWorkflowSentinelToWorkflowReviews Migration', () => {
 
 			await runSingleMigration(MIGRATION_NAME);
 			dataSource = Container.get(DataSource);
-			await undoLastSingleMigration(MIGRATION_NAME);
+			await undoLastSingleMigration();
 			dataSource = Container.get(DataSource);
 
 			const ctx = createTestMigrationContext(dataSource);

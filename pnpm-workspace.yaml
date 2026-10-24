@@ -137,7 +137,7 @@ catalog:
   cross-env: ^7.0.3
   csv-parse: 7.0.2
   dotenv: 17.2.3
-  electron: 41.10.6
+  electron: 42.11.16
   esbuild: ^0.28.1
   eslint: 9.29.0
   eslint-plugin-n8n-nodes-base: ^1.16.7
@@ -180,7 +180,7 @@ catalog:
   mysql2: 3.23.1
   nanoid: 3.3.18
   nock: 14.0.14
-  nodemailer: 10.0.10
+  nodemailer: 10.1.4
   openai: 6.46.0
   oracledb: 6.10.0
   oxlint: ^1.61.0
@@ -196,7 +196,7 @@ catalog:
   qs: 6.16.0
   reflect-metadata: 0.2.2
   rimraf: 6.0.1
-  sanitize-html: 2.18.0
+  sanitize-html: 2.18.1
   sass-embedded: ^1.98.0
   semver: 7.7.3
   simple-git: 4.0.1
@@ -285,7 +285,7 @@ catalogs:
     '@typescript/native': 'npm:typescript@7.0.2'
     typescript: 'npm:@typescript/typescript6@6.0.2'
   undici-v6:
-    undici: ^6.28.1
+    undici: ^6.29.1
   undici-v7:
     undici: ^7.29.1
 

@@ -101,7 +101,7 @@ describe('RoleController - Integration Tests', () => {
 				displayName: 'Custom Project Role',
 				description: 'A custom role for project management',
 				roleType: 'project',
-				scopes: ['workflow:create', 'workflow:read'].sort(),
+				scopes: ['workflow:create', 'workflow:read'],
 			};
 
 			const response = await ownerAgent.post('/roles').send(createRoleDto).expect(200);
@@ -140,7 +140,7 @@ describe('RoleController - Integration Tests', () => {
 				displayName: 'Custom Project Role',
 				description: 'A custom role for project management',
 				roleType: 'project',
-				scopes: ['workflow:create', 'workflow:read'].sort(),
+				scopes: ['workflow:create', 'workflow:read'],
 			};
 
 			const createResponse = await ownerAgent.post('/roles').send(createRoleDto).expect(200);
@@ -162,7 +162,7 @@ describe('RoleController - Integration Tests', () => {
 			expect(response.body).toEqual({
 				data: {
 					...updateRoleDto,
-					scopes: ['workflow:create', 'workflow:read'].sort(),
+					scopes: ['workflow:create', 'workflow:read'],
 					slug: generatedRoleSlug,
 					roleType: 'project',
 					licensed: expect.any(Boolean),
@@ -178,7 +178,7 @@ describe('RoleController - Integration Tests', () => {
 			expect(availableRole.body).toEqual({
 				data: {
 					...updateRoleDto,
-					scopes: ['workflow:create', 'workflow:read'].sort(),
+					scopes: ['workflow:create', 'workflow:read'],
 					slug: generatedRoleSlug,
 					roleType: 'project',
 					licensed: expect.any(Boolean),

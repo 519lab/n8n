@@ -143,9 +143,9 @@ describe('WorkflowReviewService write guards', () => {
 		it('conflicts and does not publish when the pin moved under the transaction', async () => {
 			linkRepository.takeLinkAtPin.mockResolvedValue(0);
 
-			await expect(service.decide(reviewer, 'req-1', { decision: 'approved' })).rejects.toThrow(
-				ConflictError,
-			);
+			await expect(
+				service.decide(reviewer, 'req-1', { decision: 'approved', expectedVersionId: versionId }),
+			).rejects.toThrow(ConflictError);
 
 			expect(requestRepository.applyDecisionIfOpen).not.toHaveBeenCalled();
 			expect(workflowService.activateWorkflow).not.toHaveBeenCalled();

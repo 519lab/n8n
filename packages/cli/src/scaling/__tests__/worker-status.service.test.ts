@@ -106,6 +106,7 @@ describe('WorkerStatusService', () => {
 			);
 
 			const [message] = mockPush.sendToUsers.mock.calls[0];
+			if (message.type !== 'sendWorkerStatusMessage') throw new Error('Unexpected push type');
 
 			expect(message.data.status).not.toHaveProperty('requestingUserId');
 		});

@@ -183,6 +183,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+	debouncedApplySearch.cancel();
 	document.removeEventListener('keydown', flushPendingSearchOnNavigation, { capture: true });
 	cleanupopeningContext();
 	detachKeydownEvent();
