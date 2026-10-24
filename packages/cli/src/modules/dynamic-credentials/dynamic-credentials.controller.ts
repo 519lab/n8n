@@ -1,6 +1,6 @@
 import type { WorkflowExecutionStatus } from '@n8n/api-types';
 import { AuthenticatedRequest, type User } from '@n8n/db';
-import { Delete, Get, Param, Post, Query, RestController } from '@n8n/decorators';
+import { Delete, Get, Param, Post, RestController } from '@n8n/decorators';
 import type { Request, Response } from 'express';
 import { timingSafeEqual } from 'node:crypto';
 
@@ -17,7 +17,19 @@ import {
 /** Header an external caller presents the static endpoint token in. */
 const ENDPOINT_TOKEN_HEADER = 'x-authorization';
 
-type DynamicCredentialsQuery = { resolverId?: string; authSource?: string };
+type DynamicCredentialsQuery = { resolverId?: string; authSource?: string; token?: string };
+
+/**
+ * `@Query` only parses into Zod DTO classes, so read the few string params here.
+ * Repeated or nested values (arrays/objects) are ignored.
+ */
+function readQuery(req: Request): DynamicCredentialsQuery {
+	const pick = (key: string) => {
+		const value: unknown = req.query[key];
+		return typeof value === 'string' ? value : undefined;
+	};
+	return { resolverId: pick('resolverId'), authSource: pick('authSource'), token: pick('token') };
+}
 
 /**
  * Endpoints that let an end user — signed in to n8n, or external and named by a
@@ -40,8 +52,8 @@ export class DynamicCredentialsController {
 		req: AuthenticatedRequest,
 		_res: Response,
 		@Param('workflowId') workflowId: string,
-		@Query query: DynamicCredentialsQuery,
 	): Promise<WorkflowExecutionStatus> {
+		const query = readQuery(req);
 		return await this.authorizationService.getExecutionStatus(
 			workflowId,
 			this.identify(req, query),
@@ -53,8 +65,8 @@ export class DynamicCredentialsController {
 		req: AuthenticatedRequest,
 		res: Response,
 		@Param('credentialId') credentialId: string,
-		@Query query: DynamicCredentialsQuery,
 	): Promise<string> {
+		const query = readQuery(req);
 		const identity = this.identify(req, query);
 		return await this.authorizationService.startAuthorization(
 			credentialId,
@@ -74,8 +86,8 @@ export class DynamicCredentialsController {
 		req: AuthenticatedRequest,
 		res: Response,
 		@Param('credentialId') credentialId: string,
-		@Query query: { token?: string },
 	): Promise<void> {
+		const query = readQuery(req);
 		if (typeof query.token !== 'string' || query.token.length === 0) {
 			throw new BadRequestError('An authorization link token is required');
 		}
@@ -96,8 +108,8 @@ export class DynamicCredentialsController {
 		req: AuthenticatedRequest,
 		_res: Response,
 		@Param('credentialId') credentialId: string,
-		@Query query: DynamicCredentialsQuery,
 	): Promise<{ success: true }> {
+		const query = readQuery(req);
 		await this.authorizationService.revoke(
 			credentialId,
 			requireResolverId(query),
