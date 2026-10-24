@@ -52,3 +52,15 @@ jobs:
     uses: ./.github/workflows/test-linting-reusable.yml
     with:
       ref: ${{ github.sha }}
+
+  report-status:
+    name: Report CI status
+    needs: [build-github, unit-test, lint]
+    # Branch pushes only: a failing PR is already visible on the PR.
+    if: ${{ !cancelled() && github.event_name == 'push' }}
+    permissions:
+      contents: read
+      issues: write
+    uses: ./.github/workflows/util-ci-failure-issue-reusable.yml
+    with:
+      status: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}

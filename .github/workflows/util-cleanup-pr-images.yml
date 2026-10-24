@@ -25,3 +25,15 @@ jobs:
           GHCR_ORG: ${{ github.repository_owner }}
           GHCR_REPO: ${{ github.event.repository.name }}
         run: node .github/scripts/cleanup-ghcr-images.mjs --stale 3
+
+  report-status:
+    name: Report CI status
+    needs: [cleanup]
+    # Scheduled runs only: a failing PR or manual run is already visible where it ran.
+    if: ${{ !cancelled() && github.event_name == 'schedule' }}
+    permissions:
+      contents: read
+      issues: write
+    uses: ./.github/workflows/util-ci-failure-issue-reusable.yml
+    with:
+      status: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}

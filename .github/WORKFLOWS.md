@@ -190,8 +190,7 @@ Push to master/develop  ·  PR → master/develop
 └─ lint
 ```
 
-A failing push run is visible in the Actions tab and on the commit status;
-there is no chat notification.
+A failing push run opens a `ci-failure` issue (see [Failure Alerts](#failure-alerts)).
 
 ---
 
@@ -205,6 +204,20 @@ there is no chat notification.
 | Daily 03:00     | `util-cleanup-pr-images.yml`| Prune CI images older than 3 days    |
 | Mon 10:00       | `clean-stale-branches.yml`  | Delete stale branches                |
 | Mon–Fri 09:00   | `community-pr-close-stale.yml` | Close stale community PRs         |
+
+### Failure Alerts
+
+Scheduled workflows, and `ci-master` on branch pushes, end with a
+`report-status` job that calls `util-ci-failure-issue-reusable.yml`. It runs
+`.github/scripts/ci-failure-issue.mjs`, which keeps one open issue labelled
+`ci-failure` per workflow + branch (`CI failing: <workflow> on <branch>`):
+
+- first failure → opens the issue (and creates the label if missing)
+- repeat failure → comments the new run URL
+- next success → comments and closes it
+
+PR and manual runs don't report — their failures are visible where they ran.
+Watch the repo's issues (or filter `label:ci-failure`) to get notified.
 
 ---
 
@@ -233,6 +246,7 @@ Composite actions in `.github/actions/`:
 | `test-e2e-reusable.yml`              | Core E2E executor     |
 | `test-workflows-callable.yml`        | Workflow tests        |
 | `test-workflow-scripts-reusable.yml` | `.github/scripts` tests |
+| `util-ci-failure-issue-reusable.yml` | Open/close `ci-failure` issues |
 | `prepare-docker-reusable.yml`        | Build/cache the E2E image |
 | `docker-build-push.yml`              | Docker build          |
 | `sec-ci-reusable.yml`                | Security orchestrator |
@@ -261,6 +275,7 @@ runs).
 | `cleanup-ghcr-images.mjs`            | `util-cleanup-pr-images.yml`           |
 | `quality/check-pr-size.mjs`          | `ci-pr-quality.yml`                    |
 | `stale/clean-stale-branches.mjs`     | `clean-stale-branches.yml`             |
+| `ci-failure-issue.mjs`               | `util-ci-failure-issue-reusable.yml`   |
 | `owners.mjs`                         | `community-pr-readiness-check` skill   |
 | `trim-fe-packageJson.js`             | `scripts/build-n8n.mjs` (image build)  |
 
