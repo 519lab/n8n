@@ -5,11 +5,10 @@ import { appendFileSync } from 'node:fs';
 class TagGenerator {
 	constructor() {
 		this.githubOwner = process.env.GITHUB_REPOSITORY_OWNER || 'n8n-io';
-		this.dockerUsername = process.env.DOCKER_USERNAME || 'n8nio';
 		this.githubOutput = process.env.GITHUB_OUTPUT || null;
 	}
 
-	generate({ image, version, platform, includeDockerHub = false, sha = '', date = '' }) {
+	generate({ image, version, platform, sha = '', date = '' }) {
 		let imageName = image;
 		let versionSuffix = '';
 
@@ -23,22 +22,17 @@ class TagGenerator {
 
 		const tags = {
 			ghcr: [`ghcr.io/${this.githubOwner}/${imageName}:${fullVersion}`],
-			docker: includeDockerHub ? [`${this.dockerUsername}/${imageName}:${fullVersion}`] : [],
 		};
 
-		tags.all = [...tags.ghcr, ...tags.docker];
+		tags.all = [...tags.ghcr];
 
 		// Generate additional SHA-based tags for immutable references
 		if (sha) {
 			const shaVersion = `${version}-${sha}`;
 			const shaPlatformTag = `${shaVersion}${versionSuffix}${platformSuffix}`;
 			const shaGhcr = [`ghcr.io/${this.githubOwner}/${imageName}:${shaPlatformTag}`];
-			const shaDocker = includeDockerHub
-				? [`${this.dockerUsername}/${imageName}:${shaPlatformTag}`]
-				: [];
-			tags.all = [...tags.all, ...shaGhcr, ...shaDocker];
+			tags.all = [...tags.all, ...shaGhcr];
 			tags.ghcr = [...tags.ghcr, ...shaGhcr];
-			tags.docker = [...tags.docker, ...shaDocker];
 			tags.shaPrimaryTag = shaGhcr[0].replace(/-amd64$|-arm64$/, '');
 		}
 
@@ -47,12 +41,8 @@ class TagGenerator {
 			const dateVersion = `${version}-${date}`;
 			const datePlatformTag = `${dateVersion}${versionSuffix}${platformSuffix}`;
 			const dateGhcr = [`ghcr.io/${this.githubOwner}/${imageName}:${datePlatformTag}`];
-			const dateDocker = includeDockerHub
-				? [`${this.dockerUsername}/${imageName}:${datePlatformTag}`]
-				: [];
-			tags.all = [...tags.all, ...dateGhcr, ...dateDocker];
+			tags.all = [...tags.all, ...dateGhcr];
 			tags.ghcr = [...tags.ghcr, ...dateGhcr];
-			tags.docker = [...tags.docker, ...dateDocker];
 			tags.datePrimaryTag = dateGhcr[0].replace(/-amd64$|-arm64$/, '');
 		}
 
@@ -66,7 +56,6 @@ class TagGenerator {
 			const outputs = [
 				`${prefixStr}tags=${tags.all.join(',')}`,
 				`${prefixStr}ghcr_tag=${tags.ghcr[0] || ''}`,
-				`${prefixStr}docker_tag=${tags.docker[0] || ''}`,
 				`${prefixStr}primary_tag=${primaryTag}`,
 			];
 			if (tags.shaPrimaryTag) {
@@ -81,12 +70,12 @@ class TagGenerator {
 		}
 	}
 
-	generateAll({ version, platform, includeDockerHub = false, sha = '', date = '' }) {
+	generateAll({ version, platform, sha = '', date = '' }) {
 		const images = ['n8n', 'runners', 'runners-distroless'];
 		const results = {};
 
 		for (const image of images) {
-			const tags = this.generate({ image, version, platform, includeDockerHub, sha, date });
+			const tags = this.generate({ image, version, platform, sha, date });
 			const prefix = image.replace('-distroless', '_distroless');
 			results[prefix] = tags;
 
@@ -120,7 +109,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 			const results = generator.generateAll({
 				version,
 				platform: getArg('platform'),
-				includeDockerHub: hasFlag('include-docker'),
 				sha: getArg('sha') || '',
 				date: getArg('date') || '',
 			});
@@ -137,7 +125,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 				image,
 				version,
 				platform: getArg('platform'),
-				includeDockerHub: hasFlag('include-docker'),
 				sha: getArg('sha') || '',
 				date: getArg('date') || '',
 			});

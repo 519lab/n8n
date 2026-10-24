@@ -16,6 +16,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-10-24 — Docker images publish to GHCR only
+
+**Infrastructure; no `.ee` source involved.** Scheduled (nightly) and release
+image builds still tried to log in to Docker Hub with secrets this repo doesn't
+have, and tagged `n8nio/*`, upstream's namespace, so they could not publish.
+Removed the Docker Hub path from `docker-config.mjs`, `docker-tags.mjs`,
+`docker-build-push.yml` and the `docker-registry-login` action; images go to
+`ghcr.io/<owner>/{n8n,runners}` only.
+
 ### 2026-10-24 — Remove upstream-only CI workflows and dead secret steps
 
 **Infrastructure; no `.ee` source involved.** Removed 60 GitHub Actions
