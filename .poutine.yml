@@ -45,7 +45,7 @@ skip:
   # invocation context.
   - rule: untrusted_checkout_exec
     path:
-      # Only called from release-publish.yml with release tag refs (e.g., n8n@1.2.3),
+      # Manually dispatched (workflow_dispatch) with a release tag ref (e.g. n8n@1.2.3),
       # never PR code. The checked out code is already-released, trusted code.
       - .github/workflows/sbom-generation-callable.yml
       # Uses merge commit SHA from GitHub - the code has already been reviewed
@@ -57,9 +57,3 @@ skip:
       # Permission-gated: only maintainers (admin/write/maintain) can trigger
       # via /test-workflows comment. Verified in test-workflows-pr-comment.yml.
       - .github/workflows/test-workflows-callable.yml
-      # Reusable workflow reachable only via workflow_dispatch (manual) or from
-      # ci-mcp-evals.yml, which is itself workflow_dispatch-only — never from a
-      # pull_request / fork. The flagged step (`npm install -g
-      # @anthropic-ai/claude-code`) installs a fixed package from the npm
-      # registry, not the checked-out code.
-      - .github/workflows/test-evals-mcp.yml

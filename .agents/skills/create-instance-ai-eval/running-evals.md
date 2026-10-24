@@ -239,7 +239,7 @@ pnpm eval:instance-ai --source langtracer --suite baseline \
 ```
 
 LangSmith appends a random suffix; the most-recently-started `instance-ai-baseline-*`
-becomes the next comparison target. In CI, the same is a workflow dispatch:
+becomes the next comparison target. Upstream, the same is a workflow dispatch (these workflows were removed from this fork; run locally instead):
 
 ```bash
 gh workflow run test-evals-instance-ai.yml -f experiment-name=instance-ai-baseline -f iterations=10

@@ -9,6 +9,8 @@ troubleshooting, use the [Instance AI workflow evaluation README](../../../../..
 
 ## Two ways to run
 
+> **Fork note (2026-10-24):** `ci-mcp-evals.yml` was removed from this fork's CI (it needs n8n-io secrets). Run it locally with the commands in this doc.
+
 - **Fused — recommended.** `eval:instance-ai --build-via-mcp` builds each
   workflow through the MCP server and verifies it in the **same run**, across one
   or more lanes. One command, one LangSmith experiment (`LANGSMITH_API_KEY`

@@ -38,7 +38,7 @@ reusable workflow is a **`:changed`/affected variant** (`test:unit:changed`,
 `CHANGED_FILES` — there is **no full-suite frontend job**, on PRs *or* master.
 Result: tests untouched since the Phase A de-fork rebuild were never in a changed
 set, so they never ran green and the red baseline accumulated undetected.
-(`test-e2e-coverage-nightly.yml` exists but is E2E, not these units.)
+(Upstream's `test-e2e-coverage-nightly.yml` was E2E, not these units, and has since been removed from this fork.)
 
 **Implication:** these tests likely **never passed on this fork** — this is
 "port / rewrite / delete / fix the rebuilt code," not "repair a regression."

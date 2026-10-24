@@ -69,6 +69,8 @@ The BQ table schema lives with the writer workflow (in n8n's internal Quality pr
 
 ## End-to-end pipeline
 
+> **Fork note (2026-10-24):** `mutation-health-nightly.yml` was removed from this fork (its ledger writer and webhook belong to n8n-io). The scripts here still run locally; the pipeline below is upstream's.
+
 ```
 [GHA nightly cron, .github/workflows/mutation-health-nightly.yml]
        │

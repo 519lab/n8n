@@ -1,5 +1,11 @@
 # Developing v3 features
 
+> **Fork note (2026-10-24):** this describes upstream `n8n-io/n8n`'s v3 model and
+> is kept for reference only. This fork has no `3.x` branch, and the automation
+> below (`util-sync-master-to-3x.yml`, `build-v3-nightly.yml`,
+> `sync-conflict-owners.mjs`) was removed. Here, all work lands on `develop` and
+> is promoted to `master`.
+
 n8n is preparing a **v3 major release** (~October 2026). v3 is an *operational*
 release: breaking changes, removals, and legacy cleanup — not a big-bang feature
 launch. From July until release we keep **two long-lived branches alive at once**,
