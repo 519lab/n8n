@@ -16,6 +16,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-10-24 — CI failure alerts as GitHub issues
+
+**Infrastructure; no `.ee` source involved.** Replaces the removed Slack
+notifiers. Scheduled workflows and `ci-master` branch pushes now open one
+`ci-failure` issue per failing workflow + branch, comment on repeats, and close
+it on the next green run (`util-ci-failure-issue-reusable.yml`,
+`.github/scripts/ci-failure-issue.mjs`).
+
 ### 2026-10-24 — Remove upstream-only CI workflows and dead secret steps
 
 **Infrastructure; no `.ee` source involved.** Removed 60 GitHub Actions

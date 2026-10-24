@@ -1,0 +1,46 @@
+name: 'Util: CI Failure Issue'
+
+# Opens/updates a `ci-failure` issue when the calling workflow failed, and closes it
+# on the next success. Callers run it on schedule / branch-push events only — a
+# failing PR is already visible on the PR.
+
+on:
+  workflow_call:
+    inputs:
+      status:
+        description: "'failure' or 'success' for the caller's run."
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+
+# Serialize per workflow + branch so close-together runs see each other's issue.
+concurrency:
+  group: ci-failure-issue-${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  report:
+    name: Report CI status
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node.js
+        uses: ./.github/actions/setup-nodejs
+        with:
+          build-command: ''
+          install-command: pnpm install --frozen-lockfile --dir ./.github/scripts --ignore-workspace
+          cache-dependency-path: .github/scripts/pnpm-lock.yaml
+
+      - name: Open, update or close the tracking issue
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CI_STATUS: ${{ inputs.status }}
+          CI_WORKFLOW: ${{ github.workflow }}
+          CI_BRANCH: ${{ github.ref_name }}
+          CI_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node .github/scripts/ci-failure-issue.mjs

@@ -37,3 +37,15 @@ jobs:
         with:
           build-command: 'pnpm build:docker:clean'
           enable-docker-cache: true
+
+  report-status:
+    name: Report CI status
+    needs: [docker-smoke-test]
+    # Scheduled runs only: a failing PR or manual run is already visible where it ran.
+    if: ${{ !cancelled() && github.event_name == 'schedule' }}
+    permissions:
+      contents: read
+      issues: write
+    uses: ./.github/workflows/util-ci-failure-issue-reusable.yml
+    with:
+      status: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
