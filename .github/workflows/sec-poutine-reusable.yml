@@ -37,8 +37,9 @@ jobs:
           fi
           echo "No error-level findings detected"
 
+      # Upload even when the step above fails, so the findings reach the Security tab.
       - name: Upload SARIF results
         uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
-        if: github.repository == 'n8n-io/n8n'
+        if: ${{ !cancelled() && hashFiles('results.sarif') != '' }}
         with:
           sarif_file: results.sarif

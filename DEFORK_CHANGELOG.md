@@ -23,6 +23,14 @@ upstream's `1.x,3.x` keep-list, and `master` has no deletion ruleset here, so
 a 100-day gap between promotions would have deleted `master` (#126). The
 keep-list is now always `master,develop`, plus any manual extras.
 
+### 2026-10-24 — CI failure alerts as GitHub issues
+
+**Infrastructure; no `.ee` source involved.** Replaces the removed Slack
+notifiers. Scheduled workflows and `ci-master` branch pushes now open one
+`ci-failure` issue per failing workflow + branch, comment on repeats, and close
+it on the next green run (`util-ci-failure-issue-reusable.yml`,
+`.github/scripts/ci-failure-issue.mjs`).
+
 ### 2026-10-24 — Remove upstream-only CI workflows and dead secret steps
 
 **Infrastructure; no `.ee` source involved.** Removed 60 GitHub Actions

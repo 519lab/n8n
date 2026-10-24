@@ -57,3 +57,15 @@ jobs:
             just housekeeping — if you'd like to pick it up again, address the
             feedback and reopen (or open a fresh PR) and we'll happily take
             another look. Thanks again for the contribution! 🙏
+
+  report-status:
+    name: Report CI status
+    needs: [close-stale-community-prs]
+    # Scheduled runs only: a failing PR or manual run is already visible where it ran.
+    if: ${{ !cancelled() && github.event_name == 'schedule' }}
+    permissions:
+      contents: read
+      issues: write
+    uses: ./.github/workflows/util-ci-failure-issue-reusable.yml
+    with:
+      status: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
