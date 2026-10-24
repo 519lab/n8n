@@ -22,7 +22,10 @@ import { OAuthTokenVerifierProxy } from '@/services/oauth-token-verifier-proxy.s
 
 import { SYSTEM_RESOLVER_ID } from '../constants';
 import { N8NIdentifier } from '../credential-resolvers/identifiers/n8n-identifier';
-import { OAuth2UserinfoIdentifier } from '../credential-resolvers/identifiers/oauth2-userinfo-identifier';
+import {
+	EXTERNAL_IDENTITY_SOURCE,
+	OAuth2UserinfoIdentifier,
+} from '../credential-resolvers/identifiers/oauth2-userinfo-identifier';
 import { DynamicCredentialEntryStorage } from '../credential-resolvers/storage/dynamic-credential-entry-storage';
 import { DynamicCredentialUserEntryStorage } from '../credential-resolvers/storage/dynamic-credential-user-entry-storage';
 import { DynamicCredentialResolverRepository } from '../database/repositories/credential-resolver.repository';
@@ -204,6 +207,14 @@ export class CredentialResolverService
 		metadata: { id: string },
 	): Promise<ResolvedSubject> {
 		if (resolverId !== SYSTEM_RESOLVER_ID) {
+			// Never forward an n8n session or n8n-issued token to a third-party provider.
+			if (credentialContext.metadata?.source !== EXTERNAL_IDENTITY_SOURCE) {
+				this.logger.debug('Refusing to send a non-external identity to a credential resolver', {
+					credentialId: metadata.id,
+					resolverId,
+				});
+				throw new CredentialResolutionError(UNRESOLVED_MESSAGE);
+			}
 			return {
 				subjectId: await this.resolveExternalSubject(
 					resolverId,

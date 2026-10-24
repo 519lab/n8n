@@ -83,6 +83,39 @@ rebuild because no consumer pins it.
 - **Chosen here:** removes only the calling subject's entry for that credential +
   resolver; never another subject's.
 
+## Security decisions (from review, all **chosen here**)
+
+- **Identity source gate:** a non-system resolver only ever receives identities
+  whose credential-context source is `external` (set by the authorize route and the
+  `BearerTokenExtractor` webhook hook). An n8n session JWT (`manual-execution`) or an
+  n8n-issued OAuth token (`n8n-oauth`) is never sent to a third-party UserInfo endpoint.
+- **Browser binding:** flows started from a browser — the cookie `POST /authorize` and
+  the `GET ?token=` link — are bound to that browser (`OAuthBrowserBindingService`)
+  regardless of `N8N_OAUTH_BROWSER_BINDING`, so the consent must complete there.
+- **Access checks:** a request carrying an n8n session needs `workflow:read` for status
+  and `credential:connect` for authorize/revoke, even on the external (Bearer) path. A
+  token-only external caller may only see workflows that use a non-system resolver.
+- **Resolver binding:** a non-system resolver may connect a credential only if it is the
+  credential's own resolver or one selected by a workflow that uses the credential.
+- **SSRF:** discovery and UserInfo requests go through the SSRF-guarded outbound client
+  (same policy as OAuth discovery) after an http(s) check. No origin check between
+  `userinfo_endpoint` and `metadataUri` — providers commonly advertise a public host
+  that differs from an internal discovery URL.
+- **Single-use links:** consumed under a `LockService` lease (Redis under multi-main),
+  so two concurrent requests can't both use one.
+- **Webhook identity:** `BearerTokenExtractor` removes the `Authorization` header from
+  the trigger item so the token is held only in the encrypted execution context.
+
+### Residual risk (accepted, documented)
+
+An external flow started by an **API client** (`POST /authorize` with a Bearer and the
+static token) returns a provider URL that is not bound to any browser. Whoever holds
+the static token and a valid IdP account could send that URL to someone else and have
+their provider account linked under the sender's subject. Mitigations: the static
+token is a partner secret and admits no one when unset; gate-issued links are bound on
+open. Closing it fully needs the consenting provider account tied to the IdP subject,
+which no consumer pins.
+
 ## Not covered
 
 CORS behaviour beyond the existing `DynamicCredentialsConfig` fields; non-OAuth2

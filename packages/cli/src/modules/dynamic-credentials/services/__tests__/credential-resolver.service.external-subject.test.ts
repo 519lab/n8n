@@ -1,6 +1,7 @@
 import type { Logger } from '@n8n/backend-common';
 import { mock } from 'vitest-mock-extended';
 import type { Cipher } from 'n8n-core';
+import type { ICredentialDataDecryptedObject } from 'n8n-workflow';
 
 import type { OAuthTokenVerifierProxy } from '@/services/oauth-token-verifier-proxy.service';
 
@@ -65,5 +66,57 @@ describe('CredentialResolverService.resolveExternalSubject', () => {
 		await expect(service.resolveExternalSubject('r1', 'Bearer t', 'cred-1')).rejects.toThrow(
 			CredentialResolutionError,
 		);
+	});
+});
+
+describe('CredentialResolverService identity sources', () => {
+	const config = {
+		metadataUri: 'https://idp.example.com/.well-known/openid-configuration',
+		validation: OAUTH2_USERINFO_VALIDATION,
+	};
+	const metadata = {
+		id: 'cred-1',
+		name: 'c',
+		type: 'oAuth2Api',
+		isResolvable: true,
+		resolverId: 'r1',
+	};
+
+	const contextWith = (source: string) => {
+		const { service, identifier } = setup(OAUTH2_RESOLVER_TYPE, config);
+		// readCredentialContext decrypts the execution context: hand back one with `source`.
+		const cipher = (service as unknown as { cipher: Cipher }).cipher;
+		vi.mocked(cipher.decryptV2).mockImplementation(async (value: string) =>
+			value === 'ctx'
+				? JSON.stringify({ version: 1, identity: 'Bearer session-jwt', metadata: { source } })
+				: JSON.stringify(config),
+		);
+		return { service, identifier };
+	};
+
+	it('never sends an n8n session identity to a third-party resolver', async () => {
+		const { service, identifier } = contextWith('manual-execution');
+
+		await expect(
+			service.resolveIfNeeded(
+				metadata,
+				{} as ICredentialDataDecryptedObject,
+				{ credentials: 'ctx' } as never,
+			),
+		).rejects.toThrow(CredentialResolutionError);
+		expect(identifier.resolve).not.toHaveBeenCalled();
+	});
+
+	it('never sends an n8n-issued OAuth token to a third-party resolver', async () => {
+		const { service, identifier } = contextWith('n8n-oauth');
+
+		await expect(
+			service.resolveIfNeeded(
+				metadata,
+				{} as ICredentialDataDecryptedObject,
+				{ credentials: 'ctx' } as never,
+			),
+		).rejects.toThrow(CredentialResolutionError);
+		expect(identifier.resolve).not.toHaveBeenCalled();
 	});
 });

@@ -1,5 +1,9 @@
 import { Logger } from '@n8n/backend-common';
+import { OutboundHttp, SsrfProtectionService, type HttpRequestClient } from '@n8n/backend-network';
+import { SsrfProtectionConfig } from '@n8n/config';
 import { Service } from '@n8n/di';
+
+import { validateOAuthUrl } from '@/oauth/validate-oauth-url';
 
 import { CredentialResolutionError } from '../../errors/credential-resolution.error';
 
@@ -8,6 +12,14 @@ export const OAUTH2_RESOLVER_TYPE = 'credential-resolver.oauth2-1.0';
 
 /** `config.validation` value selecting UserInfo-based identification. */
 export const OAUTH2_USERINFO_VALIDATION = 'oauth2-userinfo';
+
+/**
+ * Credential-context source of an identity that came from an external caller
+ * (a Bearer token for the resolver's provider). Only identities with this source
+ * are ever sent to a non-n8n resolver — an n8n session or n8n-issued OAuth token
+ * must never reach a third-party UserInfo endpoint.
+ */
+export const EXTERNAL_IDENTITY_SOURCE = 'external';
 
 const REQUEST_TIMEOUT_MS = 10_000;
 const DISCOVERY_TTL_MS = 10 * 60_000;
@@ -28,7 +40,21 @@ type DiscoveryEntry = { userinfoEndpoint: string; expiresAt: number };
 export class OAuth2UserinfoIdentifier {
 	private readonly discovery = new Map<string, DiscoveryEntry>();
 
-	constructor(private readonly logger: Logger) {}
+	private readonly http: HttpRequestClient;
+
+	constructor(
+		private readonly logger: Logger,
+		outboundHttp: OutboundHttp,
+		ssrfProtectionService: SsrfProtectionService,
+		ssrfProtectionConfig: SsrfProtectionConfig,
+	) {
+		// Both URLs reach the network on behalf of the caller (the UserInfo one is
+		// provider-supplied), so they get the same SSRF policy as OAuth discovery.
+		this.http = outboundHttp.requests({
+			ssrf: ssrfProtectionConfig.enabled ? ssrfProtectionService : 'disabled',
+			timeout: REQUEST_TIMEOUT_MS,
+		});
+	}
 
 	/** Whether this identifier can verify subjects for a resolver of `type` with `config`. */
 	static supports(type: string, config: Record<string, unknown>): boolean {
@@ -46,17 +72,7 @@ export class OAuth2UserinfoIdentifier {
 		}
 
 		const userinfoEndpoint = await this.userinfoEndpoint(config.metadataUri);
-		const response = await this.fetchOrFail(userinfoEndpoint, {
-			headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-		});
-		if (!response.ok) {
-			this.logger.debug('UserInfo rejected the external user token', {
-				status: response.status,
-			});
-			throw new CredentialResolutionError(NOT_IDENTIFIED);
-		}
-
-		const body: unknown = await response.json().catch(() => null);
+		const body = await this.getJson(userinfoEndpoint, { Authorization: `Bearer ${token}` });
 		const sub = isRecord(body) ? body.sub : undefined;
 		if (typeof sub !== 'string' || sub.length === 0) {
 			throw new CredentialResolutionError(NOT_IDENTIFIED);
@@ -68,10 +84,7 @@ export class OAuth2UserinfoIdentifier {
 		const cached = this.discovery.get(metadataUri);
 		if (cached && cached.expiresAt > Date.now()) return cached.userinfoEndpoint;
 
-		const response = await this.fetchOrFail(metadataUri, {
-			headers: { Accept: 'application/json' },
-		});
-		const document: unknown = response.ok ? await response.json().catch(() => null) : null;
+		const document = await this.getJson(metadataUri, {});
 		const endpoint = isRecord(document) ? document.userinfo_endpoint : undefined;
 		if (typeof endpoint !== 'string') {
 			this.logger.warn('OIDC discovery document has no userinfo_endpoint', { metadataUri });
@@ -85,13 +98,21 @@ export class OAuth2UserinfoIdentifier {
 		return endpoint;
 	}
 
-	private async fetchOrFail(url: string, init: RequestInit): Promise<Response> {
+	/** GET a JSON document; any invalid URL, network error or non-2xx is "not identified". */
+	private async getJson(url: string, headers: Record<string, string>): Promise<unknown> {
 		try {
-			return await fetch(url, { ...init, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
-		} catch (error) {
-			this.logger.warn('Could not reach the OAuth2 provider to identify an external user', {
+			validateOAuthUrl(url);
+			return await this.http.request({
 				url,
-				error,
+				method: 'GET',
+				headers: { ...headers, Accept: 'application/json' },
+				json: true,
+			});
+		} catch (error) {
+			// The request carried the caller's token: log the URL and reason only.
+			this.logger.debug('OAuth2 provider did not identify the external user', {
+				url,
+				reason: error instanceof Error ? error.message : String(error),
 			});
 			throw new CredentialResolutionError(NOT_IDENTIFIED);
 		}

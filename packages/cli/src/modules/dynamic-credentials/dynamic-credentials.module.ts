@@ -16,6 +16,7 @@ export class DynamicCredentialsModule implements ModuleInterface {
 	async init() {
 		await import('./credential-resolver.controller.js');
 		await import('./dynamic-credentials.controller.js');
+		await import('./bearer-token-extractor.hook.js');
 
 		const { DynamicCredentialsProxy } = await import('@/credentials/dynamic-credentials-proxy.js');
 		const { CredentialConnectionStatusProxy } = await import(

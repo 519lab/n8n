@@ -51,21 +51,24 @@ export class DynamicCredentialsController {
 	@Post('/credentials/:credentialId/authorize', { allowUnauthenticated: true })
 	async authorize(
 		req: AuthenticatedRequest,
-		_res: Response,
+		res: Response,
 		@Param('credentialId') credentialId: string,
 		@Query query: DynamicCredentialsQuery,
 	): Promise<string> {
+		const identity = this.identify(req, query);
 		return await this.authorizationService.startAuthorization(
 			credentialId,
 			requireResolverId(query),
-			this.identify(req, query),
+			identity,
+			// A signed-in browser opens the provider URL itself, so bind the flow to it.
+			identity.kind === 'user' ? { req, res } : undefined,
 		);
 	}
 
 	/** Opens a gate-issued single-use link: admitted by the link token alone. */
 	@Get('/credentials/:credentialId/authorize', { skipAuth: true })
 	async followAuthorizeLink(
-		_req: Request,
+		req: Request,
 		res: Response,
 		@Param('credentialId') credentialId: string,
 		@Query query: { token?: string },
@@ -76,7 +79,11 @@ export class DynamicCredentialsController {
 		const providerUrl = await this.authorizationService.consumeAuthorizeLink(
 			credentialId,
 			query.token,
+			{ req, res },
 		);
+		// The link token is in this URL: keep it out of caches and Referer headers.
+		res.setHeader('Referrer-Policy', 'no-referrer');
+		res.setHeader('Cache-Control', 'no-store');
 		res.redirect(providerUrl);
 	}
 
@@ -115,7 +122,7 @@ export class DynamicCredentialsController {
 		}
 
 		if (!/^Bearer\s+\S+$/i.test(bearer)) throw new UnauthenticatedError();
-		return { kind: 'external', authorizationHeader: bearer.trim() };
+		return { kind: 'external', authorizationHeader: bearer.trim(), sessionUser: user };
 	}
 
 	private hasValidEndpointToken(req: Request): boolean {

@@ -1,37 +1,47 @@
 import type { WorkflowExecutionStatus } from '@n8n/api-types';
-import { Logger } from '@n8n/backend-common';
+import { LockNamespace, LockService, Logger } from '@n8n/backend-common';
 import { GlobalConfig } from '@n8n/config';
 import {
 	CredentialsRepository,
 	WorkflowRepository,
 	type CredentialsEntity,
 	type User,
+	type WorkflowEntity,
 } from '@n8n/db';
 import { Service } from '@n8n/di';
+import type { Request, Response } from 'express';
 import { randomBytes } from 'node:crypto';
 
 import { CredentialsFinderService } from '@/credentials/credentials-finder.service';
 import { BadRequestError } from '@/errors/response-errors/bad-request.error';
 import { NotFoundError } from '@/errors/response-errors/not-found.error';
+import { OAuthBrowserBindingService } from '@/oauth/oauth-browser-binding.service';
 import type { CreateCsrfStateData } from '@/oauth/oauth.service';
 import { OauthService } from '@/oauth/oauth.service';
 import { CacheService } from '@/services/cache/cache.service';
 import { UrlService } from '@/services/url.service';
+import { WorkflowFinderService } from '@/workflows/workflow-finder.service';
 
 import { SYSTEM_RESOLVER_ID } from '../constants';
+import { EXTERNAL_IDENTITY_SOURCE } from '../credential-resolvers/identifiers/oauth2-userinfo-identifier';
 import { DynamicCredentialEntryStorage } from '../credential-resolvers/storage/dynamic-credential-entry-storage';
 import { DynamicCredentialUserEntryStorage } from '../credential-resolvers/storage/dynamic-credential-user-entry-storage';
 import { collectCredentialIds } from './credential-check.service';
 import { CredentialResolverService } from './credential-resolver.service';
+import { CredentialResolverWorkflowService } from './credential-resolver-workflow.service';
 
 /**
  * Who a dynamic-credential request acts for: the signed-in n8n user (system
  * resolver), or an external user named by a Bearer token that a non-system
- * resolver verifies.
+ * resolver verifies. `sessionUser` is the signed-in user, if any, behind an
+ * external request — their credential access still applies.
  */
 export type CallerIdentity =
 	| { kind: 'user'; user: User; cookieToken: string }
-	| { kind: 'external'; authorizationHeader: string };
+	| { kind: 'external'; authorizationHeader: string; sessionUser?: User };
+
+/** The browser request a flow is started from, so the flow can be bound to it. */
+export type BrowserContext = { req: Request; res: Response };
 
 type CredentialStatus = NonNullable<WorkflowExecutionStatus['credentials']>[number];
 
@@ -66,10 +76,14 @@ export class DynamicCredentialAuthorizationService {
 		private readonly globalConfig: GlobalConfig,
 		private readonly urlService: UrlService,
 		private readonly cacheService: CacheService,
+		private readonly lockService: LockService,
 		private readonly oauthService: OauthService,
+		private readonly browserBindingService: OAuthBrowserBindingService,
 		private readonly credentialsFinderService: CredentialsFinderService,
+		private readonly workflowFinderService: WorkflowFinderService,
 		private readonly credentialsRepository: CredentialsRepository,
 		private readonly workflowRepository: WorkflowRepository,
+		private readonly resolverWorkflowService: CredentialResolverWorkflowService,
 		private readonly resolverService: CredentialResolverService,
 		private readonly userEntryStorage: DynamicCredentialUserEntryStorage,
 		private readonly entryStorage: DynamicCredentialEntryStorage,
@@ -79,8 +93,7 @@ export class DynamicCredentialAuthorizationService {
 		workflowId: string,
 		identity: CallerIdentity,
 	): Promise<WorkflowExecutionStatus> {
-		const workflow = await this.workflowRepository.findById(workflowId);
-		if (!workflow) throw new NotFoundError(`Workflow "${workflowId}" could not be found.`);
+		const workflow = await this.findStatusWorkflow(workflowId, identity);
 
 		const credentialIds = collectCredentialIds(workflow.nodes ?? []);
 		const resolvable =
@@ -90,11 +103,21 @@ export class DynamicCredentialAuthorizationService {
 						(credential) => credential.isResolvable,
 					);
 
+		const resolverFor = (credential: CredentialsEntity) =>
+			credential.resolverId ?? workflow.settings?.credentialResolverId ?? SYSTEM_RESOLVER_ID;
+
+		// An external caller may only inspect workflows set up for external users;
+		// anything else answers as if it did not exist, so ids can't be enumerated.
+		if (
+			identity.kind === 'external' &&
+			!resolvable.some((credential) => resolverFor(credential) !== SYSTEM_RESOLVER_ID)
+		) {
+			throw new NotFoundError(`Workflow "${workflowId}" could not be found.`);
+		}
+
 		const credentials: CredentialStatus[] = [];
 		for (const credential of resolvable) {
-			const resolverId =
-				credential.resolverId ?? workflow.settings?.credentialResolverId ?? SYSTEM_RESOLVER_ID;
-			credentials.push(await this.statusFor(credential, resolverId, identity));
+			credentials.push(await this.statusFor(credential, resolverFor(credential), identity));
 		}
 
 		return {
@@ -104,13 +127,19 @@ export class DynamicCredentialAuthorizationService {
 		};
 	}
 
-	/** Returns the OAuth provider URL that connects `credentialId` for `identity`. */
+	/**
+	 * Returns the OAuth provider URL that connects `credentialId` for `identity`.
+	 * When started from a browser the flow is bound to it, so only that browser
+	 * can complete the consent.
+	 */
 	async startAuthorization(
 		credentialId: string,
 		resolverId: string,
 		identity: CallerIdentity,
+		browser?: BrowserContext,
 	): Promise<string> {
 		const credential = await this.findAuthorizableCredential(credentialId, identity);
+		await this.assertResolverServesCredential(credential, resolverId);
 
 		let csrfData: CreateCsrfStateData;
 		if (identity.kind === 'user') {
@@ -143,33 +172,45 @@ export class DynamicCredentialAuthorizationService {
 				origin: 'dynamic-credential',
 				credentialResolverId: resolverId,
 				authorizationHeader: identity.authorizationHeader,
-				authMetadata: { source: 'external' },
+				authMetadata: { source: EXTERNAL_IDENTITY_SOURCE },
 			};
 		}
 
+		this.bindToBrowser(csrfData, browser);
 		return await this.oauthService.generateAOauth2AuthUri(credential, csrfData);
 	}
 
 	/**
-	 * Mints a single-use link that starts the authorization for an external
-	 * identity without ever putting its Bearer token in a URL.
+	 * Mints a single-use link that starts the authorization for an identity
+	 * without ever putting its token in a URL.
 	 */
 	async issueAuthorizeLink(link: AuthorizeLink): Promise<string> {
-		const { credentialId } = link;
 		const token = randomBytes(32).toString('base64url');
 		await this.cacheService.set(`${LINK_CACHE_PREFIX}${token}`, link, LINK_TTL_MS);
-		return `${this.restBaseUrl()}/credentials/${encodeURIComponent(credentialId)}/authorize?token=${token}`;
+		return `${this.restBaseUrl()}/credentials/${encodeURIComponent(link.credentialId)}/authorize?token=${token}`;
 	}
 
-	/** Consumes a link minted by `issueAuthorizeLink` and returns the provider URL. */
-	async consumeAuthorizeLink(credentialId: string, token: string): Promise<string> {
+	/**
+	 * Consumes a link minted by `issueAuthorizeLink` and returns the provider URL,
+	 * binding the flow to the browser that opened the link.
+	 */
+	async consumeAuthorizeLink(
+		credentialId: string,
+		token: string,
+		browser: BrowserContext,
+	): Promise<string> {
 		const key = `${LINK_CACHE_PREFIX}${token}`;
-		const link = await this.cacheService.get<AuthorizeLink>(key);
-		// Single-use: removed before the flow starts, so a replay finds nothing.
-		await this.cacheService.delete(key);
+		// Claim under a lease so two concurrent requests (on any main) can't both
+		// read the link before it is deleted.
+		const link = await this.lockService.withLease(LockNamespace.KNOWN_LOCKS, key, async () => {
+			const found = await this.cacheService.get<AuthorizeLink>(key);
+			await this.cacheService.delete(key);
+			return found;
+		});
 		if (!link || link.credentialId !== credentialId) {
 			throw new NotFoundError('This authorization link is invalid or has expired.');
 		}
+
 		const credential = await this.credentialsRepository.findOneBy({ id: link.credentialId });
 		if (!credential?.isResolvable) {
 			throw new NotFoundError(`Credential "${credentialId}" could not be found.`);
@@ -181,14 +222,17 @@ export class DynamicCredentialAuthorizationService {
 				credential.id,
 			);
 		}
-		return await this.oauthService.generateAOauth2AuthUri(credential, {
+
+		const csrfData: CreateCsrfStateData = {
 			cid: credential.id,
 			origin: 'dynamic-credential',
 			credentialResolverId: link.resolverId,
 			authorizationHeader: link.authorizationHeader,
 			authMetadata: { source: link.source },
 			...(link.userId ? { userId: link.userId } : {}),
-		});
+		};
+		this.bindToBrowser(csrfData, browser);
+		return await this.oauthService.generateAOauth2AuthUri(credential, csrfData);
 	}
 
 	/** Removes the caller's own connection for the credential under that resolver. */
@@ -266,22 +310,74 @@ export class DynamicCredentialAuthorizationService {
 		};
 	}
 
+	/** Signed-in callers need read access to the workflow; external callers can't name one they lack. */
+	private async findStatusWorkflow(
+		workflowId: string,
+		identity: CallerIdentity,
+	): Promise<WorkflowEntity> {
+		const sessionUser = identity.kind === 'user' ? identity.user : identity.sessionUser;
+		const workflow = sessionUser
+			? await this.workflowFinderService.findWorkflowForUser(workflowId, sessionUser, [
+					'workflow:read',
+				])
+			: await this.workflowRepository.findById(workflowId);
+		if (!workflow) throw new NotFoundError(`Workflow "${workflowId}" could not be found.`);
+		return workflow;
+	}
+
+	/**
+	 * Any request carrying an n8n session needs `credential:connect` on the
+	 * credential; a token-only external request may reach any end-user credential,
+	 * since what it stores is keyed by its own verified subject.
+	 */
 	private async findAuthorizableCredential(
 		credentialId: string,
 		identity: CallerIdentity,
 	): Promise<CredentialsEntity> {
-		const credential =
-			identity.kind === 'user'
-				? await this.credentialsFinderService.findCredentialForUser(credentialId, identity.user, [
-						'credential:connect',
-					])
-				: await this.credentialsRepository.findOneBy({ id: credentialId });
+		const sessionUser = identity.kind === 'user' ? identity.user : identity.sessionUser;
+		const credential = sessionUser
+			? await this.credentialsFinderService.findCredentialForUser(credentialId, sessionUser, [
+					'credential:connect',
+				])
+			: await this.credentialsRepository.findOneBy({ id: credentialId });
 
 		if (!credential?.isResolvable) {
 			this.logger.debug('Dynamic credential authorization refused', { credentialId });
 			throw new NotFoundError(`Credential "${credentialId}" could not be found.`);
 		}
 		return credential;
+	}
+
+	/**
+	 * A non-n8n resolver may only connect a credential it actually serves: the
+	 * credential's own resolver, or one a workflow using the credential selects.
+	 */
+	private async assertResolverServesCredential(
+		credential: CredentialsEntity,
+		resolverId: string,
+	): Promise<void> {
+		if (resolverId === SYSTEM_RESOLVER_ID || credential.resolverId === resolverId) return;
+
+		const selecting = await this.resolverWorkflowService.findAffectedWorkflows(resolverId);
+		if (selecting.length > 0) {
+			const workflows = await this.workflowRepository.findByIds(selecting.map((w) => w.id));
+			const serves = workflows.some((workflow) =>
+				collectCredentialIds(workflow.nodes ?? []).includes(credential.id),
+			);
+			if (serves) return;
+		}
+		throw new BadRequestError('This resolver does not serve this credential');
+	}
+
+	/**
+	 * Binds an OAuth flow to the browser starting it, whatever
+	 * `N8N_OAUTH_BROWSER_BINDING` says: dynamic-credential flows land tokens under
+	 * an identity, so a consent completed in another browser must not count.
+	 */
+	private bindToBrowser(csrfData: CreateCsrfStateData, browser?: BrowserContext): void {
+		if (!browser) return;
+		const nonce = this.browserBindingService.ensureBindingCookie(browser.req, browser.res);
+		csrfData.bindingHash = this.browserBindingService.computeHash(nonce);
 	}
 
 	/** Absolute REST base from configuration, never from the request's Host header. */
