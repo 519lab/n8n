@@ -1,35 +1,19 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from '@n8n/i18n';
-import type { BaseTextKey } from '@n8n/i18n';
 import { useToast } from '@n8n/composables/useToast';
+import { N8nButton, N8nEmptyState, N8nHeading, N8nNotice, N8nText } from '@n8n/design-system';
+import { defaultMessageEventBusDestinationOptions, deepCopy } from 'n8n-workflow';
+
 import { useDocumentTitle } from '@/app/composables/useDocumentTitle';
 import { usePageRedirectionHelper } from '@/app/composables/usePageRedirectionHelper';
-import { useUIStore } from '@/app/stores/ui.store';
 import { LOG_STREAM_MODAL_KEY } from '@/app/constants';
-import {
-	N8nButton,
-	N8nCard,
-	N8nEmptyState,
-	N8nHeading,
-	N8nIcon,
-	N8nNotice,
-	N8nText,
-} from '@n8n/design-system';
-import {
-	defaultMessageEventBusDestinationSentryOptions,
-	defaultMessageEventBusDestinationSyslogOptions,
-	defaultMessageEventBusDestinationWebhookOptions,
-	deepCopy,
-	MessageEventBusDestinationTypeNames,
-} from 'n8n-workflow';
+import { useUIStore } from '@/app/stores/ui.store';
 
-import { useLogStreamingStore } from '@/features/integrations/logStreaming/logStreaming.store';
-import { DESTINATION_TYPES } from '@/features/integrations/logStreaming/logStreaming.constants';
-import type {
-	MessageEventBusDestinationOptions,
-	MessageEventBusDestinationType,
-} from '@/features/integrations/logStreaming/logStreaming.types';
+import EventDestinationCard from '../components/EventDestinationCard.vue';
+import { useDestinationDelete } from '../composables/useDestinationDelete';
+import { useLogStreamingStore } from '../logStreaming.store';
+import type { MessageEventBusDestinationOptions } from '../logStreaming.types';
 
 const i18n = useI18n();
 const toast = useToast();
@@ -37,49 +21,56 @@ const documentTitle = useDocumentTitle();
 const pageRedirectionHelper = usePageRedirectionHelper();
 const uiStore = useUIStore();
 const logStreamingStore = useLogStreamingStore();
+const { confirmAndDelete } = useDestinationDelete();
 
-const loading = ref(false);
+// Nothing is rendered for the licensed view until the first fetch settles, so
+// the empty state never flashes before existing destinations appear.
+const loaded = ref(false);
 
 const isEnabled = computed(() => logStreamingStore.isEnterpriseLogStreamingEnabled);
 const isManagedByEnv = computed(() => logStreamingStore.isManagedByEnv);
 const destinations = computed(() => logStreamingStore.destinations);
 const hasDestinations = computed(() => logStreamingStore.hasDestinations);
 
-const defaultsByType: Record<MessageEventBusDestinationType, MessageEventBusDestinationOptions> = {
-	[MessageEventBusDestinationTypeNames.webhook]: defaultMessageEventBusDestinationWebhookOptions,
-	[MessageEventBusDestinationTypeNames.sentry]: defaultMessageEventBusDestinationSentryOptions,
-	[MessageEventBusDestinationTypeNames.syslog]: defaultMessageEventBusDestinationSyslogOptions,
-};
-
-function typeLabel(destination: MessageEventBusDestinationOptions): string {
-	const key = `settings.log-streaming.${destination.__type ?? ''}`;
-	const label = i18n.baseText(key as BaseTextKey);
-	return label === key ? (destination.__type ?? '') : label;
-}
-
 function goToUpgrade() {
 	void pageRedirectionHelper.goToUpgrade('log-streaming', 'upgrade-log-streaming');
 }
 
-function openDestination(destination: MessageEventBusDestinationOptions, isNew: boolean) {
+function openModal(destination: MessageEventBusDestinationOptions, isNew: boolean) {
 	uiStore.openModalWithData({
 		name: LOG_STREAM_MODAL_KEY,
 		data: { destination: deepCopy(destination), isNew },
 	});
 }
 
-function addDestination(type: MessageEventBusDestinationType) {
-	openDestination(defaultsByType[type], true);
+function addDestination() {
+	// the modal starts at type selection and replaces these defaults with the chosen type's
+	openModal(defaultMessageEventBusDestinationOptions, true);
+}
+
+function openDestination(destination: MessageEventBusDestinationOptions) {
+	openModal(destination, false);
+}
+
+async function toggleDestination(destination: MessageEventBusDestinationOptions, enabled: boolean) {
+	try {
+		await logStreamingStore.saveDestination({ ...destination, enabled });
+	} catch (error) {
+		toast.showError(error, i18n.baseText('error'));
+	}
+}
+
+async function deleteDestination(destination: MessageEventBusDestinationOptions) {
+	await confirmAndDelete(destination);
 }
 
 async function loadDestinations() {
-	loading.value = true;
 	try {
 		await logStreamingStore.fetchDestinations();
 	} catch (error) {
 		toast.showError(error, i18n.baseText('error'));
 	} finally {
-		loading.value = false;
+		loaded.value = true;
 	}
 }
 
@@ -100,7 +91,7 @@ onMounted(async () => {
 			v-if="!isEnabled"
 			:description="i18n.baseText('settings.log-streaming.actionBox.description')"
 			:button-text="i18n.baseText('settings.log-streaming.actionBox.button')"
-			data-test-id="log-streaming-content-unlicensed"
+			data-test-id="action-box-unlicensed"
 			@click:button="goToUpgrade"
 		>
 			<template #heading>
@@ -108,7 +99,7 @@ onMounted(async () => {
 			</template>
 		</N8nEmptyState>
 
-		<div v-else :class="$style.content" data-test-id="log-streaming-content-licensed">
+		<div v-else-if="loaded" :class="$style.content">
 			<N8nText :class="$style.info" tag="div" size="medium" color="text-base">
 				<span v-n8n-html="i18n.baseText('settings.log-streaming.infoText')" />
 			</N8nText>
@@ -117,65 +108,39 @@ onMounted(async () => {
 				{{ i18n.baseText('settings.log-streaming.managedByEnv') }}
 			</N8nNotice>
 
-			<div v-if="!hasDestinations" :class="$style.emptyBox" data-test-id="log-streaming-empty">
-				<N8nHeading tag="h2" size="large">
-					{{ i18n.baseText('settings.log-streaming.addFirstTitle') }}
-				</N8nHeading>
-				<N8nText color="text-base">
-					{{ i18n.baseText('settings.log-streaming.addFirst') }}
-				</N8nText>
-				<div :class="$style.addButtons">
-					<N8nButton
-						v-for="type in DESTINATION_TYPES"
-						:key="type"
-						variant="outline"
-						:disabled="isManagedByEnv"
-						:label="i18n.baseText(`settings.log-streaming.${type}` as BaseTextKey)"
-						:data-test-id="`log-streaming-add-${type}`"
-						@click="addDestination(type)"
-					/>
-				</div>
-			</div>
+			<!-- Exactly one add button is rendered in each state: here, or in the list header. -->
+			<N8nEmptyState
+				v-if="!hasDestinations"
+				:heading="i18n.baseText('settings.log-streaming.addFirstTitle')"
+				:description="i18n.baseText('settings.log-streaming.addFirst')"
+				:button-text="i18n.baseText('settings.log-streaming.add')"
+				:button-disabled="isManagedByEnv"
+				data-test-id="action-box-licensed"
+				@click:button="addDestination"
+			/>
 
 			<div v-else :class="$style.destinations">
 				<div :class="$style.destinationsHeader">
 					<N8nHeading tag="h2" size="large">
 						{{ i18n.baseText('settings.log-streaming.destinations') }}
 					</N8nHeading>
-					<div :class="$style.addButtons">
-						<N8nButton
-							v-for="type in DESTINATION_TYPES"
-							:key="type"
-							variant="outline"
-							:disabled="isManagedByEnv"
-							:label="i18n.baseText(`settings.log-streaming.${type}` as BaseTextKey)"
-							:data-test-id="`log-streaming-add-${type}`"
-							@click="addDestination(type)"
-						/>
-					</div>
+					<N8nButton
+						:disabled="isManagedByEnv"
+						:label="i18n.baseText('settings.log-streaming.add')"
+						data-test-id="log-streaming-add-destination"
+						@click="addDestination"
+					/>
 				</div>
 
-				<N8nCard
+				<EventDestinationCard
 					v-for="destination in destinations"
 					:key="destination.id"
-					:class="$style.card"
-					:data-test-id="`log-streaming-destination-${destination.id}`"
-					@click="openDestination(destination, false)"
-				>
-					<div :class="$style.cardBody">
-						<div :class="$style.cardInfo">
-							<N8nText bold>{{ destination.label }}</N8nText>
-							<N8nText size="small" color="text-light">{{ typeLabel(destination) }}</N8nText>
-						</div>
-						<N8nText
-							size="small"
-							:color="destination.enabled ? 'success' : 'text-light'"
-							:class="$style.cardStatus"
-						>
-							<N8nIcon :icon="destination.enabled ? 'circle-check' : 'circle-x'" size="small" />
-						</N8nText>
-					</div>
-				</N8nCard>
+					:destination="destination"
+					:read-only="isManagedByEnv"
+					@open="openDestination(destination)"
+					@delete="deleteDestination(destination)"
+					@toggle="(enabled: boolean) => toggleDestination(destination, enabled)"
+				/>
 			</div>
 		</div>
 	</div>
@@ -199,17 +164,6 @@ onMounted(async () => {
 	line-height: var(--line-height--xl);
 }
 
-.emptyBox {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	gap: var(--spacing--s);
-	padding: var(--spacing--l);
-	border: var(--border);
-	border-radius: var(--radius--md);
-	background-color: var(--background--surface);
-}
-
 .destinations {
 	display: flex;
 	flex-direction: column;
@@ -222,34 +176,5 @@ onMounted(async () => {
 	justify-content: space-between;
 	gap: var(--spacing--s);
 	margin-bottom: var(--spacing--xs);
-}
-
-.addButtons {
-	display: flex;
-	gap: var(--spacing--xs);
-	flex-wrap: wrap;
-}
-
-.card {
-	cursor: pointer;
-}
-
-.cardBody {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--spacing--s);
-	width: 100%;
-}
-
-.cardInfo {
-	display: flex;
-	flex-direction: column;
-	gap: var(--spacing--4xs);
-}
-
-.cardStatus {
-	display: flex;
-	align-items: center;
 }
 </style>
