@@ -35,7 +35,7 @@ jobs:
           build-command: pnpm run build --filter=@n8n/utils --filter=@n8n/vitest-config --filter=@n8n/chat --filter=@n8n/design-system
 
       - name: Publish to Chromatic
-        uses: chromaui/action@14cfaef73576e69f95f47f60058063f46ca38719 # v18.1.0
+        uses: chromaui/action@882b4728513a3720bfcd27bd9ad1260c603c6090 # v18.13.2
         id: chromatic_tests
         with:
           workingDir: packages/frontend/@n8n/storybook
