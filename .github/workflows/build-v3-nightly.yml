@@ -20,7 +20,7 @@ jobs:
   prepare:
     name: Compute date tag
     if: github.repository == 'n8n-io/n8n'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     permissions: {}
     outputs:
       date_tag: ${{ steps.date.outputs.date }}

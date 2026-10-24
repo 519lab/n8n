@@ -255,7 +255,7 @@ jobs:
 
   unit-test:
     name: Unit tests
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     needs: [unit-test-backend, integration-test-backend, unit-test-nodes, unit-test-frontend]
     if: always()
     steps:

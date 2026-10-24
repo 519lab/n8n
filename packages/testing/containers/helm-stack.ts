@@ -149,6 +149,14 @@ function parseImageName(imageName: string): { repository: string; tag: string } 
 		: { repository: imageName, tag: 'latest' };
 }
 
+// The CI builds the runners image next to n8n (<prefix>/n8n:tag -> <prefix>/runners:tag);
+// the chart's runner sidecar otherwise pulls n8nio/runners with our CI tag, which doesn't exist.
+function runnersImageFor(imageName: string): string | undefined {
+	const { repository, tag } = parseImageName(imageName);
+	if (!repository.endsWith('/n8n')) return undefined;
+	return `${repository.slice(0, -'/n8n'.length)}/runners:${tag}`;
+}
+
 function buildHelmSetFlags(
 	imageName: string,
 	mode: HelmStackMode,
@@ -157,8 +165,7 @@ function buildHelmSetFlags(
 ): string[] {
 	const { repository, tag } = parseImageName(imageName);
 
-	// Collect env vars as an array, then convert to indexed --set flags.
-	// This avoids fragile manual index tracking and makes it easy to add conditional entries.
+	// Collect env vars as an array, then convert to --set flags; later entries win.
 	const extraEnvs: Array<{ name: string; value: string }> = [
 		{ name: 'N8N_DIAGNOSTICS_ENABLED', value: 'false' },
 		{ name: 'N8N_DYNAMIC_BANNERS_ENABLED', value: 'false' },
@@ -192,12 +199,18 @@ function buildHelmSetFlags(
 	const flags = [
 		`--set image.repository=${repository}`,
 		`--set image.tag=${tag}`,
-		// --set-string because K8s env values must be strings
-		...extraEnvs.flatMap((env, i) => [
-			`--set config.extraEnv[${i}].name=${env.name}`,
-			`--set-string config.extraEnv[${i}].value=${env.value}`,
-		]),
+		// The chart reads env vars from the env.shared map (config.extraEnv is rejected).
+		// --set-string because K8s env values must be strings; escape helm's list separator.
+		...extraEnvs.map(
+			(env) => `--set-string env.shared.${env.name}=${env.value.replace(/[\\,]/g, '\\$&')}`,
+		),
 	];
+
+	const runnersImage = runnersImageFor(imageName);
+	if (runnersImage) {
+		// Tag follows image.tag when left empty
+		flags.push(`--set taskRunners.image.repository=${parseImageName(runnersImage).repository}`);
+	}
 
 	if (mode === 'standalone') {
 		// Override persistence size (example uses 5Gi, we need less for tests)
@@ -220,7 +233,7 @@ function buildHelmSetFlags(
 function createN8nSecret(env: NodeJS.ProcessEnv): void {
 	log('Creating n8n core secrets...');
 	execOnHost(
-		'kubectl create secret generic n8n-secrets --from-literal=N8N_ENCRYPTION_KEY=test-encryption-key-for-e2e-testing --from-literal=N8N_HOST=localhost --from-literal=N8N_PORT=5678 --from-literal=N8N_PROTOCOL=http',
+		'kubectl create secret generic n8n-secrets --from-literal=N8N_ENCRYPTION_KEY=test-encryption-key-for-e2e-testing --from-literal=N8N_HOST=localhost --from-literal=N8N_PORT=5678 --from-literal=N8N_PROTOCOL=http --from-literal=N8N_RUNNERS_AUTH_TOKEN=test-runners-auth-token',
 		env,
 		'Create n8n core secrets',
 	);
@@ -369,6 +382,8 @@ export async function createHelmStack(config: HelmStackConfig = {}): Promise<Hel
 
 		// Step 4: Preload n8n image into K3s containerd
 		await preloadImage(k3s, n8nImage);
+		const runnersImage = runnersImageFor(n8nImage);
+		if (runnersImage) await preloadImage(k3s, runnersImage);
 		log('Image preloaded');
 
 		// Step 5: Download chart to host

@@ -25,14 +25,14 @@ concurrency:
 jobs:
   build-github:
     name: Build for Github Cache
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     env:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       QA_METRICS_WEBHOOK_URL: ${{ secrets.QA_METRICS_WEBHOOK_URL }}
       QA_METRICS_WEBHOOK_USER: ${{ secrets.QA_METRICS_WEBHOOK_USER }}
       QA_METRICS_WEBHOOK_PASSWORD: ${{ secrets.QA_METRICS_WEBHOOK_PASSWORD }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
       - name: Setup and Build
         uses: ./.github/actions/setup-nodejs
         with:
@@ -66,13 +66,13 @@ jobs:
 
   notify-on-failure:
     name: Notify Slack on failure
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     needs: [unit-test, lint, performance, build-github]
     # Only alert on push (master/develop). A failing PR is visible on the PR itself,
     # and github.ref_name is a merge ref (e.g. "39/merge") on pull_request events.
     if: ${{ always() && contains(needs.*.result, 'failure') && github.event_name == 'push' }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
         with:
           sparse-checkout: .github/scripts/slack
           sparse-checkout-cone-mode: false

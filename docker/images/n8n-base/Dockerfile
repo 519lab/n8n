@@ -1,7 +1,7 @@
 # Pinned to a multi-arch index digest (linux/amd64 + linux/arm64) for reproducible builds.
 # The tag is the human-readable version; Docker resolves by the digest. Bump the tag and
 # digest together when updating the base image.
-FROM dhi.io/node:24.18.1-alpine3.24-dev@sha256:074b5aa92e1ce74cd575214211bbcb8d1550710aec59558da734a67d84d31679
+FROM node:24.18.1-alpine3.24@sha256:f70403e87646dc51b45295f4b8b70cdad0b63d2297c4c9899119b03f7af7a6b3
 
 # Install all dependencies in a single layer to minimize image size
 RUN apk add --no-cache busybox-binsh && \
@@ -13,10 +13,11 @@ RUN apk add --no-cache busybox-binsh && \
     find /usr/share/fonts/truetype/msttcorefonts/ -type l -exec unlink {} \; && \
     # Install OS dependencies. No blanket `apk upgrade` — it floats the whole
     # world off the Alpine repos at build time and defeats the pinned base;
-    # patched bytes come from bumping the pinned DHI digest instead. git and
-    # openssl omitted: the base already provides git and the libssl3/libcrypto3
-    # libs Node uses (the openssl CLI binary isn't needed at runtime).
+    # patched bytes come from bumping the pinned base digest instead. openssl
+    # omitted: the base already provides the libssl3/libcrypto3 libs Node uses
+    # (the openssl CLI binary isn't needed at runtime).
     apk add --no-cache \
+        git \
         openssh \
         graphicsmagick \
         tini \
@@ -26,10 +27,6 @@ RUN apk add --no-cache busybox-binsh && \
     # Cleanup
     rm -rf /tmp/* /root/.npm /root/.cache/node /opt/yarn* && \
     apk del apk-tools
-
-# Alpine 3.24 ships node at /usr/bin; symlink it to /usr/local/bin so the path
-# matches what the cloud launch and AppArmor profile expect.
-RUN mkdir -p /usr/local/bin && ln -sf /usr/bin/node /usr/local/bin/node
 
 WORKDIR /home/node
 # This base image installs global npm modules under /usr/local; set NODE_PATH

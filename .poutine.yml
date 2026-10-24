@@ -35,6 +35,8 @@ skip:
       - pkg:githubactions/pnpm/action-setup
       - pkg:githubactions/rharkor/caching-for-turbo
       - pkg:githubactions/tomi/paths-filter-action
+      - pkg:githubactions/useblacksmith/build-push-action
+      - pkg:githubactions/useblacksmith/checkout
       - pkg:githubactions/useblacksmith/setup-docker-builder
 
   # === UNTRUSTED CHECKOUT EXECUTION (DOCUMENTED FALSE POSITIVES) ===

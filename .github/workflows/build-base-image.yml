@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - master
+      - develop
     paths:
       - 'docker/images/n8n-base/Dockerfile'
       - '.github/workflows/build-base-image.yml'
@@ -20,45 +21,37 @@ on:
         default: false
         type: boolean
 
+permissions:
+  contents: read
+
 jobs:
   build:
-    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
       fail-fast: false
       matrix:
-        # Node 26 requires alpine 3.23 on DHI (3.22 pairing isn't published).
-        # While we're on alpine 3.22 awaiting NODE-4184 (graphicsmagick → sharp
-        # migration that unblocks 3.23), Node 26 base builds can't succeed.
-        # Restore '26' to this matrix once 3.23 is back.
-        node_version: ['22', '24.18.1']
+        # The Dockerfile pins one Node version (FROM digest), so build only that.
+        node_version: ['24.18.1']
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Setup Blacksmith Builder
+        uses: useblacksmith/setup-docker-builder@e4c1c000c95f9cc255f72940e9c56bcbd1239436 # v1
 
-      - name: Login to DHI Registry (for pulling base images)
-        uses: ./.github/actions/docker-registry-login
-        with:
-          login-ghcr: 'false'
-          login-dhi: 'true'
-          dockerhub-username: ${{ secrets.DOCKER_USERNAME }}
-          dockerhub-password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Login to Docker registries (for pushing)
+      - name: Login to GHCR (for pushing)
         if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.push == true)
         uses: ./.github/actions/docker-registry-login
         with:
           login-ghcr: 'true'
-          login-dockerhub: 'true'
-          dockerhub-username: ${{ secrets.DOCKER_USERNAME }}
-          dockerhub-password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        uses: useblacksmith/build-push-action@9b0579bbec7a6cad2f171596c57e7ac1e7658850 # v2
         with:
           context: .
           file: ./docker/images/n8n-base/Dockerfile
@@ -69,8 +62,6 @@ jobs:
           sbom: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.push == true) }}
           push: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.push == true) }}
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/base:${{ matrix.node_version }}-${{ github.sha }}
-            ${{ secrets.DOCKER_USERNAME }}/base:${{ matrix.node_version }}
             ghcr.io/${{ github.repository_owner }}/base:${{ matrix.node_version }}-${{ github.sha }}
             ghcr.io/${{ github.repository_owner }}/base:${{ matrix.node_version }}
           no-cache: true

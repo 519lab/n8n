@@ -17,7 +17,7 @@ permissions:
 jobs:
   check-cadence:
     name: Check release cadence
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       # Guards against a misbehaving scheduler dispatching this workflow more than once a week.
       - name: Fail if a minor release already went live this week
@@ -54,9 +54,9 @@ jobs:
     name: Notify Slack
     needs: [create-release-pr]
     if: needs.create-release-pr.result == 'success' && needs.create-release-pr.outputs.pull-request-number != ''
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
         with:
           sparse-checkout: .github/scripts/slack
           sparse-checkout-cone-mode: false

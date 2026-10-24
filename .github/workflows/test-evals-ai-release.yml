@@ -7,7 +7,7 @@ on:
 jobs:
   check-minor-release:
     name: Check Minor Release
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     outputs:
       is_minor: ${{ steps.check.outputs.is_minor }}
       version: ${{ steps.check.outputs.version }}

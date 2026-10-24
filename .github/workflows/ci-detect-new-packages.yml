@@ -10,11 +10,11 @@ on:
 jobs:
   detect-new-packages:
     name: Check for new unpublished packages
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     if: github.event.pull_request.merged == true
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
 
       - name: Setup Node.js
         uses: ./.github/actions/setup-nodejs

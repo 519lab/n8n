@@ -35,7 +35,7 @@ jobs:
   sync:
     name: Sync master into 3.x
     if: github.repository == 'n8n-io/n8n'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     permissions:
       contents: write
       pull-requests: write
@@ -55,7 +55,7 @@ jobs:
           permission-issues: write # create the conflict label
 
       - name: Checkout 3.x
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
         with:
           ref: 3.x
           fetch-depth: 0
@@ -71,11 +71,11 @@ jobs:
     name: Notify Slack about conflict PR
     needs: [sync]
     if: ${{ needs.sync.outputs.conflict_pr != '' }}
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     permissions:
       contents: read # checkout the slack scripts
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
         with:
           sparse-checkout: .github/scripts/slack
           sparse-checkout-cone-mode: false
@@ -94,11 +94,11 @@ jobs:
     name: Notify Slack on failure
     needs: [sync]
     if: ${{ always() && needs.sync.result == 'failure' }}
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     permissions:
       contents: read # checkout the slack scripts
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
         with:
           sparse-checkout: .github/scripts/slack
           sparse-checkout-cone-mode: false

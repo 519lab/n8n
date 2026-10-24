@@ -16,6 +16,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-10-24 — Base image off Docker Hardened Images; publish to GHCR only
+
+**Infrastructure; no `.ee` source involved.** This fork has no `dhi.io`
+access, so `build-base-image` failed at the DHI login on every run.
+`docker/images/n8n-base/Dockerfile` now builds from the official
+`node:24.18.1-alpine3.24` image (index-digest pinned, the same pin as the n8n
+builder stage). It installs `git` itself, since the DHI `-dev` image provided
+it, and drops the `/usr/bin/node` symlink, since the official image already
+ships node at `/usr/local/bin`. `build-base-image.yml` pushes only to
+`ghcr.io/<owner>/base` with job-scoped `packages: write`. The DHI login
+steps and the `login-dhi` input of `docker-registry-login` are removed.
+
+### 2026-10-24 — Remove dead `test-evals-python` workflow
+
+**Cleanup; no `.ee` source read.** `.github/workflows/test-evals-python.yml`
+only triggered on, and ran inside,
+`packages/@n8n/ai-workflow-builder.ee/evaluations/programmatic/python`, which was
+removed with the `.ee` code. Any PR editing the workflow file failed it at the
+first `run:` step (missing working directory). Removed the workflow and its
+`WORKFLOWS.md` path-trigger row.
+
 ### 2026-10-16 — Dependabot config + auto-merge workflow
 
 **Infrastructure, not de-fork work; no `.ee` source involved.** Dependabot now

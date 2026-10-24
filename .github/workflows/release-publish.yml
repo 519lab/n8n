@@ -10,7 +10,7 @@ on:
 jobs:
   determine-version-info:
     name: Determine publishing track
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     if: github.event.pull_request.merged == true
     outputs:
       track: ${{ steps.determine-info.outputs.track }}
@@ -22,7 +22,7 @@ jobs:
       rc_branch: ${{ steps.determine-info.outputs.rc_branch }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
         with:
           fetch-depth: 1
           fetch-tags: true
@@ -41,7 +41,7 @@ jobs:
   publish-to-npm:
     name: Publish to NPM
     needs: [determine-version-info]
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     if: github.event.pull_request.merged == true
     timeout-minutes: 30
     environment: npm
@@ -52,7 +52,7 @@ jobs:
       RELEASE: ${{ needs.determine-version-info.outputs.version }} # Used by Vite build process
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
 
       - name: Setup and Build
         uses: ./.github/actions/setup-nodejs
@@ -240,9 +240,9 @@ jobs:
       always() &&
       github.event.pull_request.merged == true &&
       (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled'))
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
         with:
           ref: master
           sparse-checkout: .github/scripts/slack

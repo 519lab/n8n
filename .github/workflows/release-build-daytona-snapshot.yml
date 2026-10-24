@@ -34,7 +34,7 @@ permissions:
 jobs:
   build-snapshot:
     name: Build versioned Daytona snapshot (${{ matrix.environment }})
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 30
     # Dev is best-effort: a dev failure is reported but does not block the release.
     # Only the prod publish gates the release.
@@ -46,7 +46,7 @@ jobs:
         environment: [dev, prod]
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
 
       - name: Setup Node.js and build
         uses: ./.github/actions/setup-nodejs
