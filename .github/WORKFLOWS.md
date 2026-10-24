@@ -80,7 +80,7 @@ Types:   feat | fix | perf | test | docs | refactor | build | ci | chore
 Scopes:  API | benchmark | core | editor | * Node (optional)
 ```
 
-Enforced by `ci-check-pr-title.yml`. See `pull_request_title_conventions.md`.
+Enforced on PRs into `master` and `develop` by `ci-check-pr-title.yml`. See `pull_request_title_conventions.md`.
 
 ---
 
@@ -92,7 +92,7 @@ Enforced by `ci-check-pr-title.yml`. See `pull_request_title_conventions.md`.
 | `ci-master.yml`                 | PR into `master`/`develop` (skips Python-only changes)        |
 | `ci-master-python-only.yml`     | Python-only PRs — reports the required ci-master checks as stubs |
 | `ci-pr-quality.yml`             | Any PR — size check (`/size-limit-override` comment to bypass)      |
-| `ci-check-pr-title.yml`         | Any PR — title format                                         |
+| `ci-check-pr-title.yml`         | PRs into `master`/`develop` — title format                    |
 | `ci-codeowners-validation.yml`  | Any PR — CODEOWNERS syntax                                    |
 | `ci-python.yml`                 | `packages/@n8n/task-runner-python/**` changes                 |
 | `build-base-image.yml`          | `docker/images/n8n-base/**` changes (pushes on `develop`)     |
@@ -277,7 +277,7 @@ added to `actionlint.yml`, or the `actionlint_check` pre-commit hook fails.
 
 | Runner                              | Use Case                    |
 |-------------------------------------|-----------------------------|
-| `ubuntu-slim`                       | Gate jobs (required-checks) |
+| `ubuntu-slim`                       | `RUNNER_PROVIDER=github` fallback for light jobs |
 | `ubuntu-latest`                     | Simple jobs                 |
 | `blacksmith-4vcpu-ubuntu-2404`      | Default for most jobs       |
 | `blacksmith-4vcpu-windows-2025`     | Windows build               |
