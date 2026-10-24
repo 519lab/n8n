@@ -17,7 +17,8 @@ const MOCK_SERVER_URL = 'https://server.com/v1';
 const MOCK_RENEW_OFFSET = 259200;
 const MOCK_INSTANCE_ID = 'instance-id';
 const MOCK_ACTIVATION_KEY = 'activation-key';
-const MOCK_FEATURE_FLAG = 'feat:sharing';
+// A feature that stays license-gated in this fork (needs n8n-hosted services).
+const MOCK_FEATURE_FLAG = 'feat:aiAssistant';
 const MOCK_MAIN_PLAN_ID = '1b765dc4-d39d-4ffe-9885-c56dd67c4b26';
 
 function makeDateWithHourOffset(offsetInHours: number): Date {
@@ -134,7 +135,7 @@ describe('License', () => {
 		expect(LicenseManager.prototype.hasFeatureEnabled).toHaveBeenCalledWith(MOCK_FEATURE_FLAG);
 	});
 
-	test('check if sharing feature is enabled', () => {
+	test('check if a still-gated feature is enabled', () => {
 		license.isLicensed(MOCK_FEATURE_FLAG);
 
 		expect(LicenseManager.prototype.hasFeatureEnabled).toHaveBeenCalledWith(MOCK_FEATURE_FLAG);
@@ -160,6 +161,15 @@ describe('License', () => {
 			'feat:insights:viewSummary',
 			'feat:insights:viewDashboard',
 			'feat:insights:viewHourlyData',
+			'feat:sharing',
+			'feat:advancedPermissions',
+			'feat:projectRole:admin',
+			'feat:projectRole:editor',
+			'feat:projectRole:viewer',
+			'feat:customRoles',
+			'feat:personalSpacePolicy',
+			'feat:mfaEnforcement',
+			'feat:apiKeyScopes',
 		])('isLicensed(%s) is true without consulting the license manager', (feature) => {
 			vi.mocked(LicenseManager.prototype.hasFeatureEnabled).mockReturnValue(false);
 
@@ -178,6 +188,13 @@ describe('License', () => {
 			expect(license.getValue('quota:insights:maxHistoryDays')).toBe(-1);
 			expect(LicenseManager.prototype.getFeatureValue).not.toHaveBeenCalledWith(
 				'quota:insights:maxHistoryDays',
+			);
+		});
+
+		test('getValue returns unlimited for the team-project quota, without delegating', () => {
+			expect(license.getValue('quota:maxTeamProjects')).toBe(-1);
+			expect(LicenseManager.prototype.getFeatureValue).not.toHaveBeenCalledWith(
+				'quota:maxTeamProjects',
 			);
 		});
 
