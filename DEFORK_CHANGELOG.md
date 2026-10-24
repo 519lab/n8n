@@ -16,6 +16,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-10-24 — Inverse license flags removed (#133 wave 6)
+
+**Removal; no `.ee` source involved.** `feat:apiDisabled` and
+`feat:showNonProdBanner` were the only license flags whose *presence* took
+something away: one disabled the public API, the other showed a "not licensed
+for production" banner. Neither can mean anything in a build with no license, so
+both are gone, along with the `isAPIDisabled` shims, the telemetry field, the
+`showNonProdBanner` frontend setting, and the `NON_PRODUCTION_LICENSE` banner,
+schema entry and string. `N8N_PUBLIC_API_DISABLED` remains the switch for the
+public API.
+
 ### 2026-10-24 — Workflow UX features on without a license (#133 wave 4)
 
 **Ungate; no `.ee` source involved.** Advanced execution filters (with the E19
