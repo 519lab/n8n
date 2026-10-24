@@ -157,8 +157,7 @@ function buildHelmSetFlags(
 ): string[] {
 	const { repository, tag } = parseImageName(imageName);
 
-	// Collect env vars as an array, then convert to indexed --set flags.
-	// This avoids fragile manual index tracking and makes it easy to add conditional entries.
+	// Collect env vars as an array, then convert to --set flags; later entries win.
 	const extraEnvs: Array<{ name: string; value: string }> = [
 		{ name: 'N8N_DIAGNOSTICS_ENABLED', value: 'false' },
 		{ name: 'N8N_DYNAMIC_BANNERS_ENABLED', value: 'false' },
@@ -192,11 +191,11 @@ function buildHelmSetFlags(
 	const flags = [
 		`--set image.repository=${repository}`,
 		`--set image.tag=${tag}`,
-		// --set-string because K8s env values must be strings
-		...extraEnvs.flatMap((env, i) => [
-			`--set config.extraEnv[${i}].name=${env.name}`,
-			`--set-string config.extraEnv[${i}].value=${env.value}`,
-		]),
+		// The chart reads env vars from the env.shared map (config.extraEnv is rejected).
+		// --set-string because K8s env values must be strings; escape helm's list separator.
+		...extraEnvs.map(
+			(env) => `--set-string env.shared.${env.name}=${env.value.replace(/[\\,]/g, '\\$&')}`,
+		),
 	];
 
 	if (mode === 'standalone') {
