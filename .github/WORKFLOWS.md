@@ -475,7 +475,6 @@ inputs:
 inputs:
   login-ghcr:       # default: 'true'
   login-dockerhub:  # default: 'false'
-  login-dhi:        # default: 'false'
 ```
 
 ---

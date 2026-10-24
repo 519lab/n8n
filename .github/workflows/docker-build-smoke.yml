@@ -33,14 +33,6 @@ jobs:
     steps:
       - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
 
-      - name: Login to DHI Registry (for base image)
-        uses: ./.github/actions/docker-registry-login
-        with:
-          login-ghcr: 'false'
-          login-dhi: 'true'
-          dockerhub-username: ${{ secrets.DOCKER_USERNAME }}
-          dockerhub-password: ${{ secrets.DOCKER_PASSWORD }}
-
       - name: Build full chain (no cache)
         uses: ./.github/actions/setup-nodejs
         with:
