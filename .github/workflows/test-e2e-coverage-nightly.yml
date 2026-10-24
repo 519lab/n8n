@@ -194,7 +194,7 @@ jobs:
         uses: ./.github/actions/setup-nodejs
 
       - name: Download E2E shard artifacts
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: coverage-shard-*
           path: /tmp/shards/
@@ -204,7 +204,7 @@ jobs:
       # prevent clobbering, and findFiles recurses into all of them so MCR
       # unions unit + integration coverage for CLI correctly.
       - name: Download unit + integration + frontend coverage artifacts
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: '*-coverage'
           path: /tmp/unit-lcovs/
@@ -314,7 +314,7 @@ jobs:
           persist-credentials: false
 
       - name: Download coverage report artifact
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: coverage-report
           path: /tmp/coverage-report
