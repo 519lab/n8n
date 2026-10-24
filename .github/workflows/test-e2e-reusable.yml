@@ -162,8 +162,6 @@ jobs:
           SHARD_ARGS: ${{ steps.shard-args.outputs.args }}
           # Args for actual test command runner
           CURRENTS_RECORD_KEY: ${{ secrets.CURRENTS_RECORD_KEY }}
-          N8N_LICENSE_ACTIVATION_KEY: ${{ secrets.N8N_LICENSE_ACTIVATION_KEY }}
-          N8N_LICENSE_CERT: ${{ secrets.N8N_LICENSE_CERT }}
           N8N_ENCRYPTION_KEY: ${{ secrets.N8N_ENCRYPTION_KEY }}
           N8N_TEST_ENV: ${{ inputs.n8n-env }}
 

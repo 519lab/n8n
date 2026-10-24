@@ -173,20 +173,6 @@ function buildHelmSetFlags(
 		{ name: 'WEBHOOK_URL', value: baseUrl },
 	];
 
-	// License env vars from host (same pattern as testcontainers stack)
-	if (process.env.N8N_LICENSE_TENANT_ID) {
-		extraEnvs.push({ name: 'N8N_LICENSE_TENANT_ID', value: process.env.N8N_LICENSE_TENANT_ID });
-	}
-	if (process.env.N8N_LICENSE_ACTIVATION_KEY) {
-		extraEnvs.push({
-			name: 'N8N_LICENSE_ACTIVATION_KEY',
-			value: process.env.N8N_LICENSE_ACTIVATION_KEY,
-		});
-	}
-	if (process.env.N8N_LICENSE_CERT) {
-		extraEnvs.push({ name: 'N8N_LICENSE_CERT', value: process.env.N8N_LICENSE_CERT });
-	}
-
 	// Caller-provided env overrides (merge-last-wins)
 	if (envOverrides) {
 		for (const [name, value] of Object.entries(envOverrides)) {

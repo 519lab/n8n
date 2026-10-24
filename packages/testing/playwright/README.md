@@ -108,7 +108,7 @@ situations where `test:local`'s defaults aren't enough:
   stable URL for browser inspection.
 - **Throwaway `N8N_USER_FOLDER`** under the OS temp dir (cleaned up on exit).
   Its `database.sqlite` is fully isolated from your local `~/.n8n` install.
-- **Container-only tests included.** `@capability:*` / `@licensed` /
+- **Container-only tests included.** `@capability:*` / `@mode:*` /
   `@db:reset` tests are picked up by the local `e2e` project. Their fixtures
   are responsible for detecting the missing container and skipping or falling
   back.
@@ -127,7 +127,7 @@ The two underlying env-var levers — usable independently of the script:
 
 | Env var | Effect |
 |---------|--------|
-| `PLAYWRIGHT_ALLOW_CONTAINER_ONLY=true` | Disables `grepInvert` so `@capability:*`, `@mode:*`, `@licensed`, and `@db:reset` tests are picked up by the local `e2e` project. The fixtures consumed by those tests must detect the missing container and either skip or fall back. |
+| `PLAYWRIGHT_ALLOW_CONTAINER_ONLY=true` | Disables `grepInvert` so `@capability:*`, `@mode:*`, and `@db:reset` tests are picked up by the local `e2e` project. The fixtures consumed by those tests must detect the missing container and either skip or fall back. |
 | `PLAYWRIGHT_SKIP_WEBSERVER=true` | Stops Playwright from launching its own n8n via the `webServer` config. Use when a wrapper script (like `scripts/run-local-isolated.mjs`) already manages n8n with custom env vars. |
 
 ## Test Tags
@@ -137,7 +137,6 @@ test('postgres only @mode:postgres', ...)            // Mode-specific
 test('chaos test @mode:multi-main @chaostest', ...) // Isolated per worker
 test('cloud resource test @cloud:trial', ...)       // Cloud resource constraints
 test('proxy test @capability:proxy', ...)           // Requires proxy server capability
-test('enterprise feature @licensed', ...)           // Requires enterprise license (container-only)
 ```
 
 ### Tag Reference
@@ -146,7 +145,6 @@ test('enterprise feature @licensed', ...)           // Requires enterprise licen
 |-----|-------------|-------------|
 | `@mode:X` | Infrastructure mode (postgres, queue, multi-main) | Tests requiring specific DB or architecture |
 | `@capability:X` | Container services (email, proxy, oidc, source-control, observability) | Tests needing external services |
-| `@licensed` | Enterprise license features | Tests for features behind license flags at startup |
 | `@cloud:X` | Resource constraints (trial, enterprise) | Performance tests with memory/CPU limits |
 | `@chaostest` | Chaos engineering tests | Tests that intentionally break things |
 | `@auth:X` | Authentication role (owner, admin, member, none) | Tests requiring specific user role |
@@ -196,35 +194,6 @@ test.describe('My stateful tests @db:reset', () => {
 ```
 
 **When to use `@db:reset`:** When tests modify shared state that would break subsequent tests (e.g., enabling MFA, creating users, changing settings). Since resetting the database would affect all parallel tests in local mode, these tests are excluded from local runs and only execute in container mode where each worker has its own isolated database.
-
-### Enterprise Features (@licensed)
-Use the `@licensed` tag for tests that require enterprise features which are **only available when the license is present at startup**. This differs from features that can be enabled/disabled at runtime.
-
-**When to use:**
-- Features behind `@BackendModule({ licenseFlag: LICENSE_FEATURES.X })` decorators
-- API endpoints that only exist when the module loads with a valid license
-- Features like log streaming, SSO, LDAP where routes aren't registered without license
-
-**Example:**
-```typescript
-// The @licensed tag ensures this only runs in container mode with a valid license
-test.describe('Log Streaming @licensed', () => {
-  test.beforeEach(async ({ n8n }) => {
-    // enableFeature() works for runtime checks, but module must be loaded first
-    await n8n.api.enableFeature('logStreaming');
-  });
-
-  test('should show licensed view', async ({ n8n }) => {
-    await n8n.navigate.toLogStreaming();
-    // ...
-  });
-});
-```
-
-> **Note:** `@licensed` tests are skipped in local mode (`test:local`) and only run in container mode where a license is available.
-
-**Enterprise license for testing:**
-To run `@licensed` tests or manually test enterprise features, set `N8N_LICENSE_TENANT_ID` and `N8N_LICENSE_ACTIVATION_KEY` in your environment. The containers package reads these variables automatically. Ask in Slack for the sandbox license key.
 
 ## Fixture Selection
 - **`base.ts`**: Standard testing with worker-scoped containers (default choice)
