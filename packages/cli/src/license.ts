@@ -54,6 +54,10 @@ const FAIR_CODE_LICENSED_FEATURES: readonly BooleanLicenseFeature[] = [
 	LICENSE_FEATURES.PERSONAL_SPACE_POLICY,
 	LICENSE_FEATURES.MFA_ENFORCEMENT,
 	LICENSE_FEATURES.API_KEY_SCOPES,
+	// SSO (#133 wave 2): LDAP, SAML and OIDC rebuilt in E5-E7.
+	LICENSE_FEATURES.LDAP,
+	LICENSE_FEATURES.SAML,
+	LICENSE_FEATURES.OIDC,
 ];
 
 /** Numeric quotas those fair-code features need to be fully usable (an ungated

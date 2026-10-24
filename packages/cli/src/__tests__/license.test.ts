@@ -170,6 +170,9 @@ describe('License', () => {
 			'feat:personalSpacePolicy',
 			'feat:mfaEnforcement',
 			'feat:apiKeyScopes',
+			'feat:ldap',
+			'feat:saml',
+			'feat:oidc',
 		])('isLicensed(%s) is true without consulting the license manager', (feature) => {
 			vi.mocked(LicenseManager.prototype.hasFeatureEnabled).mockReturnValue(false);
 
