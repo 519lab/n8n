@@ -107,7 +107,7 @@ export class SourceControlStatusService {
 		files.push(...(await this.getCredentialStatus(context, options)));
 		files.push(...(await this.getFolderStatus(context, options)));
 		files.push(...(await this.getDataTableStatus(context, options)));
-		files.push(...(await this.getTagsStatus(context, options)));
+		files.push(...(await this.getTagsStatus(context)));
 		files.push(...this.getProjectStatus(files, options));
 		return files;
 	}
@@ -597,10 +597,7 @@ export class SourceControlStatusService {
 	//              tags
 	// ----------------------------------
 
-	private async getTagsStatus(
-		context: SourceControlContext,
-		options: SourceControlGetStatusOptions,
-	): Promise<SourceControlledFile[]> {
+	private async getTagsStatus(context: SourceControlContext): Promise<SourceControlledFile[]> {
 		const tagsFilePath = path.join(this.gitFolder, SOURCE_CONTROL_TAGS_EXPORT_FILE);
 		const remote = await this.importService.getRemoteTagsAndMappingsFromFile(context);
 		const local = await this.importService.getLocalTagsAndMappingsFromDb(context);

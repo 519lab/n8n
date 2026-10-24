@@ -1533,7 +1533,7 @@ describe('SourceControlService', () => {
 			);
 
 			const remoteCredential = toExportableCredential(credential, testProject);
-			delete remoteCredential.isGlobal;
+			Reflect.deleteProperty(remoteCredential, 'isGlobal');
 			setupMocksForCredential(credential, remoteCredential);
 
 			const result = await service.getStatus(testGlobalOwner, {

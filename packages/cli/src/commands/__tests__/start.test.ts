@@ -55,7 +55,6 @@ const license = mockInstance(License, {
 	isMultiMainLicensed: () => true,
 });
 const multiMainSetup = mockInstance(MultiMainSetup);
-multiMainSetup.registerEventHandlers.mockReturnValue(undefined);
 const authHandlerRegistry = mockInstance(AuthHandlerRegistry);
 authHandlerRegistry.init.mockResolvedValue(undefined);
 const errorReporter = mockInstance(ErrorReporter);
