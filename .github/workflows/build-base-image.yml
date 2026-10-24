@@ -32,13 +32,13 @@ jobs:
         # Restore '26' to this matrix once 3.23 is back.
         node_version: ['22', '24.18.1']
     steps:
-      - uses: useblacksmith/checkout@v1 # v6.0.2
+      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
 
       - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@v1
+        uses: useblacksmith/setup-docker-builder@e4c1c000c95f9cc255f72940e9c56bcbd1239436 # v1
 
       - name: Login to DHI Registry (for pulling base images)
         uses: ./.github/actions/docker-registry-login
@@ -58,7 +58,7 @@ jobs:
           dockerhub-password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push
-        uses: useblacksmith/build-push-action@v2 # v7.0.0
+        uses: useblacksmith/build-push-action@9b0579bbec7a6cad2f171596c57e7ac1e7658850 # v2
         with:
           context: .
           file: ./docker/images/n8n-base/Dockerfile

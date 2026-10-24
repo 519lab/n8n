@@ -30,7 +30,7 @@ jobs:
           private-key: ${{ secrets.RELEASE_TAG_MERGE_PRIVATE_KEY }}
           skip-token-revoke: false
 
-      - uses: useblacksmith/checkout@v1 # v6.0.2
+      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
         with:
           ref: ${{ inputs.target-branch }}
           fetch-depth: 500
@@ -61,7 +61,7 @@ jobs:
     if: ${{ always() && needs.merge-tag-to-branch.result == 'failure' }}
     runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
-      - uses: useblacksmith/checkout@v1 # v6.0.2
+      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
         with:
           ref: master
           sparse-checkout: .github/scripts/slack

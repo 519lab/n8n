@@ -31,7 +31,7 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2204
     if: ${{ !github.event.pull_request.head.repo.fork }}
     steps:
-      - uses: useblacksmith/checkout@v1 # v6.0.2
+      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
 
       - name: Login to DHI Registry (for base image)
         uses: ./.github/actions/docker-registry-login
@@ -68,7 +68,7 @@ jobs:
     needs: [docker-smoke-test]
     if: needs.docker-smoke-test.result == 'failure' && github.event_name == 'schedule'
     steps:
-      - uses: useblacksmith/checkout@v1 # v6.0.2
+      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
         with:
           sparse-checkout: .github/scripts/slack
           sparse-checkout-cone-mode: false

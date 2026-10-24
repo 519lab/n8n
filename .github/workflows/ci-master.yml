@@ -32,7 +32,7 @@ jobs:
       QA_METRICS_WEBHOOK_USER: ${{ secrets.QA_METRICS_WEBHOOK_USER }}
       QA_METRICS_WEBHOOK_PASSWORD: ${{ secrets.QA_METRICS_WEBHOOK_PASSWORD }}
     steps:
-      - uses: useblacksmith/checkout@v1 # v6.0.2
+      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
       - name: Setup and Build
         uses: ./.github/actions/setup-nodejs
         with:
@@ -72,7 +72,7 @@ jobs:
     # and github.ref_name is a merge ref (e.g. "39/merge") on pull_request events.
     if: ${{ always() && contains(needs.*.result, 'failure') && github.event_name == 'push' }}
     steps:
-      - uses: useblacksmith/checkout@v1 # v6.0.2
+      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
         with:
           sparse-checkout: .github/scripts/slack
           sparse-checkout-cone-mode: false

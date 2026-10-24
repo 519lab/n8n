@@ -20,7 +20,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: useblacksmith/checkout@v1 # v6.0.2
+        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
 
       - name: Azure login
         uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2.3.0

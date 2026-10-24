@@ -22,7 +22,7 @@ jobs:
       rc_branch: ${{ steps.determine-info.outputs.rc_branch }}
     steps:
       - name: Checkout
-        uses: useblacksmith/checkout@v1 # v6.0.2
+        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
         with:
           fetch-depth: 1
           fetch-tags: true
@@ -52,7 +52,7 @@ jobs:
       RELEASE: ${{ needs.determine-version-info.outputs.version }} # Used by Vite build process
     steps:
       - name: Checkout
-        uses: useblacksmith/checkout@v1 # v6.0.2
+        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
 
       - name: Setup and Build
         uses: ./.github/actions/setup-nodejs
@@ -242,7 +242,7 @@ jobs:
       (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled'))
     runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
-      - uses: useblacksmith/checkout@v1 # v6.0.2
+      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
         with:
           ref: master
           sparse-checkout: .github/scripts/slack

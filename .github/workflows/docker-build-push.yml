@@ -71,7 +71,7 @@ jobs:
       short_sha: ${{ steps.sha.outputs.short_sha }}
     steps:
       - name: Checkout code
-        uses: useblacksmith/checkout@v1 # v6.0.2
+        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
         with:
           ref: ${{ inputs.ref }}
 
@@ -246,10 +246,10 @@ jobs:
       runners_distroless_image: ${{ steps.get-digests.outputs.runners_distroless_image }}
     steps:
       - name: Checkout
-        uses: useblacksmith/checkout@v1 # v6.0.2
+        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
 
       - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@v1
+        uses: useblacksmith/setup-docker-builder@e4c1c000c95f9cc255f72940e9c56bcbd1239436 # v1
 
       - name: Login to Docker registries
         uses: ./.github/actions/docker-registry-login
@@ -470,7 +470,7 @@ jobs:
       packages: write
     steps:
       - name: Checkout
-        uses: useblacksmith/checkout@v1 # v6.0.2
+        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
@@ -536,7 +536,7 @@ jobs:
       packages: write
     steps:
       - name: Checkout
-        uses: useblacksmith/checkout@v1 # v6.0.2
+        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
 
       - name: Setup Node.js and install SBOM tooling
         uses: ./.github/actions/setup-nodejs
@@ -597,7 +597,7 @@ jobs:
     needs: [build-and-push-docker]
     if: needs.build-and-push-docker.result == 'failure' && github.event_name == 'schedule'
     steps:
-      - uses: useblacksmith/checkout@v1 # v6.0.2
+      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
         with:
           sparse-checkout: .github/scripts/slack
           sparse-checkout-cone-mode: false

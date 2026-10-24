@@ -36,7 +36,7 @@ jobs:
       should_create_pr: ${{ steps.determine-branch.outputs.should_create_pr }}
     steps:
       - name: Checkout
-        uses: useblacksmith/checkout@v1 # v6.0.2
+        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
         with:
           fetch-depth: 0
 
@@ -79,7 +79,7 @@ jobs:
     if: needs.create-release-pr.result == 'success' && needs.create-release-pr.outputs.pull-request-number != ''
     runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
-      - uses: useblacksmith/checkout@v1 # v6.0.2
+      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
         with:
           sparse-checkout: .github/scripts/slack
           sparse-checkout-cone-mode: false

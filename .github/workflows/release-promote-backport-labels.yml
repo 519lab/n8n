@@ -41,7 +41,7 @@ jobs:
           permission-pull-requests: write
 
       - name: Checkout
-        uses: useblacksmith/checkout@v1 # v6.0.2
+        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
         with:
           # The script uses the API (via GITHUB_TOKEN env), not git, so no App
           # token is needed here and credentials shouldn't be persisted.

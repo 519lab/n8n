@@ -30,7 +30,7 @@ jobs:
       issues: write
       pull-requests: read
     steps:
-      - uses: useblacksmith/checkout@v1 # v6.0.2
+      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
 
       - name: Setup Node.js
         uses: ./.github/actions/setup-nodejs
@@ -65,7 +65,7 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-      - uses: useblacksmith/checkout@v1 # v6.0.2
+      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
 
       - name: Setup Node.js
         uses: ./.github/actions/setup-nodejs
@@ -95,7 +95,7 @@ jobs:
       changed-files: ${{ steps.filter.outputs.changed-files }}
       added-files: ${{ steps.filter.outputs.added-files }}
     steps:
-      - uses: useblacksmith/checkout@v1 # v6.0.2
+      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
 
       - name: Detect changed paths
         id: filter
@@ -116,7 +116,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: useblacksmith/checkout@v1 # v6.0.2
+      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
 
       - name: Setup Node.js
         uses: ./.github/actions/setup-nodejs
@@ -155,7 +155,7 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 5
     steps:
-      - uses: useblacksmith/checkout@v1 # v6.0.2
+      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
         with:
           sparse-checkout: .github/actions/ci-filter
           sparse-checkout-cone-mode: false

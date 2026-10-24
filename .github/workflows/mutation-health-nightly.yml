@@ -49,7 +49,7 @@ jobs:
       matrix: ${{ steps.build.outputs.matrix }}
     steps:
       - name: Checkout
-        uses: useblacksmith/checkout@v1 # v6.0.2
+        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
         with:
           # Full history feeds signals.mjs (churn + fix-density). A shallow
           # clone yields zero signals and falls back to a coverage-only
@@ -133,7 +133,7 @@ jobs:
       SOURCE_FILE: ${{ matrix.source_file || '' }}
     steps:
       - name: Checkout
-        uses: useblacksmith/checkout@v1 # v6.0.2
+        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
         # Shallow clone is fine — the file to mutate has already been picked
         # in the setup job, and Stryker only needs the working tree.
 

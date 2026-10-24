@@ -42,7 +42,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: useblacksmith/checkout@v1 # v6.0.2
+        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
 
       - name: Setup Node.js and install dependencies
         uses: ./.github/actions/setup-nodejs
@@ -107,7 +107,7 @@ jobs:
     needs: [build]
     if: ${{ always() && contains(needs.*.result, 'failure') }}
     steps:
-      - uses: useblacksmith/checkout@v1 # v6.0.2
+      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
         with:
           sparse-checkout: .github/scripts/slack
           sparse-checkout-cone-mode: false
