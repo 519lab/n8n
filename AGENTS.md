@@ -404,10 +404,9 @@ handling), apply these checks:
 
 ### Security Fix Hygiene
 
-**This fork is currently private** (upstream n8n is public, and this fork may be
-opened later — so keep the habit). When working on security fixes, never expose
-the attack vector or vulnerability type in any artifact that could become
-public. Attackers monitor open-source repos for signals like branch names,
+**This fork is public** (`519lab/n8n`, made public 2026-10). When working on
+security fixes, never expose the attack vector or vulnerability type in any
+artifact — branch names, commits, PRs and issues are all publicly visible. Attackers monitor open-source repos for signals like branch names,
 commit messages, PR titles, test descriptions, and Linear URLs.
 
 **Rules for security fixes:**
@@ -428,8 +427,7 @@ commit messages, PR titles, test descriptions, and Linear URLs.
 
 ### Customer Confidentiality
 
-**This fork is currently private, but treat names as if it were not.** Never
-mention customer names in any artifact that could become public — not all
+**This fork is public.** Never mention customer names in any artifact — not all
 customers have agreed to be named publicly, and naming them can reveal
 security-relevant details about their setup.
 

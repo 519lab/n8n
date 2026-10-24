@@ -46,3 +46,15 @@ jobs:
           # this static keep-list is a safety net for scheduled runs (which pass no exclude input).
           EXCLUDE_BRANCHES: ${{ inputs.exclude || '1.x,3.x' }}
         run: node .github/scripts/stale/clean-stale-branches.mjs --days="$STALE_DAYS" ${{ !inputs.dry-run && '--execute' || '--dry-run' }}
+
+  report-status:
+    name: Report CI status
+    needs: [remove-stale-branches]
+    # Scheduled runs only: a failing PR or manual run is already visible where it ran.
+    if: ${{ !cancelled() && github.event_name == 'schedule' }}
+    permissions:
+      contents: read
+      issues: write
+    uses: ./.github/workflows/util-ci-failure-issue-reusable.yml
+    with:
+      status: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}

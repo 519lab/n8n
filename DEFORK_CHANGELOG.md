@@ -25,6 +25,14 @@ Removed the Docker Hub path from `docker-config.mjs`, `docker-tags.mjs`,
 `docker-build-push.yml` and the `docker-registry-login` action; images go to
 `ghcr.io/<owner>/{n8n,runners}` only.
 
+### 2026-10-24 — CI failure alerts as GitHub issues
+
+**Infrastructure; no `.ee` source involved.** Replaces the removed Slack
+notifiers. Scheduled workflows and `ci-master` branch pushes now open one
+`ci-failure` issue per failing workflow + branch, comment on repeats, and close
+it on the next green run (`util-ci-failure-issue-reusable.yml`,
+`.github/scripts/ci-failure-issue.mjs`).
+
 ### 2026-10-24 — Remove upstream-only CI workflows and dead secret steps
 
 **Infrastructure; no `.ee` source involved.** Removed 60 GitHub Actions

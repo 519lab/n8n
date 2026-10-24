@@ -524,3 +524,15 @@ jobs:
     with:
       image_ref: ${{ needs.build-and-push-docker.outputs.runners_primary_ghcr_manifest_tag }}
     secrets: inherit
+
+  report-status:
+    name: Report CI status
+    needs: [determine-build-context, build-and-push-docker, create_multi_arch_manifest, call-success-url, provenance-n8n, provenance-runners, provenance-runners-distroless, vex-attestation, sbom-attestation, security-scan, security-scan-runners]
+    # Scheduled runs only: a failing PR or manual run is already visible where it ran.
+    if: ${{ !cancelled() && github.event_name == 'schedule' }}
+    permissions:
+      contents: read
+      issues: write
+    uses: ./.github/workflows/util-ci-failure-issue-reusable.yml
+    with:
+      status: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
