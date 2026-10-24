@@ -260,8 +260,9 @@ jobs:
       artifact-prefix: sanity
     secrets: inherit
 
-  # Full e2e run on sqlite. @licensed specs are skipped: they need N8N_LICENSE_* secrets
-  # (upstream's multi-main suite), which this repository does not have.
+  # Full e2e run on sqlite. @licensed specs are skipped for now: their features are still
+  # license-gated in this build (packages/cli/src/license.ts) and are being ungated or
+  # removed feature by feature. The goal is no license dependency at all.
   e2e:
     name: E2E
     needs: [install-and-build, prepare-docker]
