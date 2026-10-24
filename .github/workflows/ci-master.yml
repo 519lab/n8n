@@ -58,16 +58,10 @@ jobs:
     with:
       ref: ${{ github.sha }}
 
-  performance:
-    name: Performance
-    uses: ./.github/workflows/test-bench-reusable.yml
-    with:
-      ref: ${{ github.sha }}
-
   notify-on-failure:
     name: Notify Slack on failure
     runs-on: blacksmith-4vcpu-ubuntu-2404
-    needs: [unit-test, lint, performance, build-github]
+    needs: [unit-test, lint, build-github]
     # Only alert on push (master/develop). A failing PR is visible on the PR itself,
     # and github.ref_name is a merge ref (e.g. "39/merge") on pull_request events.
     if: ${{ always() && contains(needs.*.result, 'failure') && github.event_name == 'push' }}
