@@ -25,6 +25,14 @@ Removed the Docker Hub path from `docker-config.mjs`, `docker-tags.mjs`,
 `docker-build-push.yml` and the `docker-registry-login` action; images go to
 `ghcr.io/<owner>/{n8n,runners}` only.
 
+### 2026-10-24 — All CI jobs on Blacksmith runners
+
+**Infrastructure; no `.ee` source involved.** Removed the `RUNNER_PROVIDER`
+toggle. With the variable set to `github`, 12 jobs (Install & Build,
+Typecheck, unit tests, lint, E2E…) ran on 2-vCPU `ubuntu-latest` while the rest
+of CI had moved to Blacksmith, and Typecheck was runner-cancelled there. Every
+job now uses a Blacksmith label.
+
 ### 2026-10-24 — Stale-branch cleanup always keeps master and develop
 
 **Infrastructure; no `.ee` source involved.** The scheduled cleanup used

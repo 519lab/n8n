@@ -73,7 +73,7 @@ env:
 
 jobs:
   test:
-    runs-on: ${{ vars.RUNNER_PROVIDER == 'github' && 'ubuntu-latest' || inputs.runner }}
+    runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout-minutes }}
     permissions:
       contents: read
