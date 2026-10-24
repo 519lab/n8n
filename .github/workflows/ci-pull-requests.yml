@@ -216,7 +216,6 @@ jobs:
     name: Prepare Docker
     needs: install-and-build
     if: >-
-      github.repository == 'n8n-io/n8n' &&
       github.event_name != 'merge_group' &&
       (needs.install-and-build.outputs.runtime == 'true'
         || needs.install-and-build.outputs.e2e == 'true'
@@ -226,7 +225,7 @@ jobs:
       branch: ${{ needs.install-and-build.outputs.commit_sha }}
     secrets: inherit
 
-  # Internal-only 1-spec fail-fast sanity check on sqlite.
+  # 1-spec fail-fast sanity check on sqlite.
   sqlite-sanity:
     name: 'SQLite: Sanity Check'
     needs: [install-and-build, prepare-docker]
@@ -235,7 +234,6 @@ jobs:
       (needs.install-and-build.outputs.runtime == 'true'
         || needs.install-and-build.outputs.e2e == 'true'
         || contains(github.event.pull_request.labels.*.name, 'force-e2e')) &&
-      github.repository == 'n8n-io/n8n' &&
       github.event_name != 'merge_group' &&
       github.event.pull_request.head.repo.fork != true
     uses: ./.github/workflows/test-e2e-reusable.yml
@@ -247,8 +245,8 @@ jobs:
       artifact-prefix: sanity
     secrets: inherit
 
-  # Full e2e run. Internal PRs run multi-main (postgres + redis + caddy + 2 mains + 1 worker).
-  # Fork PRs run sqlite-only and skip @licensed tests (no enterprise license secrets on forks).
+  # Full e2e run on sqlite. @licensed specs are skipped: they need N8N_LICENSE_* secrets
+  # (upstream's multi-main suite), which this repository does not have.
   e2e:
     name: E2E
     needs: [install-and-build, prepare-docker]
@@ -263,7 +261,7 @@ jobs:
     with:
       branch: ${{ needs.install-and-build.outputs.commit_sha }}
       test-mode: docker-artifact
-      test-command: ${{ github.event.pull_request.head.repo.fork == true && 'pnpm --filter=n8n-playwright test:container:sqlite:e2e --grep-invert=@licensed' || 'pnpm --filter=n8n-playwright test:container:multi-main:e2e' }}
+      test-command: pnpm --filter=n8n-playwright test:container:sqlite:e2e --grep-invert=@licensed
       workers: '1'
       pre-generated-matrix: ${{ needs.install-and-build.outputs.matrix }}
       artifact-prefix: e2e
