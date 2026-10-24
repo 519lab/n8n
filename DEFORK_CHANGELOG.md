@@ -16,6 +16,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-10-24 — LDAP, SAML and OIDC on without a license (#133 wave 2)
+
+**Ungate; no `.ee` source involved.** The SSO backends rebuilt in E5–E7 were
+gated on `feat:ldap` / `feat:saml` / `feat:oidc`, so their settings routes
+answered 403 and the login options never appeared. They are now in
+`FAIR_CODE_LICENSED_FEATURES`; the OIDC E2E spec drops its `@licensed` tag.
+
 ### 2026-10-24 — Sharing, team projects and RBAC on without a license (#133 wave 1)
 
 **Ungate; no `.ee` source involved.** Sharing, team projects and their admin/
