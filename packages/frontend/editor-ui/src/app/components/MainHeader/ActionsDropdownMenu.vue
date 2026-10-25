@@ -41,6 +41,7 @@ import { useFavoritesStore } from '@/app/stores/favorites.store';
 import { ResourceType } from '@/features/collaboration/projects/projects.utils';
 import { useMoveResourceToProjectToast } from '@/features/collaboration/projects/composables/useMoveResourceToProjectToast';
 import { injectWorkflowDocumentStore } from '@/app/stores/workflowDocument.store';
+import { useWorkflowSaving } from '@/app/composables/useWorkflowSaving';
 
 const props = defineProps<{
 	workflowPermissions: PermissionsRecord['workflow'];
@@ -72,6 +73,7 @@ const moveWorkflowEventBus = createEventBus<WorkflowListEventMap>();
 const { showMoveToProjectToast } = useMoveResourceToProjectToast();
 const workflowTelemetry = useTelemetry();
 const favoritesStore = useFavoritesStore();
+const { saveCurrentWorkflow } = useWorkflowSaving({ router });
 const workflowDocumentStore = injectWorkflowDocumentStore();
 
 const onExecutionsTab = computed(() => {
@@ -399,6 +401,10 @@ async function onWorkflowMenuSelect(action: WORKFLOW_MENU_ACTIONS): Promise<void
 			break;
 		}
 		case WORKFLOW_MENU_ACTIONS.SHARE: {
+			// Sharing needs the workflow to exist on the server; a new one may still be
+			// waiting on autosave.
+			if (props.isNewWorkflow && !(await saveCurrentWorkflow())) break;
+
 			uiStore.openModalWithData({
 				name: WORKFLOW_SHARE_MODAL_KEY,
 				data: { id: props.id },
