@@ -16,6 +16,36 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-10-24 — Dynamic (end-user) credentials without a license; external endpoints rebuilt (#133 wave 5)
+
+**Rebuild + ungate; no `.ee` source involved.** The four external
+dynamic-credentials routes (`GET /rest/workflows/:id/execution-status` and
+authorize / revoke / provider-redirect on `/rest/credentials/:id`) are rebuilt.
+An OAuth2 UserInfo identifier (`credential-resolver.oauth2-1.0`, subject = the
+UserInfo `sub`) and a `BearerTokenExtractor` webhook identity hook are added, and
+`feat:dynamicCredentials` joins `FAIR_CODE_LICENSED_FEATURES`.
+- **Admission:** an n8n session or the static `X-Authorization` token.
+- **Connect links:** opaque, single-use, and bound to the browser that opens them.
+- **External identities:** sent only to resolvers that can verify them; a raw
+  token is never used as a storage key.
+
+Clean-room sources: the fair-code consumers (`chat.api.ts`, the E2E helper and
+specs, `WorkflowExecutionStatusSchema`, `oauth.service.ts`, `McpServer.ts`) plus
+OpenID Connect Discovery 1.0, OpenID Connect Core 1.0 §5.3 and RFC 6750. The
+contract, decisions and the one accepted residual risk (an API-client-started
+external flow isn't browser-bound) are in `.defork/e12b-contract.md`.
+
+Bugs fixed while making the un-skipped E2E specs pass (all 9 now pass):
+- **Hook matching (#147):** identity-extractor hooks were matched on the bare
+  node name, so webhook workflows using an extractor could not be published.
+- **Import cycle:** two services imported each other, leaving the gate's link
+  minting undefined, so gated webhook/MCP calls answered 500 instead of 428 with
+  connect links.
+- **Connect flow:** gate links dropped the n8n token's `resource` and kept a
+  `Bearer` prefix, so the connect callback could not identify the user and never
+  saved the credential.
+- **Execution status:** always offers both the authorize and revoke links.
+
 ### 2026-10-24 — Multi-main without a license; source control locks cluster-wide (#133 wave 5)
 
 **Ungate + fix; no `.ee` source involved.** Source-control workfolder
