@@ -166,6 +166,10 @@ test.describe(
 			await n8n.canvas.logsPanel.sendManualChatMessage('Send welcome email to john@gmail.com');
 			const approveButton = n8n.canvas.manualChat.getApproveButton();
 			await expect(approveButton).toBeVisible({ timeout: 15000 });
+			// The default approval message shows the tool input as JSON
+			const approvalMessage = n8n.canvas.getManualChatLatestBotMessage();
+			await expect(approvalMessage).toContainText('"receiver":"john@gmail.com"');
+			await expect(approvalMessage).not.toContainText('[object Object]');
 			await approveButton.click();
 
 			// Approving resumes the run, the tool executes, and the Chat node posts the

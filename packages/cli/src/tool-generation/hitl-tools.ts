@@ -89,11 +89,11 @@ function filterHitlToolProperties(
 		name: 'message',
 		type: 'string',
 		default:
-			'=The agent wants to run this tool: {{ $tool.name }}\n\nInput:\n{{ $tool.parameters }}',
+			'=The agent wants to run this tool: {{ $tool.name }}\n\nInput:\n{{ JSON.stringify($tool.parameters) }}',
 		required: true,
 		typeOptions: { rows: 3 },
 		description:
-			'Message to send for approval. Use expressions to include tool details: {{ $tool.parameters }}, {{ $json.toolCallId }}',
+			'Message to send for approval. Use expressions to include tool details: {{ $tool.name }}, {{ JSON.stringify($tool.parameters) }}, {{ $json.toolCallId }}',
 	});
 
 	for (const prop of properties) {

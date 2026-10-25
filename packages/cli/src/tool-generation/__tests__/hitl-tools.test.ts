@@ -297,7 +297,7 @@ describe('hitl-tools', () => {
 			expect(messageProp).toBeDefined();
 			expect(messageProp?.type).toBe('string');
 			expect(messageProp?.default).toBe(
-				'=The agent wants to run this tool: {{ $tool.name }}\n\nInput:\n{{ $tool.parameters }}',
+				'=The agent wants to run this tool: {{ $tool.name }}\n\nInput:\n{{ JSON.stringify($tool.parameters) }}',
 			);
 		});
 
@@ -321,7 +321,7 @@ describe('hitl-tools', () => {
 			// Should only have one message property (our HITL one, not the original)
 			expect(messageProps).toHaveLength(1);
 			expect(messageProps[0].default).toBe(
-				'=The agent wants to run this tool: {{ $tool.name }}\n\nInput:\n{{ $tool.parameters }}',
+				'=The agent wants to run this tool: {{ $tool.name }}\n\nInput:\n{{ JSON.stringify($tool.parameters) }}',
 			);
 		});
 
