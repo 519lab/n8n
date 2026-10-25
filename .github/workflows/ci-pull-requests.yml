@@ -260,9 +260,7 @@ jobs:
       artifact-prefix: sanity
     secrets: inherit
 
-  # Full e2e run on sqlite. @licensed specs are skipped for now: their features are still
-  # license-gated in this build (packages/cli/src/license.ts) and are being ungated or
-  # removed feature by feature. The goal is no license dependency at all.
+  # Full e2e run on sqlite.
   e2e:
     name: E2E
     needs: [install-and-build, prepare-docker]
@@ -277,7 +275,7 @@ jobs:
     with:
       branch: ${{ needs.install-and-build.outputs.commit_sha }}
       test-mode: docker-artifact
-      test-command: pnpm --filter=n8n-playwright test:container:sqlite:e2e --grep-invert=@licensed
+      test-command: pnpm --filter=n8n-playwright test:container:sqlite:e2e
       workers: '1'
       pre-generated-matrix: ${{ needs.install-and-build.outputs.matrix }}
       artifact-prefix: e2e

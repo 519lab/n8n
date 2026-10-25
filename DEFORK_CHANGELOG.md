@@ -26,6 +26,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 Clean-room sources: the log-streaming specs and page object, `packages/workflow/src/message-event-bus.ts`, and the fair-code `ParameterInput*` / `CredentialInputs` patterns.
 
+### 2026-10-24 — Evaluation compare view rebuilt to its contract; cached insights show (#153)
+
+**Fix; no `.ee` source involved.** The rebuilt compare page was missing elements its page object expects:
+- the header
+- the score chart
+- the tabs
+- the cases table, sorted by score spread
+- per-version outputs
+- the dataset-mismatch banner
+
+It also read `.data` from an already-unwrapped insights response, so cached AI insights never showed.
+
+Clean-room sources: `eval-collections-compare.spec.ts` and `EvaluationComparePage`, the fair-code `eval-insights` service and controller, and the `@n8n/api-types` eval schemas.
+
 ### 2026-10-24 — E2E baseline: product fixes found by the un-skipped suite, plus a working test stack
 
 **Fixes; no `.ee` source involved.** Develop's full sqlite E2E run had 35+
@@ -83,6 +97,74 @@ Clean-room sources:
 - The fair-code `CredentialsFinderService` global-read helpers.
 - `SsrfProtectionConfig` and the existing SAML/OIDC gating pattern.
 - simple-git's public option types.
+
+### 2026-10-24 — Secret-provider connections UI matches its contract; edits keep stored passwords
+
+**Fix; no `.ee` source involved.**
+
+- **Changed (operators): `N8N_EXTERNAL_SECRETS_FOR_PROJECTS` is now
+  `N8N_ENV_FEAT_EXTERNAL_SECRETS_FOR_PROJECTS`.** That is the name the E2E
+  capability (the fair-code consumer) pins. Likewise
+  `N8N_EXTERNAL_SECRETS_MULTIPLE_CONNECTIONS` becomes
+  `N8N_ENV_FEAT_EXTERNAL_SECRETS_MULTIPLE_CONNECTIONS`.
+  - A deployment still setting the old names falls back silently to the legacy
+    single-connection settings page, so rename the variable on upgrade.
+  - The `N8N_ENV_FEAT_` prefix also exposes both flags to the frontend's
+    `envFeatureFlags`.
+- **Fixed: editing a saved connection replaced its stored passwords with the
+  blanking placeholder (#151).** `update()` now restores blanked password fields
+  from the stored settings, unless the provider type changes.
+- **Fixed: the connections settings page, connection modal and delete modal
+  didn't match their page objects.**
+  - Saving a new connection now keeps the modal open in edit mode, so a second
+    save is a PATCH, not a duplicate create.
+  - Every save is followed by a connection test, which shows a success callout
+    or an error banner.
+  - Fields render from the provider's property descriptions, so
+    `displayOptions` apply.
+  - Scope is a single select: Global, or one project.
+  - The card menu reads Edit / Share / Delete; it read "Impact:" before.
+  - The delete modal uses its default `deleteSecretsProvider-modal` id and
+    states the number of secrets removed.
+- **Fixed: the masked `$secrets` hint in credentials.** A referenced secret now
+  shows as `*********` in project-scoped mode too, and `$secrets` completions
+  include global and project secrets.
+
+Clean-room sources:
+- `secret-providers-connections-ui.spec.ts` and its page objects.
+- `fixtures/capabilities.ts`.
+- The fair-code `ParameterInputExpanded` / `CredentialInputs` pattern.
+- `settings-redaction.ts`.
+
+### 2026-10-24 — Dynamic (end-user) credentials without a license; external endpoints rebuilt (#133 wave 5)
+
+**Rebuild + ungate; no `.ee` source involved.** The four external
+dynamic-credentials routes (`GET /rest/workflows/:id/execution-status` and
+authorize / revoke / provider-redirect on `/rest/credentials/:id`) are rebuilt.
+An OAuth2 UserInfo identifier (`credential-resolver.oauth2-1.0`, subject = the
+UserInfo `sub`) and a `BearerTokenExtractor` webhook identity hook are added, and
+`feat:dynamicCredentials` joins `FAIR_CODE_LICENSED_FEATURES`.
+- **Admission:** an n8n session or the static `X-Authorization` token.
+- **Connect links:** opaque, single-use, and bound to the browser that opens them.
+- **External identities:** sent only to resolvers that can verify them; a raw
+  token is never used as a storage key.
+
+Clean-room sources: the fair-code consumers (`chat.api.ts`, the E2E helper and
+specs, `WorkflowExecutionStatusSchema`, `oauth.service.ts`, `McpServer.ts`) plus
+OpenID Connect Discovery 1.0, OpenID Connect Core 1.0 §5.3 and RFC 6750. The
+contract, decisions and the one accepted residual risk (an API-client-started
+external flow isn't browser-bound) are in `.defork/e12b-contract.md`.
+
+Bugs fixed while making the un-skipped E2E specs pass (all 9 now pass):
+- **Hook matching (#147):** identity-extractor hooks were matched on the bare
+  node name, so webhook workflows using an extractor could not be published.
+- **Import cycle:** two services imported each other, leaving the gate's link
+  minting undefined, so gated webhook/MCP calls answered 500 instead of 428 with
+  connect links.
+- **Connect flow:** gate links dropped the n8n token's `resource` and kept a
+  `Bearer` prefix, so the connect callback could not identify the user and never
+  saved the credential.
+- **Execution status:** always offers both the authorize and revoke links.
 
 ### 2026-10-24 — Multi-main without a license; source control locks cluster-wide (#133 wave 5)
 

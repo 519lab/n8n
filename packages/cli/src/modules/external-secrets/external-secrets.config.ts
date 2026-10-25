@@ -6,8 +6,12 @@ export class ExternalSecretsConfig {
 	@Env('N8N_EXTERNAL_SECRETS_UPDATE_INTERVAL')
 	updateInterval: number = 300;
 
-	/** Whether to allow project-scoped external-secrets provider connections. */
-	@Env('N8N_EXTERNAL_SECRETS_FOR_PROJECTS')
+	/**
+	 * Whether to allow project-scoped external-secrets provider connections.
+	 * Both connection-mode flags use the `N8N_ENV_FEAT_` opt-in form, which the
+	 * E2E `external-secrets` capability pins.
+	 */
+	@Env('N8N_ENV_FEAT_EXTERNAL_SECRETS_FOR_PROJECTS')
 	externalSecretsForProjects: boolean = false;
 
 	/**
@@ -15,6 +19,6 @@ export class ExternalSecretsConfig {
 	 * {@link externalSecretsForProjects} select the connection-entity storage
 	 * model; with both off the instance stays on the single legacy settings row.
 	 */
-	@Env('N8N_EXTERNAL_SECRETS_MULTIPLE_CONNECTIONS')
+	@Env('N8N_ENV_FEAT_EXTERNAL_SECRETS_MULTIPLE_CONNECTIONS')
 	externalSecretsMultipleConnections: boolean = false;
 }
