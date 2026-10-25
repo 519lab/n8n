@@ -1,4 +1,6 @@
 import getPort from 'get-port';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import type { StartedNetwork, StartedTestContainer, StoppedTestContainer } from 'testcontainers';
 import { Network } from 'testcontainers';
 
@@ -358,7 +360,41 @@ export async function createN8NStack(config: N8NConfig = {}): Promise<N8NStack> 
 			recordStartupFailure(uniqueProjectName, error.diagnostics, message);
 		}
 		telemetry.flush(false, message);
+		if (process.env.N8N_CONTAINERS_KEEPALIVE !== 'true') {
+			await removeFailedStack(containers, network, uniqueProjectName);
+		}
 		throw error;
+	}
+}
+
+const execFileAsync = promisify(execFile);
+
+/**
+ * A stack that fails to start would otherwise leak: services use `withReuse()`,
+ * which Ryuk never reaps, and a service failing midway (e.g. sandbox API up,
+ * runner down) never hands its started containers back. Every container carries
+ * the stack's compose project label, so sweep by label after stopping the rest.
+ */
+async function removeFailedStack(
+	containers: StartedTestContainer[],
+	network: StartedNetwork,
+	uniqueProjectName: string,
+): Promise<void> {
+	await Promise.allSettled(containers.map(async (container) => await container.stop()));
+	try {
+		const { stdout } = await execFileAsync('docker', [
+			'ps',
+			'-aq',
+			'--filter',
+			`label=com.docker.compose.project=${uniqueProjectName}`,
+		]);
+		const ids = stdout.split('\n').filter(Boolean);
+		if (ids.length > 0) await execFileAsync('docker', ['rm', '-f', '-v', ...ids]);
+		await network.stop();
+	} catch (error) {
+		console.warn(
+			`Cleanup of failed stack ${uniqueProjectName} was incomplete: ${error instanceof Error ? error.message : String(error)}`,
+		);
 	}
 }
 
