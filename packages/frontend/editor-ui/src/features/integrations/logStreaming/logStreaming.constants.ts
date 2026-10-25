@@ -1,3 +1,4 @@
+import type { BaseTextKey } from '@n8n/i18n';
 import { MessageEventBusDestinationTypeNames } from 'n8n-workflow';
 
 import type { EventGroup, MessageEventBusDestinationType } from './logStreaming.types';
@@ -5,12 +6,26 @@ import type { EventGroup, MessageEventBusDestinationType } from './logStreaming.
 /** Base path of the log-streaming (event bus) REST endpoints (mounted under `/rest`). */
 export const LOG_STREAMING_API_ROOT = '/eventbus';
 
-/** Destination types offered when creating a new log-stream destination. */
+/** Destination types offered when creating a new log-stream destination, in display order. */
 export const DESTINATION_TYPES: MessageEventBusDestinationType[] = [
 	MessageEventBusDestinationTypeNames.webhook,
 	MessageEventBusDestinationTypeNames.sentry,
 	MessageEventBusDestinationTypeNames.syslog,
 ];
+
+/** Display-name i18n key per destination type. */
+export const DESTINATION_TYPE_LABEL_KEYS: Record<MessageEventBusDestinationType, BaseTextKey> = {
+	[MessageEventBusDestinationTypeNames.webhook]:
+		'settings.log-streaming.$$MessageEventBusDestinationWebhook',
+	[MessageEventBusDestinationTypeNames.sentry]:
+		'settings.log-streaming.$$MessageEventBusDestinationSentry',
+	[MessageEventBusDestinationTypeNames.syslog]:
+		'settings.log-streaming.$$MessageEventBusDestinationSyslog',
+};
+
+/** Fallback label for a destination whose type the UI does not know. */
+export const UNKNOWN_DESTINATION_TYPE_LABEL_KEY: BaseTextKey =
+	'settings.log-streaming.$$AbstractMessageEventBusDestination';
 
 /**
  * Subscribable event tree, grouped by prefix. Group `name`s (e.g. `n8n.workflow`)
@@ -104,3 +119,20 @@ export const EVENT_GROUPS: EventGroup[] = [
 		],
 	},
 ];
+
+/** Display-name i18n key per event group. */
+export const EVENT_GROUP_LABEL_KEYS: Partial<Record<string, BaseTextKey>> = {
+	'n8n.audit': 'settings.log-streaming.eventGroup.n8n.audit',
+	'n8n.workflow': 'settings.log-streaming.eventGroup.n8n.workflow',
+	'n8n.node': 'settings.log-streaming.eventGroup.n8n.node',
+	'n8n.ai': 'settings.log-streaming.eventGroup.n8n.ai',
+	'n8n.runner': 'settings.log-streaming.eventGroup.n8n.runner',
+	'n8n.queue': 'settings.log-streaming.eventGroup.n8n.queue',
+};
+
+/** Events with a friendly display name; any other event is shown by its name. */
+export const EVENT_LABEL_KEYS: Partial<Record<string, BaseTextKey>> = {
+	'n8n.audit.mcp.oauth.completed': 'settings.log-streaming.eventName.n8n.audit.mcp.oauth.completed',
+	'n8n.audit.mcp.tool.called': 'settings.log-streaming.eventName.n8n.audit.mcp.tool.called',
+	'n8n.audit.mcp.access.updated': 'settings.log-streaming.eventName.n8n.audit.mcp.access.updated',
+};
