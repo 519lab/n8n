@@ -8,7 +8,7 @@
 			"json": {
 				"model": "claude-opus-4-6",
 				"stream": true,
-				"max_tokens": 8192,
+				"max_tokens": 16384,
 				"tools": [
 					{
 						"name": "Search_web_in_Jina_AI",
@@ -40,10 +40,6 @@
 					{
 						"role": "assistant",
 						"content": [
-							{
-								"type": "text",
-								"text": "Calling Search_web_in_Jina_AI with input: {\"Search_Query\":\"What is n8n?\",\"Simplify\":true,\"id\":\"toolu_013Sx8uVanKrNGDG9CFNmkHG\"}"
-							},
 							{
 								"type": "tool_use",
 								"id": "toolu_013Sx8uVanKrNGDG9CFNmkHG",
