@@ -47,7 +47,7 @@ All surviving test imports and the test-server endpoint loader must be migrated 
 The surviving config pins:
 
 - `N8N_EXTERNAL_SECRETS_UPDATE_INTERVAL`, numeric seconds, default `300`.
-- `N8N_EXTERNAL_SECRETS_FOR_PROJECTS`, default `false`.
+- `N8N_ENV_FEAT_EXTERNAL_SECRETS_FOR_PROJECTS`, default `false` (the name the E2E capability pins; renamed 2026-10-24 from `N8N_EXTERNAL_SECRETS_FOR_PROJECTS`).
 
 See [external-secrets.config.ts](/home/ggrace/linux-coding/n8n/packages/cli/src/modules/external-secrets/external-secrets.config.ts:5).
 
