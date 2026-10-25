@@ -16,6 +16,64 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-10-24 — E2E baseline: product fixes found by the un-skipped suite, plus a working test stack
+
+**Fixes; no `.ee` source involved.** Develop's full sqlite E2E run had 35+
+failing specs. They came from real product bugs, rebuilt UIs that didn't match
+their page objects, and a broken test stack. The log-streaming settings UI and
+the evaluation compare view are rebuilt in their own PRs.
+
+Fixed:
+- **Global credentials were unreadable by anyone but their owner (#150).** The
+  rebuilt access check (E1) granted credential scopes only through a share, so
+  `GET /rest/credentials/:id` answered 403. A `credential:read` check on a global
+  credential now passes; write scopes still need a share.
+- **Log-streaming webhook and Sentry destinations ignored the instance SSRF
+  setting (#149).** Sinks on private addresses never received events. They now
+  follow `N8N_SSRF_PROTECTION_ENABLED`.
+- **Sentry destinations reported failure on any non-2xx.** Delivery is now
+  fire-and-forget, as with the Sentry SDK: rejections are logged, and a
+  malformed DSN still fails the send.
+- **Source control couldn't connect to SSH remotes (#152).** simple-git 4
+  rejected `GIT_SSH_COMMAND`, and passing the whole environment made any
+  inherited `GIT_*` variable fatal. The command now goes in as `core.sshCommand`
+  config.
+- **Sharing.**
+  - The share modal and the credential Sharing tab hid the selector for
+    personal-space resources and offered it for team projects, the opposite of
+    the backend's scope rules.
+  - The share modal read a stale cache stub of the open workflow, and opening
+    it on a brand-new workflow raced the autosave. It now fetches the workflow,
+    and saves a new one first.
+- **Settings views.**
+  - Variables modal: default modal id, and the inputs are reachable inside it.
+  - Worker view: has its licensed wrapper.
+  - Source control: repo-URL placeholder, read-only checkbox id, and a
+    "Protected" label that never rendered.
+
+Test stack:
+- The sandbox runner image now serves HTTPS only, so Instance AI stacks never
+  became ready. The stack now advertises and health-checks it over https.
+- The worker-scoped `n8nContainer` fixture gets a 5-minute timeout. The 60s
+  default killed heavy stacks mid-start.
+- A stack that fails to start is removed by its compose label. Reused
+  containers are never reaped by Ryuk, and they had accumulated by the dozen.
+- The result-toast wait is 15s, because a cold task runner is slower than 3s.
+- The chat session-ID read waits for the copy to land. It used to race the
+  app's clipboard write.
+- HITL specs click Approve normally. A middle-click never fires `click` on a
+  `<button>`.
+- `workflow-builder` "stop generation" is fixme: this build ships without the
+  builder agent, so there is no stream to stop.
+- Still open: HITL resume in manual chat and one Instance AI recording
+  mismatch (#154).
+
+Clean-room sources:
+- The E2E specs and page objects.
+- The fair-code `CredentialsFinderService` global-read helpers.
+- `SsrfProtectionConfig` and the existing SAML/OIDC gating pattern.
+- simple-git's public option types.
+
 ### 2026-10-24 — Multi-main without a license; source control locks cluster-wide (#133 wave 5)
 
 **Ungate + fix; no `.ee` source involved.** Source-control workfolder
