@@ -153,6 +153,9 @@ describe('WorkflowHistoryCompactionService', () => {
 	});
 
 	it('should compact on start up ', () => {
+		// Outside the 3 AM window, or the daily trim fires on start up too
+		vi.setSystemTime(new Date(2026, 10, 10, 1, 0, 0));
+
 		const compactingService = new WorkflowHistoryCompactionService(
 			config,
 			globalConfig,
@@ -176,6 +179,8 @@ describe('WorkflowHistoryCompactionService', () => {
 
 		expect(optimizeHistoriesSpy).toHaveBeenCalled();
 		expect(trimLongRunningHistoriesSpy).not.toHaveBeenCalled();
+
+		vi.useRealTimers();
 	});
 
 	it('should trim on start up if flag is provided', () => {
