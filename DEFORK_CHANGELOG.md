@@ -16,6 +16,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-10-24 — Log-streaming settings UI rebuilt to its page-object contract
+
+**Fix; no `.ee` source involved.** The rebuilt page and modal didn't match `SettingsLogStreamingPage`, and couldn't create a destination at all: a new destination posted `id: ''` and the API rejected it.
+- The page now has licensed and unlicensed action boxes and a single add button.
+- Each destination has a card with an open/delete menu and an enable switch.
+- Creating a destination is a two-step modal: pick the type, then fill in its settings. The settings render from parameter descriptions.
+- After a save the modal stays open and offers a test-event button.
+
+Clean-room sources: the log-streaming specs and page object, `packages/workflow/src/message-event-bus.ts`, and the fair-code `ParameterInput*` / `CredentialInputs` patterns.
+
 ### 2026-10-24 — External-secrets providers work; first-time provider setup and OIDC sign-in fixed (#144)
 
 **Rebuild + fixes; no `.ee` source involved.** The E8 framework could store
