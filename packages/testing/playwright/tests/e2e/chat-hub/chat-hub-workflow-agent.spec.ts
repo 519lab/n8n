@@ -35,7 +35,8 @@ test.describe(
 			await tab1.ndv.fillParameterInput('System Message', 'Reply in Finnish');
 			await tab1.ndv.close();
 			await tab1.canvas.publishWorkflow();
-			await tab1Page.close();
+			// Fire beforeunload like a real tab close, so the editor releases its write lock
+			await tab1Page.close({ runBeforeUnload: true });
 
 			// STEP: Select the workflow agent for new conversation
 			await n8n.navigate.toChatHub();
@@ -57,7 +58,7 @@ test.describe(
 			await tab2.ndv.getParameterSwitch('availableInChat').click();
 			await tab2.ndv.close();
 			await tab2.canvas.publishWorkflow();
-			await tab2Page.close();
+			await tab2Page.close({ runBeforeUnload: true });
 			await n8n.navigate.toChatHubWorkflowAgents();
 			await expect(n8n.chatHubWorkflowAgents.getEmptyText()).toBeVisible();
 		});

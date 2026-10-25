@@ -90,10 +90,39 @@ export const test = base.extend<ChatHubFixtures>({
 				}
 			};
 
+			const getProviderSettings = async () => {
+				const response = await ownerApi.request.get('/rest/chat/settings');
+				if (!response.ok()) {
+					throw new Error(
+						`Failed to read Chat Hub settings: ${response.status()} ${await response.text()}`,
+					);
+				}
+				const { data } = (await response.json()) as {
+					data: { providers: Record<string, Record<string, unknown>> };
+				};
+				return data.providers;
+			};
+
 			// Chat Hub is disabled by default; turn it on for these tests.
 			await setEnabled(true);
+			const initialProviders = await getProviderSettings();
 
 			await use(undefined);
+
+			// Undo provider changes (e.g. a model allowlist), which would otherwise change the
+			// default model, and so the recorded LLM requests, for later specs on this instance.
+			const currentProviders = await getProviderSettings();
+			for (const [provider, settings] of Object.entries(initialProviders)) {
+				if (JSON.stringify(currentProviders[provider]) === JSON.stringify(settings)) continue;
+				const response = await ownerApi.request.post('/rest/chat/settings', {
+					data: { payload: settings },
+				});
+				if (!response.ok()) {
+					throw new Error(
+						`Failed to restore Chat Hub ${provider} settings: ${response.status()} ${await response.text()}`,
+					);
+				}
+			}
 
 			// Restore the default (disabled) state so a shared instance isn't left enabled.
 			await setEnabled(false);
