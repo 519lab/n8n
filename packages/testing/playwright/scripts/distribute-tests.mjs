@@ -43,11 +43,10 @@ const CONTAINER_STARTUP_TIME = 22_500; // 22.5s average per fixture
 // (no container reuse + slower execution), high-flake specs balloon into
 // multi-minute retry tails that tip a single shard over its timeout. Quarantine
 // them here until the flakiness is fixed via the Flaky pipeline.
-//   tests/e2e/ai/hitl-for-tools.spec.ts — 34.2% flakyRate (2x next worst)
 // NOTE: this list is shared with impact-scoped PR CI, so a quarantined spec is
 // removed from PR shards too and cannot gate a PR. If a shard's whole spec list
 // is quarantined it becomes the `skip` sentinel below (never the full suite).
-const QUARANTINE = new Set(['tests/e2e/ai/hitl-for-tools.spec.ts']);
+const QUARANTINE = new Set();
 
 const CAPABILITY_IMAGES = {
 	email: ['mailpit'],
