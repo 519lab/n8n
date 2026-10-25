@@ -6,6 +6,7 @@ import { useCollaborationStore } from './collaboration.store';
 const mockFetchWorkflow = vi.fn();
 const mockShowMessage = vi.fn();
 const mockUiStore = reactive({ stateIsDirty: false });
+const mockAddBeforeUnloadHandler = vi.fn();
 
 const mockPushStore = {
 	send: vi.fn(),
@@ -87,7 +88,7 @@ vi.mock('@/app/composables/useBeforeUnload', () => ({
 	useBeforeUnload: () => ({
 		addBeforeUnloadEventBindings: vi.fn(),
 		removeBeforeUnloadEventBindings: vi.fn(),
-		addBeforeUnloadHandler: vi.fn(),
+		addBeforeUnloadHandler: (handler: () => void) => mockAddBeforeUnloadHandler(handler),
 	}),
 }));
 
@@ -136,6 +137,36 @@ describe('useCollaborationStore', () => {
 
 			expect(mockPushStore.send).toHaveBeenCalledWith({
 				type: 'workflowClosed',
+				workflowId: 'workflow-1',
+			});
+		});
+	});
+
+	describe('page unload', () => {
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
+		test('should announce the workflow as open again when the user stays on a dirty page', async () => {
+			vi.useFakeTimers();
+			const store = useCollaborationStore();
+			await store.initialize('workflow-1');
+			const onBeforeUnload = mockAddBeforeUnloadHandler.mock.calls[0][0] as () => void;
+			mockUiStore.stateIsDirty = true;
+			mockPushStore.send.mockClear();
+
+			onBeforeUnload();
+
+			expect(mockPushStore.send).toHaveBeenCalledWith({
+				type: 'workflowClosed',
+				workflowId: 'workflow-1',
+			});
+
+			mockPushStore.send.mockClear();
+			vi.advanceTimersByTime(5000);
+
+			expect(mockPushStore.send).toHaveBeenCalledWith({
+				type: 'workflowOpened',
 				workflowId: 'workflow-1',
 			});
 		});
