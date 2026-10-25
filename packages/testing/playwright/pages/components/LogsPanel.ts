@@ -1,4 +1,4 @@
-import type { Locator } from '@playwright/test';
+import { expect, type Locator } from '@playwright/test';
 
 import { ManualChatModal } from './ManualChatModal';
 import { RunDataPanel } from './RunDataPanel';
@@ -119,8 +119,16 @@ export class LogsPanel {
 	 */
 	async getSessionId(clipboard: ClipboardHelper): Promise<string> {
 		await clipboard.grant();
+		// The app copies asynchronously; read only once the copy has replaced a sentinel,
+		// or a quick read returns the previous session ID.
+		const sentinel = `pending-${Date.now()}`;
+		await clipboard.writeText(sentinel);
 		await this.getSessionIdButton().click();
-		return await clipboard.readText();
+		let sessionId = sentinel;
+		await expect
+			.poll(async () => (sessionId = await clipboard.readText()), { timeout: 5_000 })
+			.not.toBe(sentinel);
+		return sessionId;
 	}
 
 	/**
