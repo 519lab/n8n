@@ -106,22 +106,9 @@ jobs:
         if: ${{ !contains(inputs.test-command, 'test:local') }}
         run: pnpm --filter n8n-containers exec tsx pull-test-images.ts ${{ matrix.images }} || true
 
-      - name: Filter specs to previous-attempt failures
-        if: github.run_attempt > 1 && matrix.specs != ''
-        id: filter-shard
-        env:
-          CANDIDATES: ${{ matrix.specs }}
-          GITHUB_RUN_ID: ${{ github.run_id }}
-          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
-        run: |
-          FILTERED=$(echo "$CANDIDATES" | node packages/testing/janitor/dist/cli.js filter-shard | tr '\n' ' ' | sed 's/ *$//')
-          echo "specs=$FILTERED" >> "$GITHUB_OUTPUT"
-
       - name: Resolve shard args
         id: shard-args
         env:
-          # On retry, prefer the filtered subset (failed specs from previous attempt)
-          RETRY_SPECS: ${{ steps.filter-shard.outputs.specs }}
           MATRIX_SPECS: ${{ matrix.specs }}
           # toJSON distinguishes an orchestrated-but-empty spec list ("") from a
           # non-orchestrated matrix entry that never set `specs` (null). Only the
@@ -131,9 +118,7 @@ jobs:
           SHARD: ${{ matrix.shard }}
           JOB_TOTAL: ${{ strategy.job-total }}
         run: |
-          if [ -n "$RETRY_SPECS" ]; then
-            echo "args=$RETRY_SPECS" >> "$GITHUB_OUTPUT"
-          elif [ "$MATRIX_SPECS_JSON" = "null" ]; then
+          if [ "$MATRIX_SPECS_JSON" = "null" ]; then
             echo "args=--shard=$SHARD/$JOB_TOTAL" >> "$GITHUB_OUTPUT"
           elif [ -z "$MATRIX_SPECS" ]; then
             echo "This shard's spec list is empty — nothing to run, skipping."

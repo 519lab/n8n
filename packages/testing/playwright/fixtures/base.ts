@@ -11,11 +11,6 @@ import { N8N_AUTH_COOKIE } from '../config/constants';
 import { setupDefaultInterceptors } from '../config/intercepts';
 import { backendV8CoverageFixtures } from '../fixtures/backend-v8-coverage';
 import { observabilityFixtures, type ObservabilityTestFixtures } from '../fixtures/observability';
-import {
-	quarantineFixtures,
-	type QuarantineTestFixtures,
-	type QuarantineWorkerFixtures,
-} from '../fixtures/quarantine';
 import { v8CoverageFixtures } from '../fixtures/v8-coverage';
 import { n8nPage } from '../pages/n8nPage';
 import { ApiHelpers } from '../services/api-helper';
@@ -81,8 +76,8 @@ function logKeepalive(container: N8NStack): void {
 }
 
 export const test = base.extend<
-	TestFixtures & CurrentsFixtures & ObservabilityTestFixtures & QuarantineTestFixtures,
-	WorkerFixtures & CurrentsWorkerFixtures & QuarantineWorkerFixtures
+	TestFixtures & CurrentsFixtures & ObservabilityTestFixtures,
+	WorkerFixtures & CurrentsWorkerFixtures
 >({
 	...currentsFixtures.baseFixtures,
 	...v8CoverageFixtures,
@@ -90,7 +85,6 @@ export const test = base.extend<
 	...currentsFixtures.actionFixtures,
 	...observabilityFixtures,
 	...consoleErrorFixtures,
-	...quarantineFixtures,
 
 	// Option for test.use({ capability: 'proxy' }) - transformed into N8NStack by n8nContainer
 	capability: [undefined, { scope: 'worker', option: true }],
