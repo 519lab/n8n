@@ -434,5 +434,5 @@ pnpm stack:clean:all
 - **Container Reuse**: Set `TESTCONTAINERS_REUSE_ENABLE=true` for faster restarts
 - **Parallel Testing**: Use `--name` to run multiple stacks without conflicts
 - **Custom Image**: Set `TEST_IMAGE_N8N=n8nio/n8n:dev` to use a different image
-- **Multi-Main**: Requires queue mode and license key in `N8N_LICENSE_ACTIVATION_KEY`
+- **Multi-Main**: Requires queue mode
 - **Using podman**: This does not work with podman out of the box - you need to ensure testcontainers is set correctly [https://podman-desktop.io/tutorial/testcontainers-with-podman](https://podman-desktop.io/tutorial/testcontainers-with-podman)
