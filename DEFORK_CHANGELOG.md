@@ -26,6 +26,35 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 Clean-room sources: the log-streaming specs and page object, `packages/workflow/src/message-event-bus.ts`, and the fair-code `ParameterInput*` / `CredentialInputs` patterns.
 
+### 2026-10-24 — External-secrets providers work; first-time provider setup and OIDC sign-in fixed (#144)
+
+**Rebuild + fixes; no `.ee` source involved.** The E8 framework could store
+provider settings but never return a secret: every provider type was a stub
+that failed on connect. All six are now implemented:
+- AWS Secrets Manager: IAM user or auto-detected credentials, and it honours
+  `AWS_ENDPOINT_URL`.
+- GCP Secret Manager: service-account key.
+- Azure Key Vault: client-secret credential.
+- HashiCorp Vault: token, AppRole or userpass auth, with KV v1/v2 discovery.
+- Infisical: Universal Auth.
+- 1Password: Connect.
+
+JSON secrets are exposed parsed. No provider logs secret values or credentials,
+and user-facing errors are scrubbed of them.
+
+Fixed:
+- **First-time provider setup.** On a fresh instance the legacy
+  `/external-secrets/providers` API listed no providers, and the first save
+  answered 404 "Could not find provider". It now lists every provider type,
+  unconfigured ones as disconnected.
+- **OIDC sign-in.** The SSO button left the user on a page showing the
+  provider URL as JSON (`{"data":"https://..."}`). The route now redirects to
+  the provider's login page.
+
+Clean-room sources: the fair-code `SecretsProvider` contract and its
+consumers, and the public vendor SDKs and HTTP APIs (AWS, Google Cloud, Azure,
+Vault, Infisical, 1Password Connect).
+
 ### 2026-10-24 — Evaluation compare view rebuilt to its contract; cached insights show (#153)
 
 **Fix; no `.ee` source involved.** The rebuilt compare page was missing elements its page object expects:
