@@ -10,7 +10,6 @@ import type {
 
 import type {
 	AddDatasetRowPayload,
-	AiInsightsEnvelope,
 	AiInsightsResponse,
 	DatasetCandidateResponse,
 	EvaluationConfig,
@@ -227,11 +226,13 @@ export const cancelCollection = async (
 // AI insights — E13 backend (live)
 // ---------------------------------------------------------------------------
 
+// The REST layer's `{ data }` wrapper is unwrapped by makeRestApiRequest, so this
+// resolves to the cached insights themselves — `null` when nothing is cached.
 export const getInsights = async (
 	context: IRestApiContext,
 	workflowId: string,
 	collectionId: string,
-): Promise<AiInsightsEnvelope> =>
+): Promise<AiInsightsResponse | null> =>
 	await makeRestApiRequest(
 		context,
 		'GET',

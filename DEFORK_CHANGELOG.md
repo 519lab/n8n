@@ -45,6 +45,20 @@ Clean-room sources: the fair-code `SecretsProvider` contract and its
 consumers, and the public vendor SDKs and HTTP APIs (AWS, Google Cloud, Azure,
 Vault, Infisical, 1Password Connect).
 
+### 2026-10-24 — Evaluation compare view rebuilt to its contract; cached insights show (#153)
+
+**Fix; no `.ee` source involved.** The rebuilt compare page was missing elements its page object expects:
+- the header
+- the score chart
+- the tabs
+- the cases table, sorted by score spread
+- per-version outputs
+- the dataset-mismatch banner
+
+It also read `.data` from an already-unwrapped insights response, so cached AI insights never showed.
+
+Clean-room sources: `eval-collections-compare.spec.ts` and `EvaluationComparePage`, the fair-code `eval-insights` service and controller, and the `@n8n/api-types` eval schemas.
+
 ### 2026-10-24 — E2E baseline: product fixes found by the un-skipped suite, plus a working test stack
 
 **Fixes; no `.ee` source involved.** Develop's full sqlite E2E run had 35+
