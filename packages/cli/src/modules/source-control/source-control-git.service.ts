@@ -105,11 +105,13 @@ export class SourceControlGitService {
 
 	/**
 	 * Materialize the database-stored private key into the SSH folder and point
-	 * GIT_SSH_COMMAND at it. Host keys are recorded in a per-instance
-	 * `known_hosts` (accepted on first use, verified thereafter). The rest of the
-	 * process environment is preserved so proxy settings keep working.
+	 * git's `core.sshCommand` at it. Host keys are recorded in a per-instance
+	 * `known_hosts` (accepted on first use, verified thereafter). The command goes
+	 * in as git config rather than `GIT_SSH_COMMAND`, so the child keeps the
+	 * ambient environment (proxy settings) without simple-git's env guard
+	 * rejecting inherited `GIT_*` variables.
 	 */
-	async setGitSshCommand(sshFolder: string): Promise<void> {
+	private async setGitSshCommand(sshFolder: string): Promise<void> {
 		const privateKeyPath = await this.writePrivateKeyToDisk(sshFolder);
 		const knownHostsPath = path.join(sshFolder, 'known_hosts');
 		await writeFile(knownHostsPath, '', { encoding: 'utf8', flag: 'a' });
@@ -119,7 +121,14 @@ export class SourceControlGitService {
 		// can neither be exhausted nor substituted.
 		const sshCommand = `ssh -o UserKnownHostsFile=${shellQuote(knownHostsPath)} -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes -i ${shellQuote(privateKeyPath)}`;
 
-		this.getGit().env({ ...process.env, GIT_SSH_COMMAND: sshCommand });
+		// simple-git refuses an SSH command unless opted in; this one is built here from
+		// fixed options and shell-quoted instance paths, never from user input.
+		this.gitOptions = {
+			...this.gitOptions,
+			config: [`core.sshCommand=${sshCommand}`],
+			unsafe: { allowUnsafeSshCommand: true },
+		};
+		this.git = simpleGit(this.gitOptions);
 	}
 
 	private async writePrivateKeyToDisk(sshFolder: string): Promise<string> {

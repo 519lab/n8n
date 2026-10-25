@@ -194,7 +194,8 @@ export const sandbox: Service<SandboxResult> = {
 					SANDBOX_RUNNER_API_KEYS: RUNNER_API_KEY,
 					SANDBOX_RUNNER_REGISTRATION_TOKEN: REGISTRATION_TOKEN,
 					SANDBOX_RUNNER_API_GRPC_ADDR: `${API_HOSTNAME}:${API_GRPC_PORT}`,
-					SANDBOX_RUNNER_HTTP_BASE_URL: `http://${RUNNER_HOSTNAME}:${API_HTTP_PORT}`,
+					// The runner's HTTP listener serves TLS only (control-grpc-server cert).
+					SANDBOX_RUNNER_HTTP_BASE_URL: `https://${RUNNER_HOSTNAME}:${API_HTTP_PORT}`,
 					SANDBOX_RUNNER_CONTROL_GRPC_LISTEN_ADDR: ':9091',
 					SANDBOX_RUNNER_CONTROL_GRPC_ADVERTISE_ADDR: `${RUNNER_HOSTNAME}:9091`,
 					SANDBOX_RUNNER_ID: 'ci-runner-1',
@@ -211,7 +212,7 @@ export const sandbox: Service<SandboxResult> = {
 				.withExposedPorts(API_HTTP_PORT)
 				.withWaitStrategy(
 					Wait.forSuccessfulCommand(
-						`wget -q -O /dev/null --header='X-Api-Key: ${RUNNER_API_KEY}' http://localhost:${API_HTTP_PORT}/healthz`,
+						`wget -q -O /dev/null --no-check-certificate --header='X-Api-Key: ${RUNNER_API_KEY}' https://localhost:${API_HTTP_PORT}/healthz`,
 					).withStartupTimeout(120_000),
 				)
 				.withLogConsumer(runnerConsumer)

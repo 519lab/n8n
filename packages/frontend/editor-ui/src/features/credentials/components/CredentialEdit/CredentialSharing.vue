@@ -13,6 +13,7 @@ import {
 } from '@/features/collaboration/projects/projects.types';
 import { useRemoteProjectSearch } from '@/features/collaboration/projects/projects.utils';
 import { useCredentialsStore } from '@/features/credentials/credentials.store';
+import { useProjectsStore } from '@/features/collaboration/projects/projects.store';
 import { hasPermission } from '@/app/utils/rbac/permissions';
 import type { ICredentialsResponse } from '@/features/credentials/credentials.types';
 
@@ -32,6 +33,7 @@ const emit = defineEmits<{
 
 const i18n = useI18n();
 const credentialsStore = useCredentialsStore();
+const projectsStore = useProjectsStore();
 const searchFn = useRemoteProjectSearch();
 
 function isProjectSharingData(value: unknown): value is ProjectSharingData {
@@ -64,6 +66,15 @@ const isReadOnly = computed(() => !props.credentialPermissions.share);
 
 const isHomeProjectPersonal = computed(() => homeProject.value?.type === ProjectTypes.Personal);
 
+// Personal-space sharing is an instance policy, surfaced as the personal owner's
+// `credential:share` scope; only the space's owner gets the notice explaining it.
+const isPersonalSharingRestricted = computed(
+	() =>
+		isHomeProjectPersonal.value &&
+		isReadOnly.value &&
+		homeProject.value?.id === projectsStore.personalProject?.id,
+);
+
 const canShareGlobally = computed(() =>
 	hasPermission(['rbac'], { rbac: { scope: 'credential:shareGlobally' } }),
 );
@@ -75,7 +86,7 @@ const credentialOwnerName = computed(() =>
 // Whoever can change sharing sees the owner-facing info; sharees see the
 // read-only note that names who is allowed to change access.
 const infoText = computed(() => {
-	if (isHomeProjectPersonal.value && !isReadOnly.value) {
+	if (isPersonalSharingRestricted.value) {
 		return i18n.baseText('credentialEdit.credentialSharing.info.personalSpaceRestricted');
 	}
 	if (!isReadOnly.value) {
@@ -105,7 +116,7 @@ function onShareWithAllUsers(value: boolean) {
 <template>
 	<div :class="$style.container" data-test-id="credential-sharing">
 		<ProjectSharing
-			v-if="!isHomeProjectPersonal"
+			v-if="!isPersonalSharingRestricted"
 			v-model="sharedWith"
 			:home-project="homeProject"
 			:search-fn="searchFn"

@@ -51,7 +51,7 @@ onBeforeUnmount(() => {
 			</template>
 		</N8nEmptyState>
 
-		<template v-else>
+		<div v-else data-test-id="worker-view-licensed">
 			<N8nText
 				v-if="!hasWorkers"
 				color="text-light"
@@ -69,7 +69,7 @@ onBeforeUnmount(() => {
 					:last-updated="orchestrationStore.getWorkerLastUpdated(worker.senderId)"
 				/>
 			</div>
-		</template>
+		</div>
 	</div>
 </template>
 

@@ -3975,7 +3975,7 @@
 	"settings.sourceControl.connectionType": "Connection Type",
 	"settings.sourceControl.enterValidHttpsUrl": "Please enter a valid HTTPS URL",
 	"settings.sourceControl.repoUrl": "Git repository URL (SSH)",
-	"settings.sourceControl.repoUrlPlaceholder": "e.g. git{'@'}github.com:my-team/my-repository",
+	"settings.sourceControl.repoUrlPlaceholder": "git{'@'}github.com:user/repository.git",
 	"settings.sourceControl.repoUrlInvalid": "The Git repository URL is not valid",
 	"settings.sourceControl.authorName": "Commit author  name",
 	"settings.sourceControl.authorEmail": "Commit author  email",

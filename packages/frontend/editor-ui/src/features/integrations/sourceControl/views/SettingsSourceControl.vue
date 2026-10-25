@@ -345,12 +345,17 @@ onMounted(async () => {
 				</N8nInputLabel>
 
 				<div :class="$style.field">
-					<N8nCheckbox v-model="form.branchReadOnly" data-test-id="source-control-branch-read-only">
-						<I18nT keypath="settings.sourceControl.protected" tag="span" scope="global">
-							<template #bold>
-								<strong>{{ i18n.baseText('settings.sourceControl.protected.bold') }}</strong>
-							</template>
-						</I18nT>
+					<N8nCheckbox
+						v-model="form.branchReadOnly"
+						data-test-id="source-control-read-only-checkbox"
+					>
+						<template #label>
+							<I18nT keypath="settings.sourceControl.protected" tag="span" scope="global">
+								<template #bold>
+									<strong>{{ i18n.baseText('settings.sourceControl.protected.bold') }}</strong>
+								</template>
+							</I18nT>
+						</template>
 					</N8nCheckbox>
 				</div>
 
