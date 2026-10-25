@@ -277,6 +277,41 @@ describe('Secret Providers Connections API', () => {
 			expect(decryptedSettings).not.toHaveProperty('accessKeyId');
 		});
 
+		test('should keep stored passwords that come back blanked in an update', async () => {
+			await ownerAgent
+				.post('/secret-providers/connections')
+				.send({
+					providerKey: 'keepPasswordsTest',
+					type: 'awsSecretsManager',
+					projectIds: [],
+					settings: {
+						region: 'us-east-1',
+						accessKeyId: 'STORED_KEY',
+						secretAccessKey: 'STORED_SECRET',
+					},
+				})
+				.expect(200);
+
+			// Round-trip what the API returns: password fields arrive blanked.
+			const { body } = await ownerAgent
+				.get('/secret-providers/connections/keepPasswordsTest')
+				.expect(200);
+			await ownerAgent
+				.patch('/secret-providers/connections/keepPasswordsTest')
+				.send({ settings: { ...body.data.settings, region: 'eu-west-1' } })
+				.expect(200);
+
+			const updated = await Container.get(SecretsProviderConnectionRepository).findOneByOrFail({
+				providerKey: 'keepPasswordsTest',
+			});
+			const decrypted = JSON.parse(Container.get(Cipher).decrypt(updated.encryptedSettings));
+			expect(decrypted).toEqual({
+				region: 'eu-west-1',
+				accessKeyId: 'STORED_KEY',
+				secretAccessKey: 'STORED_SECRET',
+			});
+		});
+
 		test('should update project access', async () => {
 			await ownerAgent
 				.post('/secret-providers/connections')

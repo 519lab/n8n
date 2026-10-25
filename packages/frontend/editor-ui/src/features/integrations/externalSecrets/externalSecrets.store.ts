@@ -6,6 +6,7 @@ import type { IDataObject } from 'n8n-workflow';
 
 import { EnterpriseEditionFeature } from '@/app/constants';
 import * as externalSecretsApi from './externalSecrets.api';
+import { EXTERNAL_SECRET_MASK } from './externalSecrets.constants';
 import type { ExternalSecretsProvider } from './externalSecrets.types';
 
 /** Provider -> list of secret names, as returned by the completions endpoints. */
@@ -14,8 +15,8 @@ type SecretNamesByProvider = Record<string, string[]>;
 /**
  * Provider -> `{ secretName: placeholder }`. The frontend only ever learns
  * secret names (values stay confined to credential evaluation), so each name
- * maps to itself; the shape is what expression resolution and completions
- * expect for `$secrets`.
+ * maps to {@link EXTERNAL_SECRET_MASK}; the shape is what expression resolution
+ * and completions expect for `$secrets`.
  */
 type SecretsObject = Record<string, Record<string, string>>;
 
@@ -34,7 +35,7 @@ function toSecretsObject(secrets: SecretNamesByProvider): SecretsObject {
 	return Object.fromEntries(
 		Object.entries(secrets).map(([provider, names]) => [
 			provider,
-			Object.fromEntries(names.map((name) => [name, name])),
+			Object.fromEntries(names.map((name) => [name, EXTERNAL_SECRET_MASK])),
 		]),
 	);
 }
@@ -55,7 +56,22 @@ export const useExternalSecretsStore = defineStore('externalSecrets', () => {
 			settingsStore.isEnterpriseFeatureEnabled[EnterpriseEditionFeature.ExternalSecrets] ?? false,
 	);
 
-	const secretsAsObject = computed<SecretsObject>(() => toSecretsObject(state.secrets));
+	const isProjectScopedMode = computed<boolean>(
+		() => settingsStore.moduleSettings['external-secrets']?.forProjects ?? false,
+	);
+
+	/**
+	 * Every `$secrets` entry resolvable in the current context. With project-scoped
+	 * connections that is the global connections plus the current project's own
+	 * (loaded by {@link fetchSecretsForProject}); otherwise the legacy instance-wide list.
+	 */
+	const secretsAsObject = computed<SecretsObject>(() =>
+		toSecretsObject(
+			isProjectScopedMode.value
+				? { ...state.globalSecrets, ...state.projectSecrets }
+				: state.secrets,
+		),
+	);
 	const globalSecretsAsObject = computed<SecretsObject>(() => toSecretsObject(state.globalSecrets));
 	const projectSecretsAsObject = computed<SecretsObject>(() =>
 		toSecretsObject(state.projectSecrets),
