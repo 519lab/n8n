@@ -4,18 +4,18 @@
  * All images can be overridden via environment variables:
  *   TEST_IMAGE_<KEY> where KEY is the SCREAMING_SNAKE_CASE version of the image key
  *   e.g., TEST_IMAGE_POSTGRES=postgres:16 overrides the postgres image
- *   e.g., TEST_IMAGE_N8N=n8nio/n8n:latest overrides the n8n image
- *   e.g., TEST_IMAGE_TASK_RUNNER=n8nio/runners:latest overrides the task runner image
+ *   e.g., TEST_IMAGE_N8N=ghcr.io/519lab/n8n:nightly overrides the n8n image
+ *   e.g., TEST_IMAGE_TASK_RUNNER=ghcr.io/519lab/runners:nightly overrides the task runner image
  *
- * For n8n image, shorthand syntax is supported:
- *   TEST_IMAGE_N8N=stable         → n8nio/n8n:stable
- *   TEST_IMAGE_N8N=n8n:stable     → n8nio/n8n:stable
- *   TEST_IMAGE_N8N=n8nio/n8n:stable → n8nio/n8n:stable
+ * For n8n image, shorthand syntax is supported (519lab's published images):
+ *   TEST_IMAGE_N8N=nightly        → ghcr.io/519lab/n8n:nightly
+ *   TEST_IMAGE_N8N=n8n:nightly    → ghcr.io/519lab/n8n:nightly
+ *   TEST_IMAGE_N8N=ghcr.io/519lab/n8n:nightly → unchanged
  *
  * Task runner image derivation:
  *   When TEST_IMAGE_TASK_RUNNER is not set, the image is derived from the n8n image:
- *   TEST_IMAGE_N8N=n8nio/n8n:nightly              → taskRunner=n8nio/runners:nightly
- *   TEST_IMAGE_N8N=ghcr.io/n8n-io/n8n:pr-123      → taskRunner=ghcr.io/n8n-io/runners:pr-123
+ *   TEST_IMAGE_N8N=ghcr.io/519lab/n8n:nightly    → taskRunner=ghcr.io/519lab/runners:nightly
+ *   TEST_IMAGE_N8N=n8nio/n8n:local               → taskRunner=n8nio/runners:local
  *
  * N8N_DOCKER_IMAGE is also supported for backwards compatibility.
  */
@@ -43,9 +43,9 @@ const DEFAULT_IMAGES = {
 	localstack: 'localstack/localstack:4.13.1',
 	postgresExporter: 'prometheuscommunity/postgres-exporter:v0.17.1',
 	cadvisor: 'gcr.io/cadvisor/cadvisor:v0.49.1',
-	sandboxApi: 'n8nio/n8n-sandbox-service-api:latest',
-	sandboxRunner: 'n8nio/n8n-sandbox-service-runner-dind:latest',
-	sandboxSandbox: 'n8nio/n8n-sandbox-service-sandbox:latest',
+	sandboxApi: 'ghcr.io/519lab/n8n-sandbox-service-api:latest',
+	sandboxRunner: 'ghcr.io/519lab/n8n-sandbox-service-runner-dind:latest',
+	sandboxSandbox: 'ghcr.io/519lab/n8n-sandbox-service-sandbox:latest',
 } as const;
 
 /** Convert camelCase to SCREAMING_SNAKE_CASE for env var names */
@@ -53,14 +53,14 @@ function toEnvVarName(key: string): string {
 	return key.replace(/([a-z])([A-Z])/g, '$1_$2').toUpperCase();
 }
 
-/** Normalize n8n image shorthand: "stable" → "n8nio/n8n:stable" */
+/** Normalize n8n image shorthand: "nightly" → "ghcr.io/519lab/n8n:nightly" */
 function normalizeN8nImage(image: string): string {
 	if (image.includes('/')) return image;
-	if (image.includes(':')) return `n8nio/${image}`;
-	return `n8nio/n8n:${image}`;
+	if (image.includes(':')) return `ghcr.io/519lab/${image}`;
+	return `ghcr.io/519lab/n8n:${image}`;
 }
 
-/** Parse "ghcr.io/n8n-io/n8n:pr-123" or "n8nio/n8n:nightly" into components */
+/** Parse "ghcr.io/519lab/n8n:nightly" or "n8nio/n8n:local" into components */
 function parseImage(image: string): { registry?: string; org: string; tag: string } {
 	const [imagePath, tag = 'latest'] = image.split(':');
 	const parts = imagePath.split('/');
