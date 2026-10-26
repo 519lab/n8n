@@ -115,7 +115,7 @@ For deeper PG analysis, every spec also logs a top-N `pg_stat_statements` breakd
 
 ## CI
 
-Upstream, the full suite runs on `blacksmith-8vcpu-ubuntu-2204` runners via `.github/workflows/test-e2e-infrastructure-reusable.yml` (removed from this fork's CI; run it locally). One container at a time (`workers: 1`); each spec brings its own topology.
+This fork's CI doesn't run the infrastructure benchmarks; run them locally. One container at a time (`workers: 1`); each spec brings its own topology.
 
 ## Architecture
 

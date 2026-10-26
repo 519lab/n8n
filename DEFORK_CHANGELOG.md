@@ -16,6 +16,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-10-26 — CI on free GitHub-hosted runners; Blacksmith removed; Windows and ARM64 builds dropped
+
+**Infrastructure; no `.ee` source involved.** CI ran on Blacksmith runners, which were billed per minute and ran up a bill. Every job now runs on GitHub-hosted `ubuntu-latest`. The repo is public, so those runners are free and unlimited, at 4 CPUs / 16 GB. An interim move to a small self-hosted pool was tried and dropped: it was too slow (backend unit tests took 75 minutes), and its runner group can't serve public repos.
+
+What changed:
+- **No Blacksmith left.** Blacksmith's checkout, Docker builder and build-push actions are replaced by the pinned standard ones (`actions/checkout`, `docker/setup-buildx-action`, `docker/build-push-action` v6.19.2). The runner labels, poutine allowlist entries, `actionlint.yml` label list, `.actrc` mappings and runner-specific comments are gone too.
+- **Nightly full E2E.** PR E2E stays impact-scoped on 16 shards (or runs everything with `force-e2e`). A new `test-e2e-nightly.yml` runs the full suite on develop every night and opens a `ci-failure` issue when it fails.
+- **Windows and ARM64 dropped.** The Windows build and the Windows get-n8n checks are removed. Docker images (n8n, runners and the base image) are built for `linux/amd64` only. GitHub's Windows and ARM runners are also free for public repos, so either can come back if needed.
+- **Stale-branch cleanup fixed.** It would have deleted branches on its weekly schedule: `!inputs.dry-run` is true when a scheduled run has no inputs. It had never run here, because no runner picked it up. Scheduled runs now only list stale branches; deleting takes a manual run with dry-run off.
+- **`get-n8n.sh` takes `N8N_HOST_PORT`** (script v1.2.0, stack definition v2). Set it to publish n8n on a port other than 5678. It's stored in `.env`, an existing install keeps its port, and invalid values are rejected before anything is written. Previously the port was fixed, and the only way around a taken 5678 was editing `compose.yml` by hand.
+- **Test servers on free ports.** The dev-server smoke and the get-n8n e2e pick free high ports instead of 5678/5679/8080. Playwright's teardown now kills only the ports its URLs name; it used to kill anything on 5678 and 8080.
+- **Playwright waits for n8n to be ready.** The local-server webServer probe used `/favicon.ico`, which answers before n8n's routes are registered, so the first DB reset could 404. It now waits on `/healthz/readiness`.
+- **Lint fits the runner.** Ten parallel eslint processes with 7 GB heaps exhausted the 16 GB VM (it was shut down mid-lint). Lint now runs two at a time with 5 GB heaps; an uncached run peaks at 10.3 GB and takes 16 minutes.
+- **Smaller fixes.**
+  - Engine and db integration tests keep Postgres data on tmpfs, so no volumes are left behind.
+  - The Trivy scan logs in to GHCR before pulling (it failed with `unauthorized`, #159).
+  - SafeChain is installed whenever its binary is missing, not only on a cache miss.
+  - The task-runner env test simulates the denied read instead of relying on `chmod 000`, which root ignores.
+
+Docs: `.github/WORKFLOWS.md` (runner section, schedule, E2E), `CI-TELEMETRY.md` and `containers/HELM-TESTING.md`.
+
 ### 2026-10-24 — Log-streaming settings UI rebuilt to its page-object contract
 
 **Fix; no `.ee` source involved.** The rebuilt page and modal didn't match `SettingsLogStreamingPage`, and couldn't create a destination at all: a new destination posted `id: ''` and the API rejected it.

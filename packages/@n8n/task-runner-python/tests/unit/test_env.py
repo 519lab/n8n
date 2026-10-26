@@ -87,13 +87,15 @@ class TestReadEnv:
             temp_file_path = f.name
 
         try:
-            Path(temp_file_path).chmod(0o000)  # Make file unreadable
-            with patch.dict(os.environ, {"TEST_VAR_FILE": temp_file_path}):
+            # Simulate the denied read: chmod 000 doesn't stop root, and CI runs as root.
+            with (
+                patch.dict(os.environ, {"TEST_VAR_FILE": temp_file_path}),
+                patch.object(Path, "read_text", side_effect=PermissionError("denied")),
+            ):
                 with pytest.raises(ValueError) as exc_info:
                     read_env("TEST_VAR")
                 assert "Failed to read TEST_VAR_FILE from file" in str(exc_info.value)
         finally:
-            Path(temp_file_path).chmod(0o644)
             Path(temp_file_path).unlink()
 
 

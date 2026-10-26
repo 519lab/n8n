@@ -403,7 +403,7 @@ Container stack telemetry tracks startup timing, configuration, and runner info.
   timestamp: string;              // ISO timestamp
   git: { sha, branch, pr? };      // Git context from CI env vars
   ci: { runId, job, workflow };   // GitHub Actions context
-  runner: { provider, cpuCores, memoryGb };  // github | blacksmith | local
+  runner: { provider, cpuCores, memoryGb };  // github | self-hosted | local
   stack: { type, mains, workers, postgres, services };
   timing: { total, network, n8nStartup, services: Record<string, number> };
   containers: { total, services, n8n };

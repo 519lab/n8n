@@ -15,6 +15,10 @@ inputs:
     description: 'standard or coverage. Coverage uses build:docker:coverage.'
     required: false
     default: 'standard'
+  cache-sha:
+    description: 'SHA for the image cache key. Empty = github.sha. Must match the key load-n8n-docker restores.'
+    required: false
+    default: ''
 
 runs:
   using: 'composite'
@@ -23,7 +27,7 @@ runs:
       id: cache-check
       uses: actions/cache/restore@640a1c2554105b57832a23eea0b4672fc7a790d5 # v4.2.3
       with:
-        key: n8n-docker-image-${{ inputs.build-variant }}-${{ github.sha }}
+        key: n8n-docker-image-${{ inputs.build-variant }}-${{ inputs.cache-sha || github.sha }}
         path: /tmp/n8n-image.tar.zst
         lookup-only: true
 
@@ -47,5 +51,5 @@ runs:
       if: steps.cache-check.outputs.cache-hit != 'true'
       uses: actions/cache/save@640a1c2554105b57832a23eea0b4672fc7a790d5 # v4.2.3
       with:
-        key: n8n-docker-image-${{ inputs.build-variant }}-${{ github.sha }}
+        key: n8n-docker-image-${{ inputs.build-variant }}-${{ inputs.cache-sha || github.sha }}
         path: /tmp/n8n-image.tar.zst
