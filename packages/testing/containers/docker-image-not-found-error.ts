@@ -1,7 +1,7 @@
 import { TEST_CONTAINER_IMAGES } from './test-containers';
 
 // Custom error class for when the Docker image is not found locally/remotely
-// This can happen when using the "n8nio/n8n:local" image, which is not available on Docker Hub
+// This can happen when using the "n8nio/n8n:local" image, which is only ever built locally
 // This image is available after running `pnpm build:docker` at the root of the repository
 export class DockerImageNotFoundError extends Error {
 	constructor(containerName: string, originalError?: Error) {
@@ -15,7 +15,7 @@ To fix this, you can either:
   2. Use a different image by setting: TEST_IMAGE_N8N=<image-tag>
 
 Example with different image:
-  TEST_IMAGE_N8N=n8nio/n8n:latest npm run stack`;
+  TEST_IMAGE_N8N=ghcr.io/519lab/n8n:nightly npm run stack`;
 
 		super(message);
 		this.name = 'DockerImageNotFoundError';

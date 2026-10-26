@@ -2,29 +2,32 @@
 #
 # get-n8n.sh — one-script setup for a self-hosted n8n instance (docker compose).
 #
+# Installs 519lab's n8n build (images from ghcr.io/519lab).
+#
 # Usage:
-#   curl -fsSL https://get.n8n.io | sh
-#   curl -fsSL https://get.n8n.io | sh -s -- --upgrade
+#   curl -fsSL https://raw.githubusercontent.com/519lab/n8n/master/docker/get-n8n.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/519lab/n8n/master/docker/get-n8n.sh | sh -s -- --upgrade
 #
 # Prefer to inspect before running?
-#   curl -fsSL https://get.n8n.io -o get-n8n.sh && less get-n8n.sh && sh get-n8n.sh
+#   curl -fsSL https://raw.githubusercontent.com/519lab/n8n/master/docker/get-n8n.sh -o get-n8n.sh && less get-n8n.sh && sh get-n8n.sh
 #
-# Source: https://github.com/n8n-io/n8n/blob/master/docker/get-n8n.sh
+# Source: https://github.com/519lab/n8n/blob/master/docker/get-n8n.sh
 set -eu
 
-SCRIPT_VERSION="1.2.0"
-# The version to install is derived from the latest stable GitHub release in
-# resolve_n8n_version(); this fallback only applies when that lookup fails.
-FALLBACK_N8N_VERSION="2.32.0"
+SCRIPT_VERSION="2.0.0"
+# Image tag installed when --version isn't given: 519lab publishes a rolling
+# `nightly` tag plus an immutable `nightly-<commit>` tag per build.
+DEFAULT_N8N_VERSION="nightly"
 N8N_DIR="${N8N_DIR:-./n8n}"
 # Host port n8n is published on. An existing install keeps the one in its .env.
 N8N_PORT="${N8N_HOST_PORT:-5678}"
-SOURCE_URL="https://github.com/n8n-io/n8n/blob/master/docker/get-n8n.sh"
+SOURCE_URL="https://github.com/519lab/n8n/blob/master/docker/get-n8n.sh"
+SCRIPT_URL="https://raw.githubusercontent.com/519lab/n8n/master/docker/get-n8n.sh"
 # The stack definition lives next to this script in the repo and is downloaded
 # at install time. A plain filesystem path also works (used by the test
 # harness to install from a working copy).
-COMPOSE_SOURCE="${N8N_COMPOSE_URL:-https://raw.githubusercontent.com/n8n-io/n8n/master/docker/get-n8n-compose.yml}"
-COMPOSE_HISTORY_URL="https://github.com/n8n-io/n8n/commits/master/docker/get-n8n-compose.yml"
+COMPOSE_SOURCE="${N8N_COMPOSE_URL:-https://raw.githubusercontent.com/519lab/n8n/master/docker/get-n8n-compose.yml}"
+COMPOSE_HISTORY_URL="https://github.com/519lab/n8n/commits/master/docker/get-n8n-compose.yml"
 DOCS_HOSTING_URL="https://docs.n8n.io/hosting/"
 
 UPGRADE=0
@@ -43,12 +46,13 @@ usage() {
 get-n8n.sh v${SCRIPT_VERSION} — set up a self-hosted n8n instance with docker compose.
 
 Usage: get-n8n.sh [options]
-       curl -fsSL https://get.n8n.io | sh -s -- [options]
+       curl -fsSL ${SCRIPT_URL} | sh -s -- [options]
 
 Options:
-  --version [x.y.z]  Without a value: print script version and the n8n version
-                     that would be installed (latest stable). With a value:
-                     install (or, with --upgrade, upgrade to) that n8n version.
+  --version [tag]    Without a value: print script version and the image tag
+                     that would be installed (${DEFAULT_N8N_VERSION}). With a value
+                     (nightly, nightly-<commit> or x.y.z): install (or, with
+                     --upgrade, upgrade to) that tag.
   --upgrade          Upgrade an existing install: updates the N8N_VERSION line
                      in .env, pulls images and restarts. Never touches any
                      other configuration or secrets.
@@ -71,11 +75,11 @@ parse_args() {
 			--version)
 				if [ $# -gt 1 ] && [ "${2#-}" = "$2" ]; then
 					valid_n8n_version "$2" ||
-						fail "invalid --version '$2' — expected a release version like 2.32.0"
+						fail "invalid --version '$2' — expected nightly, nightly-<commit> or a version like 2.32.0"
 					REQUESTED_VERSION="$2"
 					shift
 				else
-					say "get-n8n.sh v${SCRIPT_VERSION} (installs the latest stable n8n, currently $(resolve_n8n_version))"
+					say "get-n8n.sh v${SCRIPT_VERSION} (installs 519lab's n8n, image tag ${DEFAULT_N8N_VERSION})"
 					exit 0
 				fi
 				;;
@@ -169,26 +173,21 @@ gen_secret() {
 	fi
 }
 
-# Exactly three dot-separated numeric components (e.g. 2.32.0).
+# An image tag 519lab publishes: `nightly`, `nightly-<commit>` (7-40 hex
+# characters), or a version with exactly three numeric components (2.32.0).
 valid_n8n_version() {
 	case "$1" in
+	nightly) return 0 ;;
+	nightly-*)
+		commit="${1#nightly-}"
+		case "$commit" in *[!0-9a-f]* | '') return 1 ;; esac
+		[ "${#commit}" -ge 7 ] && [ "${#commit}" -le 40 ]
+		return
+		;;
 	*[!0-9.]* | *.*.*.* | .* | *. | *..*) return 1 ;;
 	[0-9]*.[0-9]*.[0-9]*) return 0 ;;
 	*) return 1 ;;
 	esac
-}
-
-# Latest stable n8n version from GitHub releases; FALLBACK_N8N_VERSION covers
-# offline/API failures. Installs stay pinned in .env — never a floating tag,
-# which would silently upgrade (and run DB migrations) on any container recreate.
-resolve_n8n_version() {
-	releases_url="https://api.github.com/repos/n8n-io/n8n/releases/latest"
-	v="$(fetch "$releases_url" | sed -n 's/.*"tag_name": *"n8n@\([0-9][0-9.]*\)".*/\1/p' | head -n1)"
-	if valid_n8n_version "$v"; then
-		printf '%s\n' "$v"
-	else
-		printf '%s\n' "$FALLBACK_N8N_VERSION"
-	fi
 }
 
 write_env() {
@@ -227,7 +226,7 @@ SEARXNG_SECRET=$(gen_secret)
 N8N_INSTANCE_AI_MODEL=anthropic/claude-opus-4-8
 N8N_INSTANCE_AI_SANDBOX_ENABLED=true
 N8N_INSTANCE_AI_SANDBOX_PROVIDER=n8n-sandbox
-N8N_INSTANCE_AI_SANDBOX_IMAGE=ghcr.io/n8n-io/n8n-sandbox-service-sandbox:latest
+N8N_INSTANCE_AI_SANDBOX_IMAGE=ghcr.io/519lab/n8n-sandbox-service-sandbox:latest
 N8N_INSTANCE_AI_SANDBOX_API_URL=http://sandbox-api:8080
 N8N_SANDBOX_SERVICE_URL=http://sandbox-api:8080
 
@@ -295,7 +294,7 @@ compose() {
 	docker compose -f "${N8N_DIR}/compose.yml" "$@"
 }
 
-# For compose commands that pull images: Docker Hub's anonymous pull rate
+# For compose commands that pull images: a registry's anonymous pull rate
 # limit is a common first-run failure, so turn it into recovery advice
 # instead of a raw error dump.
 compose_checked() {
@@ -308,10 +307,10 @@ compose_checked() {
 	cat "$log" >&2
 	if grep -qiE 'toomanyrequests|rate ?limit' "$log"; then
 		rm -f "$log"
-		fail "Docker Hub pull rate limit reached — your configuration in ${N8N_DIR} is
+		fail "Image registry pull rate limit reached — your configuration in ${N8N_DIR} is
   unaffected. Wait about an hour, then start n8n with:
     docker compose -f ${N8N_DIR}/compose.yml up -d
-  Or 'docker login' with a Docker Hub account to raise the limit and re-run."
+  Or 'docker login' to the registry named in the error above to raise the limit and re-run."
 	fi
 	rm -f "$log"
 	fail "starting n8n failed — check 'docker compose -f ${N8N_DIR}/compose.yml logs'."
@@ -322,7 +321,7 @@ do_upgrade() {
 		fail "no existing install found in ${N8N_DIR} — run without --upgrade to install."
 	fi
 
-	target="${REQUESTED_VERSION:-$(resolve_n8n_version)}"
+	target="${REQUESTED_VERSION:-$DEFAULT_N8N_VERSION}"
 	current="$(sed -n 's/^N8N_VERSION=//p' "${N8N_DIR}/.env")"
 	if [ -n "$current" ]; then
 		# .env is user state: --upgrade edits exactly this one line, nothing else.
@@ -371,7 +370,7 @@ Data stored in:    ${N8N_DIR} (Docker volume: n8n-data)
 Config files:      ${N8N_DIR}/compose.yml, ${N8N_DIR}/.env
 
 To stop:      docker compose -f ${N8N_DIR}/compose.yml down
-To upgrade:   curl -fsSL https://get.n8n.io | sh -s -- --upgrade
+To upgrade:   curl -fsSL ${SCRIPT_URL} | sh -s -- --upgrade
 To uninstall: docker compose -f ${N8N_DIR}/compose.yml down -v   # -v DELETES all n8n data
               rm -rf ${N8N_DIR}
 
@@ -421,7 +420,7 @@ main() {
 			say "To start it: docker compose -f ${N8N_DIR}/compose.yml up -d"
 			say "Once started, n8n runs at: http://localhost:${N8N_PORT}"
 		fi
-		say "To upgrade:  curl -fsSL https://get.n8n.io | sh -s -- --upgrade"
+		say "To upgrade:  curl -fsSL ${SCRIPT_URL} | sh -s -- --upgrade"
 		check_compose_freshness
 		exit 0
 	fi
@@ -436,7 +435,7 @@ main() {
   port with: N8N_HOST_PORT=<port> sh get-n8n.sh"
 	fi
 
-	INSTALL_VERSION="${REQUESTED_VERSION:-$(resolve_n8n_version)}"
+	INSTALL_VERSION="${REQUESTED_VERSION:-$DEFAULT_N8N_VERSION}"
 	mkdir -p "${N8N_DIR}"
 	write_compose
 	ok "Created ${N8N_DIR}/compose.yml"

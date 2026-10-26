@@ -16,6 +16,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-10-26 — CI no longer pulls anything from upstream n8n
+
+**Infrastructure; no `.ee` source involved.** CI and the `get-n8n.sh` installer fetched several things straight from upstream n8n (`n8n-io`). Each now comes from a 519lab fork or registry:
+
+| Was (upstream) | Now |
+| --- | --- |
+| `n8n-io/validate-n8n-pull-request-title` action | `.github/scripts/check-pr-title.mjs`, written from `pull_request_title_conventions.md` (Dependabot PRs skipped) |
+| Helm chart from `n8n-io/n8n-hosting` @ `main` | `519lab/n8n-hosting`, pinned to a commit |
+| Sandbox images `n8nio/n8n-sandbox-service-*` | `ghcr.io/519lab/n8n-sandbox-service-*`, built by `519lab/n8n-sandbox-service`. That fork had every `.ee` path removed from all of its history; the images it publishes are Sustainable Use License only. |
+| `get-n8n.sh`: `docker.io/n8nio/n8n`, `ghcr.io/n8n-io/runners`, version from n8n-io's releases API | `ghcr.io/519lab/n8n` + `runners`. It installs the `nightly` tag by default; `--version` takes `nightly`, `nightly-<commit>` or `x.y.z`, and `--upgrade` moves the pin to `nightly` (script v2.0.0, stack definition v3). |
+| `TEST_IMAGE_N8N=stable` shorthand → `n8nio/n8n:stable` | Resolves to `ghcr.io/519lab/n8n:<tag>` |
+
+`pnpm check:no-upstream-sources` (part of `lint:ci`) fails if a workflow, action, the installer or the test-stack image list references an upstream source again. Locally built `n8nio/*:local` images are allowed; they never leave the machine.
+
 ### 2026-10-26 — CI on free GitHub-hosted runners; Blacksmith removed; Windows and ARM64 builds dropped
 
 **Infrastructure; no `.ee` source involved.** CI ran on Blacksmith runners, which were billed per minute and ran up a bill. Every job now runs on GitHub-hosted `ubuntu-latest`. The repo is public, so those runners are free and unlimited, at 4 CPUs / 16 GB. An interim move to a small self-hosted pool was tried and dropped: it was too slow (backend unit tests took 75 minutes), and its runner group can't serve public repos.

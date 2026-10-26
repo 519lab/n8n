@@ -15,8 +15,9 @@ import { setTimeout as wait } from 'node:timers/promises';
 import { TEST_CONTAINER_IMAGES } from './test-containers';
 
 const DEFAULT_K3S_IMAGE = 'rancher/k3s:v1.32.2-k3s1';
-const DEFAULT_CHART_REPO = 'https://github.com/n8n-io/n8n-hosting.git';
-const DEFAULT_CHART_REF = 'main';
+// 519lab's fork of the n8n-hosting chart, pinned so chart changes land deliberately.
+const DEFAULT_CHART_REPO = 'https://github.com/519lab/n8n-hosting.git';
+const DEFAULT_CHART_REF = 'b690a87c814aed2f56981047fb617d22e488b861';
 const N8N_NODE_PORT = 30080;
 const HEALTH_POLL_INTERVAL_MS = 2_000;
 const CONTAINERD_READY_TIMEOUT_MS = 30_000;
@@ -30,9 +31,9 @@ export interface HelmStackConfig {
 	n8nImage?: string;
 	/** K3s image (default: rancher/k3s:v1.32.2-k3s1) */
 	k3sImage?: string;
-	/** Git ref for the n8n-hosting repo (default: main) */
+	/** Git ref for the chart repo (default: a pinned 519lab/n8n-hosting commit) */
 	helmChartRef?: string;
-	/** Git repo URL for the Helm chart (default: n8n-io/n8n-hosting) */
+	/** Git repo URL for the Helm chart (default: 519lab/n8n-hosting) */
 	helmChartRepo?: string;
 	/** Total startup timeout in ms (default: 300_000) */
 	startupTimeoutMs?: number;

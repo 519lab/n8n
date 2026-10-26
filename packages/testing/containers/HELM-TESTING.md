@@ -77,14 +77,14 @@ pnpm stack:helm:clean
 ### Test a Specific Version Matrix
 
 ```bash
-# Test n8n 1.80.0 against chart version v1.2.0
-pnpm stack:helm --image n8nio/n8n:1.80.0 --chart-ref v1.2.0
+# Test the nightly image against the fork's latest chart
+pnpm stack:helm --image ghcr.io/519lab/n8n:nightly --chart-ref main
 
 # Test latest n8n against a chart PR branch
 pnpm stack:helm --chart-ref fix/pvc-permissions
 
 # Test a GHCR image (e.g., from CI)
-pnpm stack:helm --image ghcr.io/n8n-io/n8n:ci-12345
+pnpm stack:helm --image ghcr.io/519lab/n8n:ci-12345
 ```
 
 ### CLI Options
@@ -92,8 +92,8 @@ pnpm stack:helm --image ghcr.io/n8n-io/n8n:ci-12345
 ```
 --mode <mode>         standalone (SQLite, default) or queue (PostgreSQL + Redis + workers)
 --image <image>       n8n Docker image (default: n8nio/n8n:local)
---chart-ref <ref>     Git branch/tag for n8n-hosting (default: main)
---chart-repo <url>    Git repo URL (default: https://github.com/n8n-io/n8n-hosting.git)
+--chart-ref <ref>     Git branch/tag/commit of the chart repo (default: a pinned commit)
+--chart-repo <url>    Git repo URL (default: https://github.com/519lab/n8n-hosting.git)
 --k3s-image <image>   K3s image (default: rancher/k3s:v1.32.2-k3s1)
 --url-file <path>     Write URL to file when ready (for CI automation)
 --help                Show help
