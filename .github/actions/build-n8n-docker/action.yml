@@ -1,14 +1,7 @@
-# Builds the n8n and runners CI test images (n8nio/n8n:ci-<variant>-<sha> +
-# n8nio/runners:ci-<variant>-<sha>) and caches the tarball under a SHA-derived
-# key so downstream jobs in the same workflow run can restore it via
+# Builds the n8n and runners CI test images (n8nio/n8n:local +
+# n8nio/runners:local) and caches the tarball under a SHA-derived key so
+# downstream jobs in the same workflow run can restore it via
 # load-n8n-docker.
-#
-# The tag is per variant and SHA because self-hosted runners share the host's
-# Docker daemon: a fixed tag like `:local` would let concurrent runs for
-# different commits overwrite each other's image.
-#
-# It builds with the daemon's default builder (no buildx container), so layers
-# stay cached on the host between jobs.
 #
 # Cache-aware: if the tarball for this SHA is already cached (e.g. a parent
 # workflow ran prepare-docker earlier), the build step is skipped and this
@@ -23,7 +16,7 @@ inputs:
     required: false
     default: 'standard'
   cache-sha:
-    description: 'SHA for the image cache key and tag. Empty = github.sha.'
+    description: 'SHA for the image cache key. Empty = github.sha. Must match the key load-n8n-docker restores.'
     required: false
     default: ''
 
@@ -43,17 +36,15 @@ runs:
       uses: ./.github/actions/setup-nodejs
       with:
         build-command: ${{ inputs.build-variant == 'coverage' && 'pnpm build:docker:coverage' || 'pnpm build:docker' }}
+        enable-docker-cache: true
       env:
         INCLUDE_TEST_CONTROLLER: 'true'
-        IMAGE_TAG: ci-${{ inputs.build-variant }}-${{ inputs.cache-sha || github.sha }}
 
     - name: Save image tarball
       if: steps.cache-check.outputs.cache-hit != 'true'
       shell: bash
-      env:
-        IMAGE_TAG: ci-${{ inputs.build-variant }}-${{ inputs.cache-sha || github.sha }}
       run: |
-        docker save "n8nio/n8n:$IMAGE_TAG" "n8nio/runners:$IMAGE_TAG" | zstd -T0 -3 -o /tmp/n8n-image.tar.zst
+        docker save n8nio/n8n:local n8nio/runners:local | zstd -T0 -3 -o /tmp/n8n-image.tar.zst
         ls -lh /tmp/n8n-image.tar.zst
 
     - name: Publish image tarball to cache

@@ -1,6 +1,6 @@
 # GitHub Actions & CI/CD Documentation
 
-Reference for this fork's `.github/` folder (as of 2026-10-25).
+Reference for this fork's `.github/` folder (as of 2026-10-26).
 
 This is a de-enterprised fork of `n8n-io/n8n`. Upstream's release, backport,
 3.x-sync, benchmark, eval, Chromatic/Storybook, Slack/Codecov/QA-metrics and
@@ -21,7 +21,6 @@ fork-specific purpose.
 ├── CODEOWNERS                            # Team ownership for PR reviews
 ├── pull_request_template.md              # PR description template
 ├── pull_request_title_conventions.md     # Title format rules (Angular)
-├── actionlint.yml                        # Workflow linter config (runner labels)
 ├── docker-compose.yml                    # DB services for local testing
 ├── test-metrics/                         # E2E impact map + playwright baselines
 ├── ISSUE_TEMPLATE/
@@ -120,7 +119,7 @@ install-and-build (paths filter + build cache)
 **E2E runs the sqlite suite with no license.** `e2e` runs when the paths
 filter marks runtime or E2E changes, or when the PR has the `force-e2e` label. It
 is advisory (not in `required-checks`). On a PR it runs only the specs affected
-by the change, unless `force-e2e` is set, spread over 4 shards (one worker each).
+by the change, unless `force-e2e` is set, spread over 16 shards (one worker each).
 The full suite runs every night on develop (`test-e2e-nightly.yml`), and can be
 started by hand from the Actions tab.
 
@@ -207,7 +206,7 @@ A failing push run opens a `ci-failure` issue (see [Failure Alerts](#failure-ale
 | Daily 02:00     | `test-get-n8n.yml`          | get-n8n installer health             |
 | Daily 03:00     | `docker-build-smoke.yml`    | No-cache Docker build                |
 | Daily 03:00     | `util-cleanup-pr-images.yml`| Prune CI images older than 3 days    |
-| Daily 05:00     | `test-e2e-nightly.yml`      | Full E2E suite on develop (4 shards) |
+| Daily 05:00     | `test-e2e-nightly.yml`      | Full E2E suite on develop (16 shards) |
 | Mon 10:00       | `clean-stale-branches.yml`  | List stale branches (deleting needs a manual run with dry-run off) |
 | Mon–Fri 09:00   | `community-pr-close-stale.yml` | Close stale community PRs         |
 
@@ -289,51 +288,26 @@ runs).
 
 ## Runner Selection
 
-Every job runs on the org's self-hosted runners: `runs-on: [self-hosted, skynet]`.
-That includes the Docker build matrix in `scripts/docker/docker-config.mjs`. The
-one exception is the SLSA provenance generator, a third-party reusable workflow
-that picks its own GitHub-hosted runner. New labels must be added to
-`actionlint.yml`, or the `actionlint_check` pre-commit hook fails.
+Every job runs on GitHub-hosted `ubuntu-latest`, including the Docker build
+matrix in `scripts/docker/docker-config.mjs`. The SLSA provenance generator is a
+third-party reusable workflow that picks its own GitHub-hosted runner.
 
-The runners:
-
-- **Pool:** two ephemeral Linux x64 runners in the `skynet-private` runner group.
-  That group serves private repositories only, so this setup depends on the repo
-  staying private.
-- **Size:** 2 CPUs per runner, and 6 GB of memory per job.
-- **Image:** `myoung34/github-runner` (Ubuntu 24.04). It runs as root with
-  `sudo`, and ships `jq`, `zstd`, `gh`, Docker, Compose and buildx. Its own
-  `node` is v18, so jobs set up Node 24 first. It lacks some system libraries
-  that GitHub's Ubuntu image has, so jobs that need them install them:
-  `shellcheck` (get-n8n lint), and `libdbus-1-3` plus `libxcb1` (the
-  `node-screenshots` addon in the backend unit tests). If a native module fails
-  with `cannot open shared object file`, run `ldd` on the module in the runner
-  image to list what's missing.
-- **Shared host:** jobs share the host's Docker daemon (through its socket),
-  its network, and `/opt/hostedtoolcache`. As a result:
-  - **Image tags:** E2E images are tagged per commit
-    (`n8nio/n8n:ci-<variant>-<sha>`) so concurrent runs can't swap images.
-    `util-cleanup-pr-images.yml` untags this repo's `ci-` images older than 3 days.
-  - **Bind mounts:** they resolve on the host. The work dir and `TMPDIR` are
-    mounted at the same paths there.
-  - **Host ports:** srv2 itself serves on 5678 (the homelab n8n's Swarm ingress
-    publishes it on every node), and concurrent jobs share the network. Jobs that
-    start a server on the host pick free high ports from the kernel:
-    - The dev-server smoke passes `N8N_BASE_URL`, `N8N_EDITOR_URL` and
-      `N8N_RUNNERS_BROKER_PORT`.
-    - `test-get-n8n.sh --e2e` passes `N8N_HOST_PORT`, and uses a per-run compose
-      project name so one run's teardown can't remove another's.
-    Container-based E2E stacks already map random host ports.
-  - **Layer cache:** image builds without a buildx container builder reuse the
-    host's layer cache between jobs.
-- **Sizing:**
-  - Heap caps (`NODE_OPTIONS`) are at most 4–5 GB.
-  - Typecheck runs turbo serially: editor-ui's vue-tsc alone peaks at about
-    6.0 GB (measured under a 6 GB cgroup).
-  - Lint runs one eslint process at a time.
-  - Turbo runs at most 2 tasks unless a job sets `TURBO_CONCURRENCY` or `--concurrency`.
-- **No Windows or ARM:** there are no Windows or ARM runners, so there's no
-  Windows build, and Docker images are built for `linux/amd64` only.
+- **Cost:** the repo is public, so standard GitHub-hosted runners are free and
+  unlimited. Don't add paid runner labels (larger runners, third-party runner
+  services). If the repo ever goes private, minutes become metered against the
+  org's allowance, and the org's Actions budget stops CI when it runs out.
+- **Size:** 4 CPUs and 16 GB per job (GitHub's size for public repos). Heap caps
+  (`NODE_OPTIONS`, 6–7 GB) and lint's `TURBO_CONCURRENCY: 10` are tuned for it.
+- **Images between jobs:** each job is a fresh VM, so `prepare-docker` saves
+  `n8nio/n8n:local` + `n8nio/runners:local` as a zstd tarball in the Actions
+  cache under a variant+SHA key, and `load-n8n-docker` restores it in each shard
+  (rebuilding on a cache miss).
+- **Host ports:** the dev-server smoke and `test-get-n8n.sh --e2e` start servers
+  on free high ports picked from the kernel (`N8N_BASE_URL`, `N8N_EDITOR_URL`,
+  `N8N_RUNNERS_BROKER_PORT`, `N8N_HOST_PORT`) rather than n8n's defaults.
+  Container-based E2E stacks already map random host ports.
+- **No Windows or ARM:** there's no Windows build, and Docker images are built
+  for `linux/amd64` only.
 
 ---
 

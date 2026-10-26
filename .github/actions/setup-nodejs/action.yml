@@ -1,6 +1,4 @@
-# Works on the self-hosted skynet runners (shared host Docker daemon and a
-# host-mounted /opt/hostedtoolcache) and on GitHub-hosted runners, using
-# standard GitHub Actions caching.
+# Runs on GitHub-hosted runners, using standard GitHub Actions caching.
 
 name: 'Node.js Build Setup'
 description: 'Configures Node.js with pnpm, installs Aikido SafeChain for supply chain protection, installs dependencies, enables Turborepo caching, (optional) sets up Docker layer caching, and builds the project or an optional command.'
@@ -44,22 +42,8 @@ runs:
     # PATH is left untouched, and the runner image's baked-in Node 20.20.0
     # quietly takes over. Caching the parent version dir captures the marker
     # alongside the toolchain. Key bumped to v2 to invalidate stale entries.
-    # On the self-hosted runners /opt/hostedtoolcache is a host mount shared by
-    # every runner, so once a version is there, skip the restore: extracting
-    # over a toolchain another job is using could break that job.
-    - name: Check Node.js Toolcache
-      id: node-toolcache
-      if: runner.os == 'Linux' && runner.arch == 'X64'
-      shell: bash
-      env:
-        NODE_VERSION: ${{ inputs.node-version }}
-      run: |
-        if [ -f "/opt/hostedtoolcache/node/$NODE_VERSION/x64.complete" ]; then
-          echo "present=true" >> "$GITHUB_OUTPUT"
-        fi
-
     - name: Restore Node.js Toolcache
-      if: runner.os == 'Linux' && runner.arch == 'X64' && steps.node-toolcache.outputs.present != 'true'
+      if: runner.os == 'Linux' && runner.arch == 'X64'
       uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
       with:
         path: /opt/hostedtoolcache/node/${{ inputs.node-version }}
@@ -172,8 +156,7 @@ runs:
 
     # `--loglevel` CLI flag does NOT override `.npmrc` for that path, but
     # `--config.loglevel` does — so the failing script's real output reaches us.
-    # (Confirmed on CI on the former Blacksmith and GitHub-hosted runners, through the SafeChain
-    # shim and the real pnpm binary)
+    # (Confirmed on CI through the SafeChain shim and the real pnpm binary)
     #
     # Layered so the cause survives even failure modes pnpm can't report itself:
     #  1. `--config.loglevel=info` un-suppresses lifecycle output (the actual fix).
@@ -292,13 +275,6 @@ runs:
     - name: Setup Docker Builder
       if: ${{ inputs.enable-docker-cache == 'true' }}
       uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
-
-    # Turbo defaults to 10 parallel tasks; the self-hosted runners have 2 CPUs and
-    # 6 GB per job. Jobs that set TURBO_CONCURRENCY (or pass --concurrency) keep theirs.
-    - name: Limit Turborepo concurrency
-      if: ${{ env.TURBO_CONCURRENCY == '' }}
-      shell: bash
-      run: echo "TURBO_CONCURRENCY=2" >> "$GITHUB_ENV"
 
     - name: Build Project
       if: ${{ inputs.build-command != '' }}

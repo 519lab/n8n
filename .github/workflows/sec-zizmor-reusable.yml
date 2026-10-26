@@ -9,7 +9,7 @@ permissions: {}
 jobs:
   zizmor_scan:
     name: Zizmor Security Scan
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     permissions:
       security-events: write
     steps:

@@ -17,13 +17,13 @@ on:
 
 permissions:
   contents: read
-  # The scanned images live in this private repo's GHCR packages.
+  # The scanned images are private GHCR packages.
   packages: read
 
 jobs:
   security_scan:
     name: Security - Scan Docker Image With Trivy
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout for VEX file
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -34,12 +34,6 @@ jobs:
             security/trivy-ignore-policy.rego
             .github/scripts/retry.mjs
           sparse-checkout-cone-mode: false
-
-      # The self-hosted runner image's own node is v18; scripts here target current Node.
-      - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-        with:
-          node-version: '24.18.1'
 
       - name: Login to GHCR
         uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0

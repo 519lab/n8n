@@ -29,7 +29,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -54,7 +54,7 @@ jobs:
           file: ./docker/images/n8n-base/Dockerfile
           build-args: |
             NODE_VERSION=${{ matrix.node_version }}
-          # amd64 only: the self-hosted runners are x64 and there are no ARM runners.
+          # Images are published for linux/amd64 only.
           platforms: linux/amd64
           provenance: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.push == true) }}
           sbom: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.push == true) }}

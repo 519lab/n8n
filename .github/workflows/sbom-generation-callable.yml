@@ -32,7 +32,7 @@ permissions:
 jobs:
   generate-sbom:
     name: Generate and Attach SBOM to Release
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     # No continue-on-error: SBOM is now the source of truth for
     # THIRD_PARTY_LICENSES.md (served by the /third-party-licenses endpoint

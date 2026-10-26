@@ -11,7 +11,7 @@ class BuildContext {
 		let context = {
 			version: '',
 			release_type: '',
-			// amd64 only: the self-hosted runners are x64 and there are no ARM runners.
+			// Images are published for linux/amd64 only.
 			platforms: ['linux/amd64'],
 			push_to_ghcr: true,
 		};

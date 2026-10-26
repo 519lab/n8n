@@ -54,21 +54,21 @@ on:
         type: string
 
 env:
-  # Runner containers are capped at 6 GB.
-  NODE_OPTIONS: '--max-old-space-size=4096'
+  NODE_OPTIONS: '--max-old-space-size=6144'
   PLAYWRIGHT_WORKERS: ${{ inputs.workers != '' && inputs.workers || '2' }}
   # Browser cache location - must match install-browsers script.
   # Absolute so nested pnpm invocations (e.g. coverage shard runner) don't
   # re-resolve a relative path against the package's INIT_CWD and double it.
   PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/packages/testing/playwright/.playwright-browsers
-  # TEST_IMAGE_N8N is exported by load-n8n-docker (docker-artifact mode); unused in local mode.
+  # docker-artifact loads the image locally as n8nio/n8n:local; unused in local mode.
+  TEST_IMAGE_N8N: 'n8nio/n8n:local'
   N8N_SKIP_LICENSES: 'true'
   CURRENTS_CI_BUILD_ID: ${{ github.repository }}-${{ github.run_id }}-${{ github.run_attempt }}
   CURRENTS_PROJECT_ID: ${{ inputs.currents-project-id }}
 
 jobs:
   test:
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     timeout-minutes: ${{ inputs.timeout-minutes }}
     permissions:
       contents: read

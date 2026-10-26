@@ -9,12 +9,6 @@ include:
   - path: .github/poutine-rules
 
 skip:
-  # === SELF-HOSTED RUNNERS ===
-  # PR jobs run on the org's own self-hosted runners (runs-on: [self-hosted, skynet]).
-  # Safe only while this repo is private: their runner group serves private
-  # repositories only, so fork PRs from the public can't reach them.
-  - rule: pr_runs_on_self_hosted
-
   # === UNVERIFIED ACTIONS ===
   # Third-party actions from non-verified GitHub Marketplace creators.
   # These have been reviewed and approved for use.

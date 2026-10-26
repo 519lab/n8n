@@ -25,7 +25,6 @@ Test n8n Helm chart deployments using K3s (lightweight Kubernetes) inside Docker
 | Docker Desktop (macOS/Windows) | Yes | Privileged enabled by default |
 | Docker Engine (Linux) | Yes | Standard daemon supports it |
 | GitHub Actions (ubuntu runners) | Yes | Docker socket available |
-| Self-hosted CI runners (`skynet`) | Untested | Jobs use the host's Docker daemon via its socket, so privileged containers should start |
 | Rootless Docker | **No** | K3s requires privileged mode |
 | Docker-in-Docker | Depends | Outer container needs `--privileged` |
 | Podman | **No** | K3s requires Docker-compatible runtime |

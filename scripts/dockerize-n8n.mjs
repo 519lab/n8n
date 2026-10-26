@@ -314,7 +314,7 @@ async function buildDockerImage({ name, dockerfilePath, fullImageName, buildArgs
 				${config.buildContext}`;
 			echo(stdout);
 		} else {
-			// A buildx container builder (set up by setup-docker-builder / setup-buildx-action).
+			// Uses the buildx builder that setup-nodejs's `enable-docker-cache` sets up in CI.
 			// In CI, push directly to registry to avoid slow --load (export/import tarball).
 			// Locally, use --load to make image available in local daemon.
 			const outputFlag = shouldPush ? '--push' : '--load';

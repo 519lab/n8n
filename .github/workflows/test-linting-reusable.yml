@@ -15,15 +15,14 @@ on:
         default: 24.18.1
 
 env:
-  # Sized for the self-hosted runners (2 CPUs, 6 GB per job): one eslint process
-  # at a time, with most of the job's memory as its heap.
-  NODE_OPTIONS: --max-old-space-size=5120
-  TURBO_CONCURRENCY: 1
+  # Tuned for the 4-vCPU / 16 GB GitHub-hosted runner: ~10 parallel eslint processes.
+  NODE_OPTIONS: --max-old-space-size=7168
+  TURBO_CONCURRENCY: 10
 
 jobs:
   lint:
     name: Lint
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:

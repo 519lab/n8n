@@ -13,12 +13,6 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    # The self-hosted runner image's own node is v18; scripts here target current Node.
-    - name: Setup Node.js
-      uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-      with:
-        node-version: '24.18.1'
-
     - name: Login to GitHub Container Registry
       if: inputs.login-ghcr == 'true'
       shell: bash

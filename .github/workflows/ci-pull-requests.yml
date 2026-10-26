@@ -11,10 +11,9 @@ concurrency:
 jobs:
   install-and-build:
     name: Install & Build
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     env:
-      # Runner containers are capped at 6 GB.
-      NODE_OPTIONS: '--max-old-space-size=4096'
+      NODE_OPTIONS: '--max-old-space-size=7168'
     outputs:
       ci: ${{ fromJSON(steps.ci-filter.outputs.results).ci == true }}
       runtime: ${{ fromJSON(steps.ci-filter.outputs.results).runtime == true }}
@@ -151,12 +150,11 @@ jobs:
           FORCE_E2E: ${{ contains(github.event.pull_request.labels.*.name, 'force-e2e') }}
         run: |
           FILES_CSV=$(echo "$CHANGED_FILES" | tr '\n' ',' | sed 's/,$//')
-          # 4 shards: the self-hosted pool has two 2-CPU runners, so more shards only queue.
           # A forced run means "run everything", so skip impact selection.
           if [ "$FORCE_E2E" = "true" ]; then
-            MATRIX=$(node packages/testing/playwright/scripts/distribute-tests.mjs --matrix 4 --orchestrate)
+            MATRIX=$(node packages/testing/playwright/scripts/distribute-tests.mjs --matrix 16 --orchestrate)
           else
-            MATRIX=$(node packages/testing/playwright/scripts/distribute-tests.mjs --matrix 4 --orchestrate --impact "--files=$FILES_CSV" "--base=$MERGE_BASE")
+            MATRIX=$(node packages/testing/playwright/scripts/distribute-tests.mjs --matrix 16 --orchestrate --impact "--files=$FILES_CSV" "--base=$MERGE_BASE")
           fi
           echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
           echo "skip-tests=$(node -e "process.stdout.write(JSON.parse(process.argv[1])[0]?.skip === true ? 'true' : 'false')" "$MATRIX")" >> "$GITHUB_OUTPUT"
@@ -186,14 +184,10 @@ jobs:
   typecheck:
     name: Typecheck
     if: needs.install-and-build.outputs.ci == 'true'
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     needs: install-and-build
     env:
-      # Runner containers are capped at 6 GB.
-      NODE_OPTIONS: --max-old-space-size=4096
-      # editor-ui's vue-tsc alone peaks at ~6.0 GB (measured under a 6 GB cgroup),
-      # so nothing else may run beside it.
-      TURBO_CONCURRENCY: 1
+      NODE_OPTIONS: --max-old-space-size=7168
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -215,7 +209,7 @@ jobs:
   check-packaging:
     name: Check packaging
     if: needs.install-and-build.outputs.ci == 'true'
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     needs: install-and-build
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -283,8 +277,6 @@ jobs:
       test-mode: docker-artifact
       test-command: pnpm --filter=n8n-playwright test:container:sqlite:e2e
       workers: '1'
-      # A full (force-e2e) run is ~200 specs over 4 one-worker shards on 2-CPU runners.
-      timeout-minutes: 240
       pre-generated-matrix: ${{ needs.install-and-build.outputs.matrix }}
       artifact-prefix: e2e
     secrets: inherit
@@ -348,7 +340,7 @@ jobs:
         workflow-scripts,
       ]
     if: always()
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:

@@ -16,32 +16,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
-### 2026-10-25 — All CI on the org's self-hosted runners; Windows and ARM64 builds dropped
+### 2026-10-26 — CI on free GitHub-hosted runners; Blacksmith removed; Windows and ARM64 builds dropped
 
-**Infrastructure; no `.ee` source involved.** Blacksmith runners were billed per minute, so every job now runs on the org's self-hosted runners (`runs-on: [self-hosted, skynet]`). The pool is two 2-CPU runners with 6 GB per job, on a shared host Docker daemon, in a private-repos-only runner group. The only job left on GitHub-hosted runners is the third-party SLSA provenance generator.
+**Infrastructure; no `.ee` source involved.** CI ran on Blacksmith runners, which were billed per minute and ran up a bill. Every job now runs on GitHub-hosted `ubuntu-latest`. The repo is public, so those runners are free and unlimited, at 4 CPUs / 16 GB. An interim move to a small self-hosted pool was tried and dropped: it was too slow (backend unit tests took 75 minutes), and its runner group can't serve public repos.
 
 What changed:
-- **Standard actions.** Blacksmith's checkout, Docker builder and build-push actions are replaced by the pinned standard ones (`actions/checkout`, `docker/setup-buildx-action`, `docker/build-push-action` v6.19.2).
-- **Sized for the smaller runners.**
-  - Heap caps are 4–5 GB instead of 7 GB.
-  - Typecheck runs one task at a time: editor-ui's vue-tsc alone peaks at about 6.0 GB.
-  - Lint runs one eslint process at a time.
-  - Turbo defaults to 2 parallel tasks.
-  - PR E2E uses 4 shards instead of 16 and stays impact-scoped.
-  - A new `test-e2e-nightly.yml` runs the full suite on develop every night.
-- **Safe on a shared Docker daemon.**
-  - E2E images are tagged per commit (`n8nio/n8n:ci-<variant>-<sha>`), so concurrent runs can't test each other's build. A daily job untags this repo's `ci-` images older than 3 days.
-  - The get-n8n e2e stack uses a per-run compose project, so one run's teardown can't remove another's stack.
-  - Jobs that start a server on the host use free high ports. The runner host already serves on 5678, and jobs share its network.
+- **No Blacksmith left.** Blacksmith's checkout, Docker builder and build-push actions are replaced by the pinned standard ones (`actions/checkout`, `docker/setup-buildx-action`, `docker/build-push-action` v6.19.2). The runner labels, poutine allowlist entries, `actionlint.yml` label list, `.actrc` mappings and runner-specific comments are gone too.
+- **Nightly full E2E.** PR E2E stays impact-scoped on 16 shards (or runs everything with `force-e2e`). A new `test-e2e-nightly.yml` runs the full suite on develop every night and opens a `ci-failure` issue when it fails.
+- **Windows and ARM64 dropped.** The Windows build and the Windows get-n8n checks are removed. Docker images (n8n, runners and the base image) are built for `linux/amd64` only. GitHub's Windows and ARM runners are also free for public repos, so either can come back if needed.
+- **Stale-branch cleanup fixed.** It would have deleted branches on its weekly schedule: `!inputs.dry-run` is true when a scheduled run has no inputs. It had never run here, because no runner picked it up. Scheduled runs now only list stale branches; deleting takes a manual run with dry-run off.
 - **`get-n8n.sh` takes `N8N_HOST_PORT`** (script v1.2.0, stack definition v2). Set it to publish n8n on a port other than 5678. It's stored in `.env`, an existing install keeps its port, and invalid values are rejected before anything is written. Previously the port was fixed, and the only way around a taken 5678 was editing `compose.yml` by hand.
-  - The E2E image build uses the host's layer cache.
-  - The Node toolcache restore skips versions already present.
+- **Test servers on free ports.** The dev-server smoke and the get-n8n e2e pick free high ports instead of 5678/5679/8080. Playwright's teardown now kills only the ports its URLs name; it used to kill anything on 5678 and 8080.
+- **Playwright waits for n8n to be ready.** The local-server webServer probe used `/favicon.ico`, which answers before n8n's routes are registered, so the first DB reset could 404. It now waits on `/healthz/readiness`.
+- **Smaller fixes.**
   - Engine and db integration tests keep Postgres data on tmpfs, so no volumes are left behind.
-  - Steps that ran the image's Node 18 now set up Node 24 first.
-- **Windows and ARM64 dropped.** No Windows or ARM runners exist, so the Windows build and the Windows get-n8n checks are removed, and Docker images (n8n, runners and the base image) are built for `linux/amd64` only.
-- **Stale-branch cleanup fixed.** It deleted branches on its weekly schedule: `!inputs.dry-run` is true when a scheduled run has no inputs. It had never run here, because no Blacksmith runner picked it up. Scheduled runs now only list stale branches; deleting takes a manual run with dry-run off.
+  - The Trivy scan logs in to GHCR before pulling (it failed with `unauthorized`, #159).
+  - SafeChain is installed whenever its binary is missing, not only on a cache miss.
+  - The task-runner env test simulates the denied read instead of relying on `chmod 000`, which root ignores.
 
-Docs: `.github/WORKFLOWS.md` (runner section, schedule, E2E) and `CI-TELEMETRY.md`. Actionlint now knows the `skynet` label, and poutine no longer allowlists the Blacksmith actions.
+Docs: `.github/WORKFLOWS.md` (runner section, schedule, E2E), `CI-TELEMETRY.md` and `containers/HELM-TESTING.md`.
 
 ### 2026-10-24 — Log-streaming settings UI rebuilt to its page-object contract
 

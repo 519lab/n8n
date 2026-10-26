@@ -9,12 +9,12 @@ on:
         default: ''
 
 env:
-  NODE_OPTIONS: '--max-old-space-size=4096'
+  NODE_OPTIONS: '--max-old-space-size=6144'
 
 jobs:
   test:
     name: ${{ matrix.name }}
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false

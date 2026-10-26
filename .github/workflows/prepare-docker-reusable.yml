@@ -24,7 +24,7 @@ on:
 jobs:
   prepare:
     name: 'Build & publish image'
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:

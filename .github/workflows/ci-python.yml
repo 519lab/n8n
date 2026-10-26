@@ -12,7 +12,7 @@ on:
 jobs:
   checks:
     name: Checks
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: packages/@n8n/task-runner-python

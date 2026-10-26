@@ -29,14 +29,11 @@ concurrency:
 jobs:
   lint:
     name: 'Lint (shellcheck + POSIX)'
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      # The self-hosted runner image doesn't ship shellcheck.
-      - name: Install shellcheck
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
       - name: shellcheck
         run: shellcheck docker/get-n8n.sh docker/test-get-n8n.sh
       - name: POSIX syntax check (dash)
@@ -44,20 +41,15 @@ jobs:
 
   e2e:
     name: 'Install, boot, upgrade'
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Run test harness
-        env:
-          # The stack's compose project would otherwise be named after its directory
-          # ("e2e") on the shared host Docker daemon, so overlapping runs would tear
-          # down each other's stack.
-          COMPOSE_PROJECT_NAME: get-n8n-e2e-${{ github.run_id }}-${{ github.run_attempt }}
-        # The self-hosted runners share the host network, where 5678 can already be taken,
-        # so publish n8n on a free high port.
+        # Publish n8n on a free high port instead of 5678, so the test can't collide
+        # with anything already listening there.
         run: |
           N8N_HOST_PORT=$(python3 -c 'import socket; s = socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1])')
           export N8N_HOST_PORT

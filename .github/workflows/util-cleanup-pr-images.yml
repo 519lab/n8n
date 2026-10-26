@@ -8,7 +8,7 @@ on:
 jobs:
   cleanup:
     name: 'Delete stale CI images'
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     permissions:
       packages: write
       contents: read
@@ -19,35 +19,12 @@ jobs:
           sparse-checkout: .github/scripts
           sparse-checkout-cone-mode: false
 
-      # The self-hosted runner image's own node is v18; scripts here target current Node.
-      - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-        with:
-          node-version: '24.18.1'
-
       - name: Delete stale CI images
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GHCR_ORG: ${{ github.repository_owner }}
           GHCR_REPO: ${{ github.event.repository.name }}
         run: node .github/scripts/cleanup-ghcr-images.mjs --stale 3
-
-      # E2E images are tagged per commit (n8nio/{n8n,runners}:ci-<variant>-<sha>) on the
-      # self-hosted runners' shared host Docker daemon, which this job also uses. Untag
-      # this repo's ones older than 3 days; images still in use are skipped, and
-      # nothing else on the daemon is touched.
-      - name: Delete stale local CI images
-        run: |
-          cutoff=$(date -d '3 days ago' +%s)
-          docker image ls --format '{{.Repository}}:{{.Tag}}' \
-            --filter 'reference=n8nio/n8n:ci-*' --filter 'reference=n8nio/runners:ci-*' |
-            sort -u | while read -r ref; do
-              created=$(docker image inspect --format '{{.Created}}' "$ref") || continue
-              if [ "$(date -d "$created" +%s)" -lt "$cutoff" ]; then
-                docker image rm "$ref" >/dev/null && echo "Removed $ref" ||
-                  echo "::warning::Could not remove $ref (still in use?)"
-              fi
-            done
 
   report-status:
     name: Report CI status

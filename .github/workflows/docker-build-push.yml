@@ -7,8 +7,7 @@ name: 'Docker: Build and Push'
 run-name: "${{ github.event_name == 'workflow_dispatch' && format('Docker: Build and Push {0} (push={1})', github.ref_name, inputs.push_enabled) || '' }}"
 
 env:
-  # Runner containers are capped at 6 GB.
-  NODE_OPTIONS: '--max-old-space-size=4096'
+  NODE_OPTIONS: '--max-old-space-size=7168'
   NODE_VERSION: '24.18.1'
 
 on:
@@ -57,7 +56,7 @@ on:
 jobs:
   determine-build-context:
     name: Determine Build Context
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     outputs:
       release_type: ${{ steps.context.outputs.release_type }}
       n8n_version: ${{ steps.context.outputs.version }}
@@ -75,12 +74,6 @@ jobs:
         # From the checked-out working tree (honours `ref`), not GITHUB_SHA — which
         # is the triggering ref (e.g. master) and would mislabel a ref-override build.
         run: echo "short_sha=$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
-
-      # The self-hosted runner image's own node is v18; scripts here target current Node.
-      - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-        with:
-          node-version: '24.18.1'
 
       - name: Determine build context
         id: context
@@ -101,9 +94,8 @@ jobs:
   build-and-push-docker:
     name: Build App, then Build and Push Docker Image (${{ matrix.platform }})
     needs: determine-build-context
-    runs-on: [self-hosted, skynet]
-    # A cold build on a 2-CPU self-hosted runner is much slower than on the old 4-vCPU ones.
-    timeout-minutes: 90
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
     strategy:
       matrix: ${{ fromJSON(needs.determine-build-context.outputs.build_matrix) }}
     outputs:
@@ -151,7 +143,7 @@ jobs:
             "${DATE_ARGS[@]}"
 
           echo "=== Generated Docker Tags ==="
-          cat "$GITHUB_OUTPUT" | grep "_tags=" | while IFS='=' read -r key value; do
+          grep "_tags=" "$GITHUB_OUTPUT" | while IFS='=' read -r key value; do
             echo "${key}: ${value%%,*}..."  # Show first tag for brevity
           done
 
@@ -228,7 +220,7 @@ jobs:
   create_multi_arch_manifest:
     name: Create Manifest
     needs: [determine-build-context, build-and-push-docker]
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     if: |
       needs.build-and-push-docker.result == 'success' &&
       needs.determine-build-context.outputs.push_enabled == 'true'
@@ -300,7 +292,7 @@ jobs:
   call-success-url:
     name: Call Success URL
     needs: [create_multi_arch_manifest]
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     if: needs.create_multi_arch_manifest.result == 'success' || needs.create_multi_arch_manifest.result == 'skipped'
     steps:
       - name: Call Success URL
@@ -387,7 +379,7 @@ jobs:
       (needs.determine-build-context.outputs.release_type == 'stable' ||
        needs.determine-build-context.outputs.release_type == 'rc' ||
        needs.determine-build-context.outputs.release_type == 'nightly')
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     permissions:
       id-token: write
       packages: write
@@ -452,7 +444,7 @@ jobs:
       (needs.determine-build-context.outputs.release_type == 'stable' ||
        needs.determine-build-context.outputs.release_type == 'rc' ||
        needs.determine-build-context.outputs.release_type == 'nightly')
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       id-token: write

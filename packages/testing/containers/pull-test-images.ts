@@ -89,9 +89,9 @@ async function main() {
 	console.log(`🐳 Pre-pulling test container images (${mode})...`);
 	const startTime = Date.now();
 
-	// Filter out local images (`:local`, or CI's per-commit `:ci-<variant>-<sha>`) and start all pulls in parallel
+	// Filter out local images and start all pulls in parallel
 	const imagesToPull = images.filter((image) => {
-		if (/:(local|ci-[\w.-]+)$/.test(image)) {
+		if (image.endsWith(':local')) {
 			console.log(`⏭️  Skipping ${image} (local build)`);
 			return false;
 		}

@@ -9,14 +9,13 @@ on:
         type: string
 
 env:
-  # Runner containers are capped at 6 GB.
-  NODE_OPTIONS: '--max-old-space-size=4096'
-  PLAYWRIGHT_BROWSERS_PATH: packages/testing/playwright/.playwright-browsers
+  NODE_OPTIONS: '--max-old-space-size=6144'
+  PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/packages/testing/playwright/.playwright-browsers
 
 jobs:
   smoke:
     name: Dev-server smoke
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
@@ -34,8 +33,8 @@ jobs:
       - name: Install Browsers
         run: pnpm turbo run install-browsers --filter=n8n-playwright
 
-      # The self-hosted runners share the host network, where n8n's usual ports
-      # (5678, 5679, 8080) can already be taken, so use free high ports.
+      # Free high ports instead of n8n's usual 5678/5679/8080, so the smoke can't
+      # collide with anything already listening there.
       - name: Pick free ports
         id: ports
         run: |
@@ -43,14 +42,14 @@ jobs:
           socks = [socket.socket() for _ in range(3)]
           for s in socks: s.bind(("127.0.0.1", 0))
           print(*(s.getsockname()[1] for s in socks))')
-          echo "backend=$backend" >> "$GITHUB_OUTPUT"
-          echo "broker=$broker" >> "$GITHUB_OUTPUT"
-          echo "editor=$editor" >> "$GITHUB_OUTPUT"
+          {
+            echo "backend=$backend"
+            echo "broker=$broker"
+            echo "editor=$editor"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Run dev-server smoke spec
         # Same as the package's `test:dev-server-smoke` script, on the ports picked above.
-        # Run from repo root so PLAYWRIGHT_BROWSERS_PATH (relative) resolves
-        # correctly. cd-ing into the playwright package double-nests it.
         env:
           N8N_BASE_URL: http://localhost:${{ steps.ports.outputs.backend }}
           N8N_EDITOR_URL: http://localhost:${{ steps.ports.outputs.editor }}

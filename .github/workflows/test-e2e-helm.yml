@@ -33,7 +33,7 @@ env:
 jobs:
   build:
     name: 'Build Docker Image'
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     permissions:
       packages: write
       contents: read
@@ -65,7 +65,7 @@ jobs:
   helm-e2e:
     name: "Helm E2E (${{ inputs.mode || 'queue' }})"
     needs: build
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: read
@@ -169,7 +169,7 @@ jobs:
     name: 'Cleanup GHCR Image'
     needs: [build, helm-e2e]
     if: always()
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     permissions:
       packages: write
       contents: read
@@ -179,12 +179,6 @@ jobs:
         with:
           sparse-checkout: .github/scripts
           sparse-checkout-cone-mode: false
-
-      # The self-hosted runner image's own node is v18; scripts here target current Node.
-      - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-        with:
-          node-version: '24.18.1'
 
       - name: Delete images from GHCR
         continue-on-error: true

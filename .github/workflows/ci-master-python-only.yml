@@ -25,7 +25,7 @@ concurrency:
 jobs:
   detect:
     name: Detect Python-only change
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     outputs:
       python_only: ${{ steps.files.outputs.python_only }}
     steps:
@@ -47,14 +47,14 @@ jobs:
   lint:
     name: ${{ needs.detect.outputs.python_only == 'true' && 'Lint / Lint' || 'Lint (python-only stub, n/a)' }}
     needs: detect
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     steps:
       - run: echo "Python-only change; covered by the task runner's own CI."
 
   unit-test:
     name: ${{ needs.detect.outputs.python_only == 'true' && format('Unit tests ({0}) / Unit tests', matrix.node-version) || format('Unit tests ({0}) (python-only stub, n/a)', matrix.node-version) }}
     needs: detect
-    runs-on: [self-hosted, skynet]
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         node-version: [22.23.2, 24.18.1]
