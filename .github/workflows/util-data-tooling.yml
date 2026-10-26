@@ -26,7 +26,7 @@ jobs:
         id: paths-filter
         with:
           mode: filter
-          base-ref: master
+          base-ref: develop
           filters: |
             db:
               - packages/@n8n/db/**
@@ -62,7 +62,7 @@ jobs:
         id: paths-filter
         with:
           mode: filter
-          base-ref: master
+          base-ref: develop
           filters: |
             db:
               - packages/@n8n/db/**
