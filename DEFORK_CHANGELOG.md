@@ -51,6 +51,16 @@ What changed:
 
 Docs: `.github/WORKFLOWS.md` (runner section, schedule, E2E), `CI-TELEMETRY.md` and `containers/HELM-TESTING.md`.
 
+### 2026-10-25 — Human-review approval prompts show the tool input; HITL E2E spec un-quarantined (#154)
+
+**Fix; no `.ee` source involved.**
+- The default approval message for a human-review (HITL) tool printed `Input: [object Object]`. `$tool.parameters` is the agent's parameters object, and the template interpolated it as-is. The default now renders it with `JSON.stringify`, so approvers can see what the tool will run with.
+- Upstream quarantined `ai/hitl-for-tools.spec.ts`, so it never ran. It passes now and runs again. Its approval tests failed for two test-side reasons:
+  - Headless Chromium's user agent counts as a bot. Send-and-wait ignores bot requests so that link previews can't approve, so the Approve click was dropped.
+  - A stale LLM recording made the agent loop.
+
+Clean-room sources: the fair-code `hitl-tools.ts` and `workflow-data-proxy.ts`, plus `sendAndWaitWebhook` in `nodes-base`.
+
 ### 2026-10-24 — Log-streaming settings UI rebuilt to its page-object contract
 
 **Fix; no `.ee` source involved.** The rebuilt page and modal didn't match `SettingsLogStreamingPage`, and couldn't create a destination at all: a new destination posted `id: ''` and the API rejected it.
