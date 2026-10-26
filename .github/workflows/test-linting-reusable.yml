@@ -43,3 +43,6 @@ jobs:
             free -m | awk '/Mem:/{printf "[mem] used=%sMB avail=%sMB\n", $3, $7} /Swap:/{printf "[swap] used=%sMB\n", $3}'
           done) &
           pnpm lint:ci --summarize
+        env:
+          # TEMPORARY: bypass the turbo cache so the memory log measures a real lint.
+          TURBO_FORCE: 'true'
