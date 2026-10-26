@@ -28,8 +28,16 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
 
-      - name: Build and Test
+      - name: Setup
         uses: ./.github/actions/setup-nodejs
         with:
-          build-command: pnpm lint:ci
+          build-command: ''
           node-version: ${{ inputs.nodeVersion }}
+
+      # TEMPORARY diagnostic: log memory use every 5s while lint runs.
+      - name: Lint
+        run: |
+          (while sleep 5; do
+            free -m | awk '/Mem:/{printf "[mem] used=%sMB avail=%sMB\n", $3, $7} /Swap:/{printf "[swap] used=%sMB\n", $3}'
+          done) &
+          pnpm lint:ci --summarize
