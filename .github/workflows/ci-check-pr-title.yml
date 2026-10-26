@@ -10,12 +10,23 @@ on:
       - 'master'
       - 'develop'
 
+permissions:
+  contents: read
+
 jobs:
   check-pr-title:
+    # Dependabot writes its own `build(deps): …` titles.
+    if: github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/scripts/check-pr-title.mjs
+          sparse-checkout-cone-mode: false
+
       - name: Validate PR title
-        uses: n8n-io/validate-n8n-pull-request-title@c3b6fd06bda12eebd57a592c0cf3b747d5b73569 # v2.4.0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: node .github/scripts/check-pr-title.mjs

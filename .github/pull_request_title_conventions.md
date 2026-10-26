@@ -11,7 +11,7 @@ A PR title consists of these elements:
   |       |                        Capitalized
   |       |                        No period at the end.
   │       │
-  │       └─⫸ Scope: API | benchmark | core | editor | * Node
+  │       └─⫸ Scope: API | benchmark | core | editor | ai-builder | * Node
   │
   └─⫸ Type: build | ci | chore | docs | feat | fix | perf | refactor | test
 ```
@@ -53,10 +53,17 @@ The scope should specify the place of the commit change as long as the commit cl
 - `benchmark` - changes to the benchmark cli
 - `core` - changes to the core / private API / backend of n8n
 - `editor` - changes to the Editor UI
+- `ai-builder` - changes to the AI workflow builder
 - `* Node` - changes to a specific node or trigger node (”`*`” to be replaced with the node name, not its display name), e.g.
   - mattermost → Mattermost Node
   - microsoftToDo → Microsoft To Do Node
   - n8n → n8n Node
+
+Several scopes can be combined with commas, e.g. `fix(core, editor): …`.
+
+`ci-check-pr-title.yml` enforces the type, scope, and summary rules on PRs into
+`master` and `develop` (`.github/scripts/check-pr-title.mjs`). Dependabot PRs are
+skipped.
 
 ## Summary
 
