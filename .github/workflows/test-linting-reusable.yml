@@ -17,7 +17,7 @@ on:
 env:
   # The 16 GB GitHub-hosted runner ran out of memory at 10 parallel eslint
   # processes (15.5 GB used, swap full) and was down to 1.1 GB free at 3.
-  # No package needs more than a 5 GB heap, so run two at a time.
+  # Two at a time peaked at 10.3 GB (uncached, 16 min).
   NODE_OPTIONS: --max-old-space-size=5120
   TURBO_CONCURRENCY: 2
 
@@ -30,19 +30,8 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
 
-      - name: Setup
+      - name: Build and Test
         uses: ./.github/actions/setup-nodejs
         with:
-          build-command: ''
+          build-command: pnpm lint:ci
           node-version: ${{ inputs.nodeVersion }}
-
-      # TEMPORARY diagnostic: log memory use every 5s while lint runs.
-      - name: Lint
-        run: |
-          (while sleep 5; do
-            free -m | awk '/Mem:/{printf "[mem] used=%sMB avail=%sMB\n", $3, $7} /Swap:/{printf "[swap] used=%sMB\n", $3}'
-          done) &
-          pnpm lint:ci --summarize
-        env:
-          # TEMPORARY: bypass the turbo cache so the memory log measures a real lint.
-          TURBO_FORCE: 'true'

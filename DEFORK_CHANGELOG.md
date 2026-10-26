@@ -28,6 +28,7 @@ What changed:
 - **`get-n8n.sh` takes `N8N_HOST_PORT`** (script v1.2.0, stack definition v2). Set it to publish n8n on a port other than 5678. It's stored in `.env`, an existing install keeps its port, and invalid values are rejected before anything is written. Previously the port was fixed, and the only way around a taken 5678 was editing `compose.yml` by hand.
 - **Test servers on free ports.** The dev-server smoke and the get-n8n e2e pick free high ports instead of 5678/5679/8080. Playwright's teardown now kills only the ports its URLs name; it used to kill anything on 5678 and 8080.
 - **Playwright waits for n8n to be ready.** The local-server webServer probe used `/favicon.ico`, which answers before n8n's routes are registered, so the first DB reset could 404. It now waits on `/healthz/readiness`.
+- **Lint fits the runner.** Ten parallel eslint processes with 7 GB heaps exhausted the 16 GB VM (it was shut down mid-lint). Lint now runs two at a time with 5 GB heaps; an uncached run peaks at 10.3 GB and takes 16 minutes.
 - **Smaller fixes.**
   - Engine and db integration tests keep Postgres data on tmpfs, so no volumes are left behind.
   - The Trivy scan logs in to GHCR before pulling (it failed with `unauthorized`, #159).

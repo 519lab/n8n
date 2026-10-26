@@ -297,7 +297,9 @@ third-party reusable workflow that picks its own GitHub-hosted runner.
   services). If the repo ever goes private, minutes become metered against the
   org's allowance, and the org's Actions budget stops CI when it runs out.
 - **Size:** 4 CPUs and 16 GB per job (GitHub's size for public repos). Heap caps
-  (`NODE_OPTIONS`, 6–7 GB) and lint's `TURBO_CONCURRENCY: 10` are tuned for it.
+  (`NODE_OPTIONS`) are 6–7 GB. Lint runs two eslint processes at a time with
+  5 GB heaps: at ten the VM ran out of memory and was shut down, at three it was
+  down to 1.1 GB free; two peak at 10.3 GB.
 - **Images between jobs:** each job is a fresh VM, so `prepare-docker` saves
   `n8nio/n8n:local` + `n8nio/runners:local` as a zstd tarball in the Actions
   cache under a variant+SHA key, and `load-n8n-docker` restores it in each shard
