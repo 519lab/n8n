@@ -1,3 +1,4 @@
+import { devices } from '@playwright/test';
 import { nanoid } from 'nanoid';
 
 import {
@@ -57,6 +58,9 @@ interface OpenAIResponsesRequest {
 }
 
 const hitlForToolsTestConfig = {
+	// Send-and-wait approval links ignore bot user agents, so link previews can't approve.
+	// Headless Chromium's UA ("HeadlessChrome") counts as a bot, so the Approve click is dropped.
+	userAgent: devices['Desktop Chrome'].userAgent,
 	capability: {
 		services: ['proxy'],
 		env: {
@@ -74,7 +78,9 @@ test.describe(
 	() => {
 		test.beforeEach(async ({ n8n, services }) => {
 			await services.proxy.clearAllExpectations();
-			await services.proxy.loadExpectations('hitl-for-tools');
+			// Strict: the first recording's input is a subset of the follow-up request, so a
+			// lenient match replays the tool call after approval and the agent loops.
+			await services.proxy.loadExpectations('hitl-for-tools', { strictBodyMatching: true });
 			await n8n.canvas.openNewWorkflow();
 		});
 

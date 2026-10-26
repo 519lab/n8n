@@ -13,11 +13,6 @@
 						"content": "Send welcome email to john@gmail.com"
 					},
 					{
-						"type": "message",
-						"role": "assistant",
-						"content": "Calling Code_Tool with input: {\"tool\":\"Code_Tool\",\"receiver\":\"john@gmail.com\",\"body\":\"Subject: Welcome to Our Service!\\n\\nHi John,\\n\\nWelcome! We're thrilled to have you with us. If you have any questions or need help getting started, reply to this email or visit our Help Center. Here are a few resources to help you begin:\\n\\n- Getting started guide: https://example.com/getting-started\\n- Support: support@example.com\\n\\nWe look forward to helping you get the most out of our service.\\n\\nBest regards,\\nThe Team\",\"id\":\"call_mv4VUael9WUlQA306fQ9c8Kq\"}"
-					},
-					{
 						"type": "function_call",
 						"name": "Code_Tool",
 						"arguments": "{\"tool\":\"Code_Tool\",\"receiver\":\"john@gmail.com\",\"body\":\"Subject: Welcome to Our Service!\\n\\nHi John,\\n\\nWelcome! We're thrilled to have you with us. If you have any questions or need help getting started, reply to this email or visit our Help Center. Here are a few resources to help you begin:\\n\\n- Getting started guide: https://example.com/getting-started\\n- Support: support@example.com\\n\\nWe look forward to helping you get the most out of our service.\\n\\nBest regards,\\nThe Team\",\"id\":\"call_mv4VUael9WUlQA306fQ9c8Kq\"}",
