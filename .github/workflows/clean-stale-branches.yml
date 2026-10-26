@@ -26,10 +26,10 @@ permissions:
 jobs:
   remove-stale-branches:
     name: Remove stale branches
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Setup Node.js
         uses: ./.github/actions/setup-nodejs
@@ -46,7 +46,10 @@ jobs:
           # rule; master has no ruleset and only moves on promotion, so this keep-list is
           # what protects it. Always applied, even when a manual run passes extra globs.
           EXCLUDE_BRANCHES: ${{ inputs.exclude && format('master,develop,{0}', inputs.exclude) || 'master,develop' }}
-        run: node .github/scripts/stale/clean-stale-branches.mjs --days="$STALE_DAYS" ${{ !inputs.dry-run && '--execute' || '--dry-run' }}
+        # Deletes only on a manual run with dry-run unchecked; scheduled runs only list.
+        # (On the schedule `inputs` is empty, so a bare `!inputs.dry-run` is true and
+        # `null == false` also coerces to true — hence the explicit event check.)
+        run: node .github/scripts/stale/clean-stale-branches.mjs --days="$STALE_DAYS" ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run == false && '--execute' || '--dry-run' }}
 
   report-status:
     name: Report CI status

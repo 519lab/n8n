@@ -187,7 +187,10 @@ describe('DbConnectionMonitor recovery against real Postgres', () => {
 			return;
 		}
 
-		container = await new PostgreSqlContainer(POSTGRES_IMAGE).start();
+		container = await new PostgreSqlContainer(POSTGRES_IMAGE)
+			// eslint-disable-next-line @typescript-eslint/naming-convention -- container path
+			.withTmpFs({ '/var/lib/postgresql': 'rw' })
+			.start();
 		connection = {
 			host: container.getHost(),
 			port: container.getMappedPort(5432),

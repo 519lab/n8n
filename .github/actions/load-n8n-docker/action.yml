@@ -5,7 +5,7 @@
 # After this action runs, `n8nio/n8n:local` and `n8nio/runners:local` are
 # present on the runner.
 #
-# If the cache entry has been evicted (e.g. Blacksmith cache thrash between
+# If the cache entry has been evicted (e.g. cache thrash between
 # prepare-docker and slow shards), the action falls back to invoking
 # build-n8n-docker, which leaves both images tagged in dockerd and re-saves
 # the tarball to cache as a side effect.
@@ -52,3 +52,4 @@ runs:
       uses: ./.github/actions/build-n8n-docker
       with:
         build-variant: ${{ inputs.build-variant }}
+        cache-sha: ${{ inputs.cache-sha }}

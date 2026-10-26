@@ -159,6 +159,10 @@ test.describe(
 
 				await n8n.instanceAi.waitForPreviewCanvasNode(setNodeName);
 
+				// The preview canvas is locked (read-only, node toolbar hidden) while the
+				// agent is working, so wait for the run to finish before hovering.
+				await n8n.instanceAi.waitForRunComplete(120_000);
+
 				// Hover over the Set node to show its toolbar
 				const setNode = n8n.instanceAi.getPreviewNodeByName(setNodeName);
 				await expect(setNode).toBeVisible({ timeout: 10_000 });
