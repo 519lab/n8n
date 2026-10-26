@@ -29,20 +29,17 @@ jobs:
     permissions:
       contents: read
       packages: write
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: [self-hosted, skynet]
     strategy:
       fail-fast: false
       matrix:
         # The Dockerfile pins one Node version (FROM digest), so build only that.
         node_version: ['24.18.1']
     steps:
-      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
-
-      - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@e4c1c000c95f9cc255f72940e9c56bcbd1239436 # v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
 
       - name: Login to GHCR (for pushing)
         if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.push == true)
@@ -51,13 +48,14 @@ jobs:
           login-ghcr: 'true'
 
       - name: Build and push
-        uses: useblacksmith/build-push-action@9b0579bbec7a6cad2f171596c57e7ac1e7658850 # v2
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: ./docker/images/n8n-base/Dockerfile
           build-args: |
             NODE_VERSION=${{ matrix.node_version }}
-          platforms: linux/amd64,linux/arm64
+          # amd64 only: the self-hosted runners are x64 and there are no ARM runners.
+          platforms: linux/amd64
           provenance: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.push == true) }}
           sbom: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.push == true) }}
           push: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.push == true) }}

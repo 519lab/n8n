@@ -12,7 +12,7 @@ jobs:
   handle_comment_command:
     name: Handle /test-workflows Command
     if: github.event.issue.pull_request && startsWith(github.event.comment.body, '/test-workflows')
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: [self-hosted, skynet]
     outputs:
       permission_granted: ${{ steps.pr_check_and_details.outputs.permission_granted }}
       git_ref: ${{ steps.pr_check_and_details.outputs.head_sha }}

@@ -314,8 +314,7 @@ async function buildDockerImage({ name, dockerfilePath, fullImageName, buildArgs
 				${config.buildContext}`;
 			echo(stdout);
 		} else {
-			// Use docker buildx build to leverage Blacksmith's layer caching when running in CI.
-			// The setup-docker-builder action creates a buildx builder with sticky disk cache.
+			// A buildx container builder (set up by setup-docker-builder / setup-buildx-action).
 			// In CI, push directly to registry to avoid slow --load (export/import tarball).
 			// Locally, use --load to make image available in local daemon.
 			const outputFlag = shouldPush ? '--push' : '--load';

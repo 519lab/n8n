@@ -33,13 +33,13 @@ env:
 jobs:
   build:
     name: 'Build Docker Image'
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: [self-hosted, skynet]
     permissions:
       packages: write
       contents: read
     steps:
       - name: Checkout
-        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ inputs.branch || github.ref }}
           fetch-depth: 1
@@ -65,14 +65,14 @@ jobs:
   helm-e2e:
     name: "Helm E2E (${{ inputs.mode || 'queue' }})"
     needs: build
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: [self-hosted, skynet]
     timeout-minutes: 30
     permissions:
       contents: read
       packages: read
     steps:
       - name: Checkout
-        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ inputs.branch || github.ref }}
           fetch-depth: 1
@@ -169,16 +169,22 @@ jobs:
     name: 'Cleanup GHCR Image'
     needs: [build, helm-e2e]
     if: always()
-    runs-on: blacksmith-2vcpu-ubuntu-2204
+    runs-on: [self-hosted, skynet]
     permissions:
       packages: write
       contents: read
     steps:
       - name: Checkout
-        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           sparse-checkout: .github/scripts
           sparse-checkout-cone-mode: false
+
+      # The self-hosted runner image's own node is v18; scripts here target current Node.
+      - name: Setup Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: '24.18.1'
 
       - name: Delete images from GHCR
         continue-on-error: true

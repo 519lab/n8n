@@ -7,11 +7,12 @@ class BuildContext {
 		this.githubOutput = process.env.GITHUB_OUTPUT || null;
 	}
 
-	determine({ event, pr, branch, version, releaseType, pushEnabled, includeArm64 }) {
+	determine({ event, pr, branch, version, releaseType, pushEnabled }) {
 		let context = {
 			version: '',
 			release_type: '',
-			platforms: ['linux/amd64', 'linux/arm64'],
+			// amd64 only: the self-hosted runners are x64 and there are no ARM runners.
+			platforms: ['linux/amd64'],
 			push_to_ghcr: true,
 		};
 
@@ -28,15 +29,11 @@ class BuildContext {
 				case 'pull_request':
 					context.version = `pr-${pr}`;
 					context.release_type = 'dev';
-					context.platforms = ['linux/amd64'];
 					break;
 
 				case 'workflow_dispatch':
 					context.version = `branch-${this.sanitizeBranch(branch)}`;
 					context.release_type = 'branch';
-					// Manual pre-merge proof (e.g. a native-binary check) can opt into arm64;
-					// defaults to amd64-only like other non-release branch builds.
-					context.platforms = includeArm64 ? ['linux/amd64', 'linux/arm64'] : ['linux/amd64'];
 					break;
 
 				case 'push':
@@ -46,7 +43,6 @@ class BuildContext {
 					} else {
 						context.version = `branch-${this.sanitizeBranch(branch)}`;
 						context.release_type = 'branch';
-						context.platforms = ['linux/amd64'];
 					}
 					break;
 
@@ -84,11 +80,6 @@ class BuildContext {
 	}
 
 	buildMatrix(platforms) {
-		const runners = {
-			'linux/amd64': 'blacksmith-4vcpu-ubuntu-2204',
-			'linux/arm64': 'blacksmith-8vcpu-ubuntu-2204-arm',
-		};
-
 		const matrix = {
 			platform: [],
 			include: [],
@@ -99,7 +90,6 @@ class BuildContext {
 			matrix.platform.push(shortName);
 			matrix.include.push({
 				platform: shortName,
-				runner: runners[platform],
 				docker_platform: platform,
 			});
 		}
@@ -148,7 +138,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 			releaseType: getArg('release-type'),
 			pushEnabled:
 				pushEnabledArg === 'true' ? true : pushEnabledArg === 'false' ? false : undefined,
-			includeArm64: getArg('include-arm64') === 'true',
 		});
 
 		const matrix = context.buildMatrix(result.platforms);

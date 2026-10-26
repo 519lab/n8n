@@ -1,6 +1,6 @@
-# This action works transparently on both Blacksmith and GitHub-hosted runners.
-# Blacksmith runners benefit from transparent caching and optional Docker layer caching.
-# GitHub-hosted runners use standard GitHub Actions caching.
+# Works on the self-hosted skynet runners (shared host Docker daemon and a
+# host-mounted /opt/hostedtoolcache) and on GitHub-hosted runners, using
+# standard GitHub Actions caching.
 
 name: 'Node.js Build Setup'
 description: 'Configures Node.js with pnpm, installs Aikido SafeChain for supply chain protection, installs dependencies, enables Turborepo caching, (optional) sets up Docker layer caching, and builds the project or an optional command.'
@@ -11,7 +11,7 @@ inputs:
     required: false
     default: '24.18.1'
   enable-docker-cache:
-    description: 'Whether to set up Blacksmith Buildx for Docker layer caching (Blacksmith runners only).'
+    description: 'Whether to set up a Docker Buildx builder (needed for attestations such as SBOMs, and for registry pushes from scripts/dockerize-n8n.mjs).'
     required: false
     default: 'false'
   build-command:
@@ -35,8 +35,7 @@ runs:
 
     # Cache the Node toolcache so setup-node skips the ~33s nodejs.org download
     # on every subsequent job. First fresh runner pays the download; later jobs
-    # (including parallel E2E shards) hit the cache. Blacksmith transparently
-    # routes actions/cache through its S3 backend.
+    # (including parallel E2E shards) hit the cache.
     #
     # The `x64.complete` sibling marker file must be cached alongside the
     # toolchain — without it, setup-node's `tc.find` returns empty and the
@@ -45,8 +44,22 @@ runs:
     # PATH is left untouched, and the runner image's baked-in Node 20.20.0
     # quietly takes over. Caching the parent version dir captures the marker
     # alongside the toolchain. Key bumped to v2 to invalidate stale entries.
-    - name: Restore Node.js Toolcache
+    # On the self-hosted runners /opt/hostedtoolcache is a host mount shared by
+    # every runner, so once a version is there, skip the restore: extracting
+    # over a toolchain another job is using could break that job.
+    - name: Check Node.js Toolcache
+      id: node-toolcache
       if: runner.os == 'Linux' && runner.arch == 'X64'
+      shell: bash
+      env:
+        NODE_VERSION: ${{ inputs.node-version }}
+      run: |
+        if [ -f "/opt/hostedtoolcache/node/$NODE_VERSION/x64.complete" ]; then
+          echo "present=true" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Restore Node.js Toolcache
+      if: runner.os == 'Linux' && runner.arch == 'X64' && steps.node-toolcache.outputs.present != 'true'
       uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
       with:
         path: /opt/hostedtoolcache/node/${{ inputs.node-version }}
@@ -147,7 +160,7 @@ runs:
 
     # `--loglevel` CLI flag does NOT override `.npmrc` for that path, but
     # `--config.loglevel` does — so the failing script's real output reaches us.
-    # (Confirmed on CI across Blacksmith + GitHub-hosted, through the SafeChain
+    # (Confirmed on CI on the former Blacksmith and GitHub-hosted runners, through the SafeChain
     # shim and the real pnpm binary)
     #
     # Layered so the cause survives even failure modes pnpm can't report itself:
@@ -257,20 +270,23 @@ runs:
     # to a local cache). The remote cache is inert, but the action's post-run
     # still fetches the unreachable server to save it and dies with a bare
     # `fetch failed`, turning the whole job red. Skip it so the one Windows
-    # build job stays green; Linux/Blacksmith jobs keep remote caching.
+    # build job stays green; Linux jobs keep remote caching.
     - name: Configure Turborepo Cache
       if: steps.turbo-server.outputs.running != 'true' && runner.os != 'Windows'
       uses: rharkor/caching-for-turbo@5d14fba18e450c09393333cfd4242e8b3cb455a6 # v2.4.2
       with:
         server-port: 0
 
-    - name: Setup Docker Builder for Docker Cache (Blacksmith)
-      if: ${{ inputs.enable-docker-cache == 'true' && contains(runner.name, 'blacksmith') }}
-      uses: useblacksmith/setup-docker-builder@ef12d5b165b596e3aa44ea8198d8fde563eab402 # v1.4.0
-
-    - name: Setup Docker Builder (GitHub fallback)
-      if: ${{ inputs.enable-docker-cache == 'true' && !contains(runner.name, 'blacksmith') }}
+    - name: Setup Docker Builder
+      if: ${{ inputs.enable-docker-cache == 'true' }}
       uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+
+    # Turbo defaults to 10 parallel tasks; the self-hosted runners have 2 CPUs and
+    # 6 GB per job. Jobs that set TURBO_CONCURRENCY (or pass --concurrency) keep theirs.
+    - name: Limit Turborepo concurrency
+      if: ${{ env.TURBO_CONCURRENCY == '' }}
+      shell: bash
+      run: echo "TURBO_CONCURRENCY=2" >> "$GITHUB_ENV"
 
     - name: Build Project
       if: ${{ inputs.build-command != '' }}

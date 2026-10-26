@@ -5,7 +5,7 @@ permissions:
   pull-requests: write
 jobs:
   auto-merge:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: [self-hosted, skynet]
     if: github.actor == 'dependabot[bot]'
     steps:
       - name: Fetch Dependabot metadata

@@ -27,10 +27,10 @@ concurrency:
 jobs:
   docker-smoke-test:
     name: 'Docker Build (no cache)'
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: [self-hosted, skynet]
     if: ${{ !github.event.pull_request.head.repo.fork }}
     steps:
-      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Build full chain (no cache)
         uses: ./.github/actions/setup-nodejs

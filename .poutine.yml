@@ -10,8 +10,9 @@ include:
 
 skip:
   # === SELF-HOSTED RUNNERS ===
-  # We use Blacksmith (trusted CI provider) for self-hosted runners.
-  # The ubuntu-slim runner is also a trusted provider.
+  # PR jobs run on the org's own self-hosted runners (runs-on: [self-hosted, skynet]).
+  # Safe only while this repo is private: their runner group serves private
+  # repositories only, so fork PRs from the public can't reach them.
   - rule: pr_runs_on_self_hosted
 
   # === UNVERIFIED ACTIONS ===
@@ -35,9 +36,6 @@ skip:
       - pkg:githubactions/pnpm/action-setup
       - pkg:githubactions/rharkor/caching-for-turbo
       - pkg:githubactions/tomi/paths-filter-action
-      - pkg:githubactions/useblacksmith/build-push-action
-      - pkg:githubactions/useblacksmith/checkout
-      - pkg:githubactions/useblacksmith/setup-docker-builder
 
   # === UNTRUSTED CHECKOUT EXECUTION (DOCUMENTED FALSE POSITIVES) ===
   # These workflows check out code and run local actions/package managers.

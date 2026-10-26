@@ -9,20 +9,21 @@ on:
         type: string
 
 env:
-  NODE_OPTIONS: '--max-old-space-size=6144'
+  # Runner containers are capped at 6 GB.
+  NODE_OPTIONS: '--max-old-space-size=4096'
   PLAYWRIGHT_BROWSERS_PATH: packages/testing/playwright/.playwright-browsers
 
 jobs:
   smoke:
     name: Dev-server smoke
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: [self-hosted, skynet]
     timeout-minutes: 10
     permissions:
       contents: read
 
     steps:
       - name: Checkout
-        uses: useblacksmith/checkout@41cdeedae8edb2e684ba22896a5fd2a3cb85db6b # v1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 1
           ref: ${{ inputs.ref }}

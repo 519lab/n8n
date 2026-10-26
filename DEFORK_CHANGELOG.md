@@ -16,6 +16,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-10-25 — All CI on the org's self-hosted runners; Windows and ARM64 builds dropped
+
+**Infrastructure; no `.ee` source involved.** Blacksmith runners were billed per minute, so every job now runs on the org's self-hosted runners (`runs-on: [self-hosted, skynet]`). The pool is two 2-CPU runners with 6 GB per job, on a shared host Docker daemon, in a private-repos-only runner group. The only job left on GitHub-hosted runners is the third-party SLSA provenance generator.
+
+What changed:
+- **Standard actions.** Blacksmith's checkout, Docker builder and build-push actions are replaced by the pinned standard ones (`actions/checkout`, `docker/setup-buildx-action`, `docker/build-push-action` v6.19.2).
+- **Sized for the smaller runners.**
+  - Heap caps are 4–5 GB instead of 7 GB.
+  - Lint runs one eslint process at a time.
+  - Turbo defaults to 2 parallel tasks.
+  - PR E2E uses 4 shards instead of 16 and stays impact-scoped.
+  - A new `test-e2e-nightly.yml` runs the full suite on develop every night.
+- **Safe on a shared Docker daemon.**
+  - E2E images are tagged per commit (`n8nio/n8n:ci-<variant>-<sha>`), so concurrent runs can't test each other's build.
+  - The E2E image build uses the host's layer cache.
+  - The Node toolcache restore skips versions already present.
+  - Engine integration tests keep Postgres data on tmpfs, so no volumes are left behind.
+  - Steps that ran the image's Node 18 now set up Node 24 first.
+- **Windows and ARM64 dropped.** No Windows or ARM runners exist, so the Windows build and the Windows get-n8n checks are removed, and Docker images (n8n, runners and the base image) are built for `linux/amd64` only.
+- **Stale-branch cleanup fixed.** It deleted branches on its weekly schedule: `!inputs.dry-run` is true when a scheduled run has no inputs. It had never run here, because no Blacksmith runner picked it up. Scheduled runs now only list stale branches; deleting takes a manual run with dry-run off.
+
+Docs: `.github/WORKFLOWS.md` (runner section, schedule, E2E) and `CI-TELEMETRY.md`. Actionlint now knows the `skynet` label, and poutine no longer allowlists the Blacksmith actions.
+
 ### 2026-10-24 — Log-streaming settings UI rebuilt to its page-object contract
 
 **Fix; no `.ee` source involved.** The rebuilt page and modal didn't match `SettingsLogStreamingPage`, and couldn't create a destination at all: a new destination posted `id: ''` and the API rejected it.

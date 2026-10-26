@@ -21,10 +21,10 @@ permissions:
 jobs:
   security_scan:
     name: Security - Scan Docker Image With Trivy
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: [self-hosted, skynet]
     steps:
       - name: Checkout for VEX file
-        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           sparse-checkout: |
             security/vex.openvex.json
@@ -32,6 +32,12 @@ jobs:
             security/trivy-ignore-policy.rego
             .github/scripts/retry.mjs
           sparse-checkout-cone-mode: false
+
+      # The self-hosted runner image's own node is v18; scripts here target current Node.
+      - name: Setup Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: '24.18.1'
 
       - name: Pull Docker image with retry
         env:
