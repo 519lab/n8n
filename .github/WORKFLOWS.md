@@ -299,7 +299,9 @@ third-party reusable workflow that picks its own GitHub-hosted runner.
 - **Size:** 4 CPUs and 16 GB per job (GitHub's size for public repos). Heap caps
   (`NODE_OPTIONS`) are 6–7 GB. Lint runs two eslint processes at a time with
   5 GB heaps: at ten the VM ran out of memory and was shut down, at three it was
-  down to 1.1 GB free; two peak at 10.3 GB.
+  down to 1.1 GB free; two peak at 10.3 GB. Typecheck also runs two tasks at a
+  time (`TURBO_CONCURRENCY: 2`); turbo's default of ten shut the VM down the same
+  way, and two peak at 12 GB uncached.
 - **Images between jobs:** each job is a fresh VM, so `prepare-docker` saves
   `n8nio/n8n:local` + `n8nio/runners:local` as a zstd tarball in the Actions
   cache under a variant+SHA key, and `load-n8n-docker` restores it in each shard

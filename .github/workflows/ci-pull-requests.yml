@@ -188,6 +188,10 @@ jobs:
     needs: install-and-build
     env:
       NODE_OPTIONS: --max-old-space-size=7168
+      # Turbo's default of 10 parallel tasks ran the 16 GB runner out of memory
+      # (the runner was shut down mid-typecheck). Two at a time peaked at 12 GB
+      # with 3.9 GB free on an uncached run, including dependency builds.
+      TURBO_CONCURRENCY: 2
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
