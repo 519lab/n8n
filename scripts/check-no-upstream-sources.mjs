@@ -10,7 +10,7 @@
  * comment lines are skipped, so prose that mentions upstream doesn't trip it.
  *
  * Usage: node scripts/check-no-upstream-sources.mjs
- * Exit: 0 clean · 1 upstream source found. (TEMPORARY: triggers typecheck for #178)
+ * Exit: 0 clean · 1 upstream source found.
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';

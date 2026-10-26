@@ -189,8 +189,8 @@ jobs:
     env:
       NODE_OPTIONS: --max-old-space-size=7168
       # Turbo's default of 10 parallel tasks ran the 16 GB runner out of memory
-      # (the runner was shut down mid-typecheck); editor-ui's vue-tsc alone peaks
-      # at about 6 GB.
+      # (the runner was shut down mid-typecheck). Two at a time peaked at 12 GB
+      # with 3.9 GB free on an uncached run, including dependency builds.
       TURBO_CONCURRENCY: 2
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -200,17 +200,7 @@ jobs:
       - name: Setup Node.js
         uses: ./.github/actions/setup-nodejs
         with:
-          build-command: ''
-
-      # TEMPORARY diagnostic: log memory every 5s during an uncached typecheck.
-      - name: Typecheck
-        env:
-          TURBO_FORCE: 'true'
-        run: |
-          (while sleep 5; do
-            free -m | awk '/Mem:/{printf "[mem] used=%sMB avail=%sMB\n", $3, $7} /Swap:/{printf "[swap] used=%sMB\n", $3}'
-          done) &
-          pnpm typecheck --summarize
+          build-command: pnpm typecheck
 
   lint:
     name: Lint
