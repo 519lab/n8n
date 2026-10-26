@@ -16,10 +16,10 @@ on:
 
 env:
   # The 16 GB GitHub-hosted runner ran out of memory at 10 parallel eslint
-  # processes (15.5 GB used, swap full). No package needs more than a 5 GB heap,
-  # so three at a time leave headroom.
+  # processes (15.5 GB used, swap full) and was down to 1.1 GB free at 3.
+  # No package needs more than a 5 GB heap, so run two at a time.
   NODE_OPTIONS: --max-old-space-size=5120
-  TURBO_CONCURRENCY: 3
+  TURBO_CONCURRENCY: 2
 
 jobs:
   lint:
