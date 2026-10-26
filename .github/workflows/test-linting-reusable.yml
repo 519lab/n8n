@@ -15,9 +15,11 @@ on:
         default: 24.18.1
 
 env:
-  # Tuned for the 4-vCPU / 16 GB GitHub-hosted runner: ~10 parallel eslint processes.
-  NODE_OPTIONS: --max-old-space-size=7168
-  TURBO_CONCURRENCY: 10
+  # The 16 GB GitHub-hosted runner ran out of memory at 10 parallel eslint
+  # processes (15.5 GB used, swap full). No package needs more than a 5 GB heap,
+  # so three at a time leave headroom.
+  NODE_OPTIONS: --max-old-space-size=5120
+  TURBO_CONCURRENCY: 3
 
 jobs:
   lint:
