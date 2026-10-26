@@ -197,7 +197,7 @@ export const useCollaborationStore = defineStore(STORES.COLLABORATION, () => {
 		notifyWorkflowClosed();
 		if (uiStore.stateIsDirty) {
 			// If user decided to stay on the page we notify that the workflow is opened again
-			unloadTimeout.value = setTimeout(() => notifyWorkflowOpened, 5 * TIME.SECOND);
+			unloadTimeout.value = setTimeout(notifyWorkflowOpened, 5 * TIME.SECOND);
 		}
 	});
 
