@@ -160,7 +160,7 @@ test.describe(
 			await n8n.canvas.logsPanel.sendManualChatMessage('Send welcome email to john@gmail.com');
 			const approveButton = n8n.canvas.manualChat.getApproveButton();
 			await expect(approveButton).toBeVisible({ timeout: 15000 });
-			await approveButton.click({ button: 'middle' });
+			await approveButton.click();
 
 			// Approving resumes the run, the tool executes, and the Chat node posts the
 			// agent's answer back. A chat run on an unsaved workflow shows no
@@ -229,7 +229,7 @@ test.describe(
 			await n8n.canvas.logsPanel.sendManualChatMessage('Send welcome email to john@gmail.com');
 			const approveButton = n8n.canvas.manualChat.getApproveButton();
 			await expect(approveButton).toBeVisible({ timeout: 15000 });
-			await approveButton.click({ button: 'middle' });
+			await approveButton.click();
 
 			// After approval, the agent sends the model a follow-up request that carries
 			// the gated tool's result back as a `function_call_output`. Inspect what the

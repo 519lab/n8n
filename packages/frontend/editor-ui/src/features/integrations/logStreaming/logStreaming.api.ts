@@ -23,16 +23,20 @@ export const getDestinations = async (
 /**
  * Create or update a destination. The backend upserts by `id`, so the same
  * endpoint serves both cases. Maps to `POST /rest/eventbus/destination`.
+ *
+ * An empty `id` is omitted: the backend assigns ids to new destinations and its
+ * schema rejects an empty string.
  */
 export const saveDestination = async (
 	context: IRestApiContext,
 	destination: MessageEventBusDestinationOptions,
 ): Promise<MessageEventBusDestinationOptions> => {
+	const { id, ...rest } = destination;
 	return await makeRestApiRequest(
 		context,
 		'POST',
 		`${LOG_STREAMING_API_ROOT}/destination`,
-		destination,
+		id ? destination : rest,
 	);
 };
 

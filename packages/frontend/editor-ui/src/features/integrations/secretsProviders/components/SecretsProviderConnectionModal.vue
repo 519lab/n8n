@@ -3,32 +3,47 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { useI18n } from '@n8n/i18n';
 import { useToast } from '@n8n/composables/useToast';
 import { createEventBus } from '@n8n/utils/event-bus';
-import type { IDataObject, INodeProperties, NodeParameterValue } from 'n8n-workflow';
-import type { SecretProviderTypeResponse, SecretsProviderType } from '@n8n/api-types';
+import { useRBACStore } from '@n8n/stores/rbac.store';
+import { useSettingsStore } from '@n8n/stores/settings.store';
+import type { INodeParameters, INodeProperties, NodeParameterValueType } from 'n8n-workflow';
+import type {
+	SecretProviderConnection,
+	SecretProviderTypeResponse,
+	SecretsProviderType,
+} from '@n8n/api-types';
 
 import Modal from '@/app/components/Modal.vue';
-import { useUIStore } from '@/app/stores/ui.store';
-import { useProjectsStore } from '@/features/collaboration/projects/projects.store';
-import { SECRETS_PROVIDER_CONNECTION_MODAL_KEY } from '@/app/constants';
 import {
 	N8nButton,
 	N8nInput,
 	N8nInputLabel,
+	N8nMenuItem,
 	N8nOption,
 	N8nSelect,
-	N8nTabs,
 	N8nText,
+	type IMenuItem,
 } from '@n8n/design-system';
 
 import { useSecretsProviderConnection } from '../composables/useSecretsProviderConnection';
+import type { ConnectionTestResult } from '../secretsProviders.types';
+import SecretsProviderConnectionFields from './SecretsProviderConnectionFields.vue';
+import SecretsProviderConnectionScope from './SecretsProviderConnectionScope.vue';
+import SecretsProviderConnectionTestResult from './SecretsProviderConnectionTestResult.vue';
+
+type ModalTab = 'connection' | 'sharing';
 
 /** Connection name: starts with a letter, then letters/digits only. Mirrors the backend DTO. */
 const CONNECTION_NAME_REGEX = /^[a-zA-Z][a-zA-Z0-9]*$/;
 
+const TAB_ITEM_IDS: Record<ModalTab, string> = {
+	connection: 'sidebar-item-connection',
+	sharing: 'sidebar-item-sharing',
+};
+
 const props = defineProps<{
 	modalName: string;
 	data: {
-		activeTab?: 'connection' | 'sharing';
+		activeTab?: ModalTab;
 		providerKey?: string;
 		providerTypes: SecretProviderTypeResponse[];
 		existingProviderNames: string[];
@@ -39,30 +54,56 @@ const props = defineProps<{
 
 const i18n = useI18n();
 const toast = useToast();
-const uiStore = useUIStore();
-const projectsStore = useProjectsStore();
+const rbacStore = useRBACStore();
+const settingsStore = useSettingsStore();
 const connection = useSecretsProviderConnection(props.data.projectId);
 
 const modalBus = createEventBus();
 
-const isEditing = computed(() => Boolean(props.data.providerKey));
+/** Set once the connection exists, so later saves update it instead of creating a duplicate. */
+const savedProviderKey = ref<string | undefined>(props.data.providerKey);
+const isEditing = computed(() => savedProviderKey.value !== undefined);
 
-const activeTab = ref<'connection' | 'scope'>(
-	props.data.activeTab === 'sharing' ? 'scope' : 'connection',
-);
+const activeTab = ref<ModalTab>(props.data.activeTab ?? 'connection');
 const connectionName = ref('');
+const nameTouched = ref(false);
 const providerType = ref<SecretsProviderType | ''>('');
 const projectIds = ref<string[]>([]);
-const settings = reactive<IDataObject>({});
+const settings = reactive<INodeParameters>({});
+/** Whether `settings` differ from what the server holds; unchanged settings are not re-sent. */
+const settingsChanged = ref(false);
+const secretsCount = ref(0);
 const isSaving = ref(false);
-const isDirty = ref(false);
+const testResult = ref<ConnectionTestResult>({ state: 'idle' });
 
-const tabs = computed(() => [
+/** Re-scoping is instance-level, so it is never offered from a project's own settings. */
+const canShare = computed(
+	() =>
+		isEditing.value &&
+		!props.data.projectId &&
+		(settingsStore.moduleSettings['external-secrets']?.forProjects ?? false) &&
+		rbacStore.hasScope('externalSecretsProvider:update'),
+);
+
+const currentTab = computed<ModalTab>(() =>
+	activeTab.value === 'sharing' && canShare.value ? 'sharing' : 'connection',
+);
+
+const sidebarItems = computed<IMenuItem[]>(() => [
 	{
-		value: 'connection',
+		id: TAB_ITEM_IDS.connection,
 		label: i18n.baseText('settings.secretsProviderConnections.modal.items.connection'),
+		position: 'top',
 	},
-	{ value: 'scope', label: i18n.baseText('settings.secretsProviderConnections.modal.items.scope') },
+	...(canShare.value
+		? [
+				{
+					id: TAB_ITEM_IDS.sharing,
+					label: i18n.baseText('settings.secretsProviderConnections.modal.items.scope'),
+					position: 'top',
+				} satisfies IMenuItem,
+			]
+		: []),
 ]);
 
 const selectedType = computed<SecretProviderTypeResponse | undefined>(() =>
@@ -71,17 +112,16 @@ const selectedType = computed<SecretProviderTypeResponse | undefined>(() =>
 
 const properties = computed<INodeProperties[]>(() => selectedType.value?.properties ?? []);
 
-const shareableProjects = computed(() =>
-	projectsStore.availableProjects.filter((project) => project.type !== 'personal'),
-);
-
 const nameError = computed<string | null>(() => {
 	if (isEditing.value) return null;
 	const name = connectionName.value.trim();
-	if (!name)
-		return i18n.baseText(
-			'settings.secretsProviderConnections.modal.validation.connectionName.required',
-		);
+	if (!name) {
+		return nameTouched.value
+			? i18n.baseText(
+					'settings.secretsProviderConnections.modal.validation.connectionName.required',
+				)
+			: null;
+	}
 	if (!CONNECTION_NAME_REGEX.test(name)) {
 		return i18n.baseText(
 			'settings.secretsProviderConnections.modal.validation.connectionName.format',
@@ -93,219 +133,211 @@ const nameError = computed<string | null>(() => {
 	return null;
 });
 
-const canSave = computed(() => !nameError.value && Boolean(providerType.value) && !isSaving.value);
+const isBusy = computed(() => isSaving.value || connection.isTesting.value);
 
-function isPassword(property: INodeProperties): boolean {
-	return Boolean(property.typeOptions?.password);
-}
+const canSave = computed(
+	() =>
+		(isEditing.value || CONNECTION_NAME_REGEX.test(connectionName.value.trim())) &&
+		!nameError.value &&
+		Boolean(providerType.value) &&
+		!isBusy.value,
+);
 
-function stringValue(name: string): string {
-	const value = settings[name];
-	return typeof value === 'string' ? value : '';
-}
-
-function setSetting(name: string, value: NodeParameterValue) {
-	settings[name] = value;
-	isDirty.value = true;
-}
-
-function seedSettings(properties: INodeProperties[], stored: IDataObject = {}) {
-	for (const property of properties) {
-		settings[property.name] = (stored[property.name] ??
-			property.default ??
-			'') as NodeParameterValue;
+function seedSettings(stored: INodeParameters = {}) {
+	for (const key of Object.keys(settings)) delete settings[key];
+	for (const property of properties.value) {
+		settings[property.name] = stored[property.name] ?? property.default ?? '';
 	}
+}
+
+function setSetting(name: string, value: NodeParameterValueType) {
+	settings[name] = value;
+	settingsChanged.value = true;
 }
 
 function onProviderTypeChange(type: SecretsProviderType) {
 	providerType.value = type;
-	isDirty.value = true;
-	for (const key of Object.keys(settings)) delete settings[key];
-	seedSettings(selectedType.value?.properties ?? []);
+	seedSettings();
+	settingsChanged.value = true;
 }
 
-async function loadConnection() {
-	if (!props.data.providerKey) return;
+function selectTab(itemId: string) {
+	activeTab.value = itemId === TAB_ITEM_IDS.sharing ? 'sharing' : 'connection';
+}
+
+function applySaved(saved: SecretProviderConnection) {
+	savedProviderKey.value = saved.name;
+	projectIds.value = saved.projects.map((project) => project.id);
+	secretsCount.value = saved.secretsCount;
+	settingsChanged.value = false;
+}
+
+async function loadConnection(providerKey: string) {
 	try {
-		const existing = await connection.getConnection(props.data.providerKey);
+		const existing = await connection.getConnection(providerKey);
 		connectionName.value = existing.name;
 		providerType.value = existing.type;
 		projectIds.value = existing.projects.map((project) => project.id);
-		seedSettings(selectedType.value?.properties ?? [], existing.settings);
+		secretsCount.value = existing.secretsCount;
+		seedSettings(existing.settings);
+		settingsChanged.value = false;
 	} catch (error) {
 		toast.showError(error, i18n.baseText('settings.secretsProviderConnections.title'));
 	}
 }
 
-async function onTest() {
-	if (!props.data.providerKey) return;
-	const result = await connection.testConnection(props.data.providerKey);
-	if (result.success) {
-		toast.showMessage({
-			title: i18n.baseText(
-				'settings.secretsProviderConnections.modal.testConnection.success.reference',
-			),
-			type: 'success',
-		});
-	} else {
-		toast.showMessage({
-			title: i18n.baseText('settings.secretsProviderConnections.modal.testConnection.error'),
-			message: result.error,
-			type: 'error',
-		});
+async function runTest() {
+	if (!savedProviderKey.value) return;
+	testResult.value = { state: 'idle' };
+	try {
+		const result = await connection.testConnection(savedProviderKey.value);
+		testResult.value = result.success
+			? { state: 'success' }
+			: { state: 'error', message: result.error };
+	} catch (error) {
+		testResult.value = {
+			state: 'error',
+			message: error instanceof Error ? error.message : undefined,
+		};
 	}
 }
 
+async function saveConnection(type: SecretsProviderType): Promise<SecretProviderConnection> {
+	if (savedProviderKey.value) {
+		return await connection.updateConnection(savedProviderKey.value, {
+			type,
+			// From a project's settings the backend keeps the scope, so don't send one.
+			...(props.data.projectId ? {} : { projectIds: projectIds.value }),
+			// Stored password fields come back masked; re-sending them unchanged would store the mask.
+			...(settingsChanged.value ? { settings: { ...settings } } : {}),
+		});
+	}
+
+	return await connection.createConnection({
+		providerKey: connectionName.value.trim(),
+		type,
+		projectIds: projectIds.value,
+		settings: { ...settings },
+	});
+}
+
+/** Saving keeps the modal open, switches it to edit mode and tests the stored connection. */
 async function onSave() {
-	if (!canSave.value || !providerType.value) return;
+	const type = providerType.value;
+	if (!canSave.value || !type) return;
 	isSaving.value = true;
+	testResult.value = { state: 'idle' };
 	try {
-		if (props.data.providerKey) {
-			await connection.updateConnection(props.data.providerKey, {
-				type: providerType.value,
-				projectIds: projectIds.value,
-				settings: { ...settings },
-			});
-		} else {
-			await connection.createConnection({
-				providerKey: connectionName.value.trim(),
-				type: providerType.value,
-				projectIds: projectIds.value,
-				settings: { ...settings },
-			});
-		}
-		await props.data.onClose?.();
-		uiStore.closeModal(SECRETS_PROVIDER_CONNECTION_MODAL_KEY);
+		applySaved(await saveConnection(type));
 	} catch (error) {
 		toast.showError(
 			error,
 			i18n.baseText('settings.secretsProviderConnections.modal.testConnection.error'),
 		);
+		return;
 	} finally {
 		isSaving.value = false;
 	}
+	await runTest();
+}
+
+/** Every close path (X, Esc, Cancel) refreshes the opener's list, without blocking the close. */
+function onBeforeClose(): boolean {
+	void Promise.resolve(props.data.onClose?.());
+	return true;
 }
 
 function closeModal() {
-	uiStore.closeModal(SECRETS_PROVIDER_CONNECTION_MODAL_KEY);
+	modalBus.emit('close');
 }
 
-onMounted(loadConnection);
+onMounted(async () => {
+	if (props.data.providerKey) await loadConnection(props.data.providerKey);
+});
 </script>
 
 <template>
 	<Modal
 		:name="modalName"
 		:event-bus="modalBus"
+		:before-close="onBeforeClose"
 		:title="
 			connectionName || i18n.baseText('settings.secretsProviderConnections.buttons.addSecretsStore')
 		"
 		:center="true"
-		width="600px"
-		data-test-id="secrets-provider-connection-modal"
+		width="800px"
 	>
 		<template #content>
-			<div :class="$style.content">
-				<N8nTabs
-					v-model="activeTab"
-					:options="tabs"
-					data-test-id="secrets-provider-connection-tabs"
-				/>
+			<div :class="$style.layout">
+				<nav :class="$style.sidebar">
+					<N8nMenuItem
+						v-for="item in sidebarItems"
+						:key="item.id"
+						:item="item"
+						:active="TAB_ITEM_IDS[currentTab] === item.id"
+						@click="selectTab(item.id)"
+					/>
+				</nav>
 
-				<div v-show="activeTab === 'connection'" :class="$style.tab">
-					<N8nInputLabel
-						:label="i18n.baseText('settings.secretsProviderConnections.modal.connectionName')"
-						:bold="false"
-					>
-						<N8nInput
-							v-model="connectionName"
-							:disabled="isEditing"
-							:state="nameError ? 'error' : 'default'"
-							data-test-id="secrets-provider-connection-name-input"
-						/>
-						<N8nText v-if="nameError" color="danger" size="small">{{ nameError }}</N8nText>
-						<N8nText v-else color="text-light" size="small">
-							{{ i18n.baseText('settings.secretsProviderConnections.modal.connectionName.hint') }}
-						</N8nText>
-					</N8nInputLabel>
+				<div :class="$style.main">
+					<SecretsProviderConnectionTestResult
+						:result="testResult"
+						:provider-key="savedProviderKey ?? connectionName"
+						:provider-name="selectedType?.displayName ?? providerType"
+						:secrets-count="secretsCount"
+					/>
 
-					<N8nInputLabel
-						:label="i18n.baseText('settings.secretsProviderConnections.modal.providerType')"
-						:bold="false"
-					>
-						<N8nSelect
-							:model-value="providerType"
-							:placeholder="
-								i18n.baseText('settings.secretsProviderConnections.modal.providerType.placeholder')
-							"
-							:teleported="false"
-							data-test-id="secrets-provider-connection-type-select"
-							@update:model-value="onProviderTypeChange"
+					<div v-if="currentTab === 'connection'" :class="$style.tab">
+						<N8nInputLabel
+							:label="i18n.baseText('settings.secretsProviderConnections.modal.connectionName')"
+							:bold="false"
 						>
-							<N8nOption
-								v-for="type in data.providerTypes"
-								:key="type.type"
-								:value="type.type"
-								:label="type.displayName"
+							<N8nInput
+								v-model="connectionName"
+								:disabled="isEditing"
+								:state="nameError ? 'error' : 'default'"
+								data-test-id="provider-name"
+								@blur="nameTouched = true"
 							/>
-						</N8nSelect>
-					</N8nInputLabel>
+							<N8nText v-if="nameError" color="danger" size="small">{{ nameError }}</N8nText>
+							<N8nText v-else-if="!isEditing" color="text-light" size="small">
+								{{ i18n.baseText('settings.secretsProviderConnections.modal.connectionName.hint') }}
+							</N8nText>
+						</N8nInputLabel>
 
-					<N8nInputLabel
-						v-for="property in properties"
-						:key="property.name"
-						:label="property.displayName"
-						:bold="false"
-					>
-						<N8nInput
-							:model-value="stringValue(property.name)"
-							:type="isPassword(property) ? 'password' : 'text'"
-							:placeholder="property.placeholder ?? ''"
-							:data-test-id="`secrets-provider-connection-field-${property.name}`"
-							@update:model-value="(value: string) => setSetting(property.name, value)"
-						/>
-						<N8nText v-if="property.description" color="text-light" size="small">
-							{{ property.description }}
-						</N8nText>
-					</N8nInputLabel>
-				</div>
-
-				<div v-show="activeTab === 'scope'" :class="$style.tab">
-					<N8nText color="text-light" size="small">
-						{{ i18n.baseText('settings.secretsProviderConnections.modal.scope.info') }}
-					</N8nText>
-					<N8nInputLabel
-						:label="i18n.baseText('settings.secretsProviderConnections.modal.scope.label')"
-						:bold="false"
-					>
-						<N8nSelect
-							v-model="projectIds"
-							multiple
-							filterable
-							:placeholder="
-								i18n.baseText('settings.secretsProviderConnections.modal.scope.placeholder.project')
-							"
-							:no-match-text="
-								i18n.baseText('settings.secretsProviderConnections.modal.scope.emptyOptionsText')
-							"
-							:teleported="false"
-							data-test-id="secrets-provider-connection-scope-select"
+						<N8nInputLabel
+							:label="i18n.baseText('settings.secretsProviderConnections.modal.providerType')"
+							:bold="false"
 						>
-							<N8nOption
-								v-for="project in shareableProjects"
-								:key="project.id"
-								:value="project.id"
-								:label="project.name ?? project.id"
-							/>
-						</N8nSelect>
-						<N8nText color="text-light" size="small">
-							{{
-								projectIds.length === 0
-									? i18n.baseText('settings.secretsProviderConnections.modal.scope.global')
-									: ''
-							}}
-						</N8nText>
-					</N8nInputLabel>
+							<N8nSelect
+								:model-value="providerType"
+								:disabled="isEditing"
+								:placeholder="
+									i18n.baseText(
+										'settings.secretsProviderConnections.modal.providerType.placeholder',
+									)
+								"
+								:teleported="false"
+								data-test-id="provider-type-select"
+								@update:model-value="onProviderTypeChange"
+							>
+								<N8nOption
+									v-for="type in data.providerTypes"
+									:key="type.type"
+									:value="type.type"
+									:label="type.displayName"
+								/>
+							</N8nSelect>
+						</N8nInputLabel>
+
+						<SecretsProviderConnectionFields
+							:properties="properties"
+							:values="settings"
+							@update="setSetting"
+						/>
+					</div>
+
+					<SecretsProviderConnectionScope v-else v-model:project-ids="projectIds" />
 				</div>
 			</div>
 		</template>
@@ -322,8 +354,9 @@ onMounted(loadConnection);
 					v-if="isEditing"
 					variant="outline"
 					:loading="connection.isTesting.value"
+					:disabled="isBusy"
 					data-test-id="secrets-provider-connection-test-button"
-					@click="onTest"
+					@click="runTest"
 				>
 					{{ i18n.baseText('settings.externalSecrets.provider.buttons.test') }}
 				</N8nButton>
@@ -346,9 +379,23 @@ onMounted(loadConnection);
 </template>
 
 <style lang="scss" module>
-.content {
+.layout {
+	display: flex;
+	gap: var(--spacing--lg);
+}
+
+.sidebar {
 	display: flex;
 	flex-direction: column;
+	flex-shrink: 0;
+	width: var(--spacing--4xl);
+}
+
+.main {
+	display: flex;
+	flex-direction: column;
+	flex-grow: 1;
+	min-width: 0;
 	gap: var(--spacing--sm);
 }
 

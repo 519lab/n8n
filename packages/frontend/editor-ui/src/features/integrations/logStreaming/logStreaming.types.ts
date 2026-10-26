@@ -1,7 +1,4 @@
-import type {
-	MessageEventBusDestinationOptions,
-	MessageEventBusDestinationTypeNames,
-} from 'n8n-workflow';
+import type { MessageEventBusDestinationTypeNames } from 'n8n-workflow';
 
 export type {
 	MessageEventBusDestinationOptions,
@@ -20,10 +17,4 @@ export type MessageEventBusDestinationType =
 export interface EventGroup {
 	name: string;
 	events: string[];
-}
-
-/** Data passed to the destination settings modal when it is opened. */
-export interface EventDestinationSettingsModalData {
-	destination: MessageEventBusDestinationOptions;
-	isNew: boolean;
 }

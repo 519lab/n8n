@@ -16,7 +16,9 @@ export class WorkflowComposer {
 		notificationMessage: string,
 		options: { timeout?: number } = {},
 	) {
-		const { timeout = 3000 } = options;
+		// The run request returns before the execution finishes; a cold task runner
+		// (first Code node on a fresh container) can take several seconds.
+		const { timeout = 15_000 } = options;
 		const responsePromise = this.n8n.page.waitForResponse(
 			(response) =>
 				response.url().includes('/rest/workflows/') &&

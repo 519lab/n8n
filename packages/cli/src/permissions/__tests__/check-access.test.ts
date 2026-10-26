@@ -1,6 +1,6 @@
 import { mockInstance } from '@n8n/backend-test-utils';
 import type { DataTable } from '@/modules/data-table/data-table.entity';
-import type { SharedCredentials, SharedWorkflow, User } from '@n8n/db';
+import type { CredentialsEntity, SharedCredentials, SharedWorkflow, User } from '@n8n/db';
 import {
 	ProjectRelationRepository,
 	SharedCredentialsRepository,
@@ -11,6 +11,7 @@ import type { Scope } from '@n8n/permissions';
 import { UnexpectedError } from 'n8n-workflow';
 import { mock } from 'vitest-mock-extended';
 
+import { CredentialsFinderService } from '@/credentials/credentials-finder.service';
 import { NotFoundError } from '@/errors/response-errors/not-found.error';
 import { DataTableRepository } from '@/modules/data-table/data-table.repository';
 import { userHasScopes } from '@/permissions/check-access';
@@ -22,6 +23,7 @@ describe('userHasScopes', () => {
 	const sharedWorkflowRepository = mockInstance(SharedWorkflowRepository);
 	const sharedCredentialsRepository = mockInstance(SharedCredentialsRepository);
 	const dataTableRepository = mockInstance(DataTableRepository);
+	const credentialsFinder = mockInstance(CredentialsFinderService);
 
 	const userWithGlobalScopes = (scopes: Scope[]): User =>
 		mock<User>({
@@ -188,6 +190,29 @@ describe('userHasScopes', () => {
 			await expect(
 				userHasScopes(user, ['credential:read'], false, { credentialId: 'c1' }),
 			).resolves.toBe(false);
+		});
+
+		it('should let any user read a global credential', async () => {
+			credentialsFinder.hasGlobalReadOnlyAccess.mockReturnValue(true);
+			credentialsFinder.findGlobalCredentialById.mockResolvedValue(mock<CredentialsEntity>());
+
+			await expect(
+				userHasScopes(user, ['credential:read'], false, { credentialId: 'global-1' }),
+			).resolves.toBe(true);
+			expect(sharedCredentialsRepository.getAllRelationsForCredentials).not.toHaveBeenCalled();
+		});
+
+		it('should still require a sharing relation to change a global credential', async () => {
+			credentialsFinder.hasGlobalReadOnlyAccess.mockReturnValue(false);
+			projectRelationRepository.getAccessibleProjectsByRoles.mockResolvedValue(['p2']);
+			sharedCredentialsRepository.getAllRelationsForCredentials.mockResolvedValue([
+				mock<SharedCredentials>({ role: 'credential:owner', projectId: 'p1' }),
+			]);
+
+			await expect(
+				userHasScopes(user, ['credential:update'], false, { credentialId: 'global-1' }),
+			).resolves.toBe(false);
+			expect(credentialsFinder.findGlobalCredentialById).not.toHaveBeenCalled();
 		});
 	});
 

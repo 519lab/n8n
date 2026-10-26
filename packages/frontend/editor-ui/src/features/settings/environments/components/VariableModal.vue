@@ -144,24 +144,19 @@ async function onSave() {
 </script>
 
 <template>
-	<Modal
-		:name="VARIABLE_MODAL_KEY"
-		:title="title"
-		:center="true"
-		width="480px"
-		data-test-id="variable-modal"
-	>
+	<Modal :name="VARIABLE_MODAL_KEY" :title="title" :center="true" width="480px">
 		<template #content>
 			<div :class="$style.content">
 				<div>
 					<N8nInputLabel :label="i18n.baseText('variables.modal.key.label')" :bold="false">
-						<N8nInput
-							v-model="key"
-							:maxlength="VARIABLE_KEY_MAX_LENGTH"
-							:placeholder="i18n.baseText('variables.editing.key.placeholder')"
-							:state="keyError ? 'error' : 'default'"
-							data-test-id="variable-modal-key-input"
-						/>
+						<div data-test-id="variable-modal-key-input">
+							<N8nInput
+								v-model="key"
+								:maxlength="VARIABLE_KEY_MAX_LENGTH"
+								:placeholder="i18n.baseText('variables.editing.key.placeholder')"
+								:state="keyError ? 'error' : 'default'"
+							/>
+						</div>
 					</N8nInputLabel>
 					<N8nText v-if="keyError" :class="$style.error" color="danger" size="small">
 						{{ keyError }}
@@ -170,13 +165,14 @@ async function onSave() {
 
 				<div>
 					<N8nInputLabel :label="i18n.baseText('variables.modal.value.label')" :bold="false">
-						<N8nInput
-							v-model="value"
-							type="textarea"
-							:maxlength="VARIABLE_VALUE_MAX_LENGTH"
-							:placeholder="i18n.baseText('variables.editing.value.placeholder')"
-							data-test-id="variable-modal-value-input"
-						/>
+						<div data-test-id="variable-modal-value-input">
+							<N8nInput
+								v-model="value"
+								type="textarea"
+								:maxlength="VARIABLE_VALUE_MAX_LENGTH"
+								:placeholder="i18n.baseText('variables.editing.value.placeholder')"
+							/>
+						</div>
 					</N8nInputLabel>
 				</div>
 

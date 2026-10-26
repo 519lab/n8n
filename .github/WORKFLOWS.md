@@ -114,14 +114,15 @@ install-and-build (paths filter + build cache)
 ├─ db-tests         → test-db-reusable.yml          (db paths)
 ├─ security-checks  → sec-ci-reusable.yml           (.github/** changes)
 ├─ workflow-scripts → test-workflow-scripts-reusable.yml
-├─ prepare-docker / sqlite-sanity / e2e             (gated to n8n-io/n8n — see below)
+├─ prepare-docker / sqlite-sanity / e2e             (runtime/e2e paths or `force-e2e` label)
 └─ required-checks  (aggregates the above via ci-filter validate)
 ```
 
-**E2E does not currently run on this fork.** `prepare-docker` is gated on
-`github.repository == 'n8n-io/n8n'`, and `sqlite-sanity` / `e2e` need it, so
-they always skip. Enabling them needs the gate retargeted and a license-free
-test command (the multi-main suite uses `N8N_LICENSE_*` secrets).
+**E2E runs the full sqlite suite with no license.** `e2e` runs when the paths
+filter marks runtime or E2E changes, or when the PR has the `force-e2e` label. It
+is advisory (not in `required-checks`) until develop's E2E baseline is green.
+Push builds of develop don't run E2E; to get a develop baseline, open a draft PR
+from an empty commit with `force-e2e`.
 
 ### Manual Triggers (PR Comments)
 
@@ -338,7 +339,7 @@ workflows still reference some secrets that are unset here:
 | Secret                                           | Referenced by                        | Effect when unset                  |
 |--------------------------------------------------|--------------------------------------|------------------------------------|
 | `CURRENTS_RECORD_KEY`, `CURRENTS_API_KEY`        | `test-e2e-reusable`, `test-workflows-callable` | No Currents recording       |
-| `N8N_LICENSE_ACTIVATION_KEY`, `N8N_LICENSE_CERT`, `N8N_ENCRYPTION_KEY` | `test-e2e-reusable` | `@licensed` E2E specs cannot pass |
+| `N8N_ENCRYPTION_KEY`                             | `test-e2e-reusable`                  | Containers fall back to a fixed test key |
 | `ENCRYPTION_KEY`                                 | `test-workflows-callable`            | Passed through as an empty `N8N_ENCRYPTION_KEY` |
 
 Before adding a workflow step that needs a secret, add the secret first — a

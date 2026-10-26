@@ -3,12 +3,14 @@ import { mock } from 'vitest-mock-extended';
 
 import type { License } from '@/license';
 
+import { E2EController } from '../e2e.controller';
+
+// Hoisted above the imports: the controller exits the process at import time
+// unless it believes it is running under E2E.
 vi.mock('@/constants', async (importOriginal) => ({
 	...(await importOriginal<typeof import('@/constants')>()),
 	inE2ETests: true,
 }));
-
-const { E2EController } = await import('../e2e.controller');
 
 type Request = Parameters<InstanceType<typeof E2EController>['setFeature']>[0];
 
@@ -19,8 +21,20 @@ const featureRequest = (feature: BooleanLicenseFeature, enabled: boolean) =>
 const setup = (shipped: (feature: BooleanLicenseFeature) => boolean) => {
 	const license = mock<License>();
 	license.isLicensed.mockImplementation(shipped);
-	const args = Array.from({ length: 12 }, () => mock());
-	const controller = new E2EController(license, ...(args as never[]));
+	const controller = new E2EController(
+		license,
+		mock(),
+		mock(),
+		mock(),
+		mock(),
+		mock(),
+		mock(),
+		mock(),
+		mock(),
+		mock(),
+		mock(),
+		mock(),
+	);
 	return { license, controller };
 };
 

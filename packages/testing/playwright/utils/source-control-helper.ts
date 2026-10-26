@@ -13,7 +13,7 @@ async function getSourceControlPreferences(api: ApiHelpers) {
 	if (!contentType.includes('application/json')) {
 		throw new Error(
 			`Expected source-control preferences JSON, got ${response.status()} ${contentType}. ` +
-				'Ensure the test is tagged @licensed and N8N_LICENSE_TENANT_ID/N8N_LICENSE_ACTIVATION_KEY are available so source-control routes are registered at startup.',
+				'Ensure the test runs with @capability:source-control so the source-control module is enabled at startup.',
 		);
 	}
 

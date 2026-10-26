@@ -8,6 +8,7 @@ import { Container } from '@n8n/di';
 import { hasGlobalScope, type Scope } from '@n8n/permissions';
 import { UnexpectedError } from 'n8n-workflow';
 
+import { CredentialsFinderService } from '@/credentials/credentials-finder.service';
 import { NotFoundError } from '@/errors/response-errors/not-found.error';
 import { DataTableRepository } from '@/modules/data-table/data-table.repository';
 import { RoleService } from '@/services/role.service';
@@ -22,7 +23,8 @@ import { RoleService } from '@/services/role.service';
  * 3. Otherwise the scopes must all be granted by the user's role in the
  *    project owning the resource (`projectId`, `workflowId`, `credentialId`,
  *    or `dataTableId`). Workflows and credentials additionally require a
- *    sufficient sharing role on the resource↔project relation itself.
+ *    sufficient sharing role on the resource↔project relation itself, except
+ *    that a global credential is readable (`credential:read` alone) by anyone.
  *
  * @throws {NotFoundError} when a referenced resource does not exist at all,
  *   so callers can answer 404 instead of 403.
@@ -71,6 +73,15 @@ export async function userHasScopes(
 	}
 
 	if (credentialId) {
+		// Global credentials are readable by every user, as the credentials finder serves them.
+		const credentialsFinder = Container.get(CredentialsFinderService);
+		if (
+			credentialsFinder.hasGlobalReadOnlyAccess(scopes) &&
+			(await credentialsFinder.findGlobalCredentialById(credentialId))
+		) {
+			return true;
+		}
+
 		const credentialRoles = await roleService.rolesWithScope('credential', scopes, trx);
 		const relations = await Container.get(
 			SharedCredentialsRepository,

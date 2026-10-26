@@ -8,7 +8,8 @@
 			"json": {
 				"model": "claude-sonnet-4-5-20250929",
 				"stream": true,
-				"max_tokens": 8192,
+				"max_tokens": 16384,
+				"tools": [],
 				"thinking": {
 					"type": "disabled"
 				},

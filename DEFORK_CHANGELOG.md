@@ -16,6 +16,185 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-10-24 — Log-streaming settings UI rebuilt to its page-object contract
+
+**Fix; no `.ee` source involved.** The rebuilt page and modal didn't match `SettingsLogStreamingPage`, and couldn't create a destination at all: a new destination posted `id: ''` and the API rejected it.
+- The page now has licensed and unlicensed action boxes and a single add button.
+- Each destination has a card with an open/delete menu and an enable switch.
+- Creating a destination is a two-step modal: pick the type, then fill in its settings. The settings render from parameter descriptions.
+- After a save the modal stays open and offers a test-event button.
+
+Clean-room sources: the log-streaming specs and page object, `packages/workflow/src/message-event-bus.ts`, and the fair-code `ParameterInput*` / `CredentialInputs` patterns.
+
+### 2026-10-24 — External-secrets providers work; first-time provider setup and OIDC sign-in fixed (#144)
+
+**Rebuild + fixes; no `.ee` source involved.** The E8 framework could store
+provider settings but never return a secret: every provider type was a stub
+that failed on connect. All six are now implemented:
+- AWS Secrets Manager: IAM user or auto-detected credentials, and it honours
+  `AWS_ENDPOINT_URL`.
+- GCP Secret Manager: service-account key.
+- Azure Key Vault: client-secret credential.
+- HashiCorp Vault: token, AppRole or userpass auth, with KV v1/v2 discovery.
+- Infisical: Universal Auth.
+- 1Password: Connect.
+
+JSON secrets are exposed parsed. No provider logs secret values or credentials,
+and user-facing errors are scrubbed of them.
+
+Fixed:
+- **First-time provider setup.** On a fresh instance the legacy
+  `/external-secrets/providers` API listed no providers, and the first save
+  answered 404 "Could not find provider". It now lists every provider type,
+  unconfigured ones as disconnected.
+- **OIDC sign-in.** The SSO button left the user on a page showing the
+  provider URL as JSON (`{"data":"https://..."}`). The route now redirects to
+  the provider's login page.
+
+Clean-room sources: the fair-code `SecretsProvider` contract and its
+consumers, and the public vendor SDKs and HTTP APIs (AWS, Google Cloud, Azure,
+Vault, Infisical, 1Password Connect).
+
+### 2026-10-24 — Evaluation compare view rebuilt to its contract; cached insights show (#153)
+
+**Fix; no `.ee` source involved.** The rebuilt compare page was missing elements its page object expects:
+- the header
+- the score chart
+- the tabs
+- the cases table, sorted by score spread
+- per-version outputs
+- the dataset-mismatch banner
+
+It also read `.data` from an already-unwrapped insights response, so cached AI insights never showed.
+
+Clean-room sources: `eval-collections-compare.spec.ts` and `EvaluationComparePage`, the fair-code `eval-insights` service and controller, and the `@n8n/api-types` eval schemas.
+
+### 2026-10-24 — E2E baseline: product fixes found by the un-skipped suite, plus a working test stack
+
+**Fixes; no `.ee` source involved.** Develop's full sqlite E2E run had 35+
+failing specs. They came from real product bugs, rebuilt UIs that didn't match
+their page objects, and a broken test stack. The log-streaming settings UI and
+the evaluation compare view are rebuilt in their own PRs.
+
+Fixed:
+- **Global credentials were unreadable by anyone but their owner (#150).** The
+  rebuilt access check (E1) granted credential scopes only through a share, so
+  `GET /rest/credentials/:id` answered 403. A `credential:read` check on a global
+  credential now passes; write scopes still need a share.
+- **Log-streaming webhook and Sentry destinations ignored the instance SSRF
+  setting (#149).** Sinks on private addresses never received events. They now
+  follow `N8N_SSRF_PROTECTION_ENABLED`.
+- **Sentry destinations reported failure on any non-2xx.** Delivery is now
+  fire-and-forget, as with the Sentry SDK: rejections are logged, and a
+  malformed DSN still fails the send.
+- **Source control couldn't connect to SSH remotes (#152).** simple-git 4
+  rejected `GIT_SSH_COMMAND`, and passing the whole environment made any
+  inherited `GIT_*` variable fatal. The command now goes in as `core.sshCommand`
+  config.
+- **Sharing.**
+  - The share modal and the credential Sharing tab hid the selector for
+    personal-space resources and offered it for team projects, the opposite of
+    the backend's scope rules.
+  - The share modal read a stale cache stub of the open workflow, and opening
+    it on a brand-new workflow raced the autosave. It now fetches the workflow,
+    and saves a new one first.
+- **Settings views.**
+  - Variables modal: default modal id, and the inputs are reachable inside it.
+  - Worker view: has its licensed wrapper.
+  - Source control: repo-URL placeholder, read-only checkbox id, and a
+    "Protected" label that never rendered.
+
+Test stack:
+- The sandbox runner image now serves HTTPS only, so Instance AI stacks never
+  became ready. The stack now advertises and health-checks it over https.
+- The worker-scoped `n8nContainer` fixture gets a 5-minute timeout. The 60s
+  default killed heavy stacks mid-start.
+- A stack that fails to start is removed by its compose label. Reused
+  containers are never reaped by Ryuk, and they had accumulated by the dozen.
+- The result-toast wait is 15s, because a cold task runner is slower than 3s.
+- The chat session-ID read waits for the copy to land. It used to race the
+  app's clipboard write.
+- HITL specs click Approve normally. A middle-click never fires `click` on a
+  `<button>`.
+- `workflow-builder` "stop generation" is fixme: this build ships without the
+  builder agent, so there is no stream to stop.
+- Still open: HITL resume in manual chat and one Instance AI recording
+  mismatch (#154).
+
+Clean-room sources:
+- The E2E specs and page objects.
+- The fair-code `CredentialsFinderService` global-read helpers.
+- `SsrfProtectionConfig` and the existing SAML/OIDC gating pattern.
+- simple-git's public option types.
+
+### 2026-10-24 — Secret-provider connections UI matches its contract; edits keep stored passwords
+
+**Fix; no `.ee` source involved.**
+
+- **Changed (operators): `N8N_EXTERNAL_SECRETS_FOR_PROJECTS` is now
+  `N8N_ENV_FEAT_EXTERNAL_SECRETS_FOR_PROJECTS`.** That is the name the E2E
+  capability (the fair-code consumer) pins. Likewise
+  `N8N_EXTERNAL_SECRETS_MULTIPLE_CONNECTIONS` becomes
+  `N8N_ENV_FEAT_EXTERNAL_SECRETS_MULTIPLE_CONNECTIONS`.
+  - A deployment still setting the old names falls back silently to the legacy
+    single-connection settings page, so rename the variable on upgrade.
+  - The `N8N_ENV_FEAT_` prefix also exposes both flags to the frontend's
+    `envFeatureFlags`.
+- **Fixed: editing a saved connection replaced its stored passwords with the
+  blanking placeholder (#151).** `update()` now restores blanked password fields
+  from the stored settings, unless the provider type changes.
+- **Fixed: the connections settings page, connection modal and delete modal
+  didn't match their page objects.**
+  - Saving a new connection now keeps the modal open in edit mode, so a second
+    save is a PATCH, not a duplicate create.
+  - Every save is followed by a connection test, which shows a success callout
+    or an error banner.
+  - Fields render from the provider's property descriptions, so
+    `displayOptions` apply.
+  - Scope is a single select: Global, or one project.
+  - The card menu reads Edit / Share / Delete; it read "Impact:" before.
+  - The delete modal uses its default `deleteSecretsProvider-modal` id and
+    states the number of secrets removed.
+- **Fixed: the masked `$secrets` hint in credentials.** A referenced secret now
+  shows as `*********` in project-scoped mode too, and `$secrets` completions
+  include global and project secrets.
+
+Clean-room sources:
+- `secret-providers-connections-ui.spec.ts` and its page objects.
+- `fixtures/capabilities.ts`.
+- The fair-code `ParameterInputExpanded` / `CredentialInputs` pattern.
+- `settings-redaction.ts`.
+
+### 2026-10-24 — Dynamic (end-user) credentials without a license; external endpoints rebuilt (#133 wave 5)
+
+**Rebuild + ungate; no `.ee` source involved.** The four external
+dynamic-credentials routes (`GET /rest/workflows/:id/execution-status` and
+authorize / revoke / provider-redirect on `/rest/credentials/:id`) are rebuilt.
+An OAuth2 UserInfo identifier (`credential-resolver.oauth2-1.0`, subject = the
+UserInfo `sub`) and a `BearerTokenExtractor` webhook identity hook are added, and
+`feat:dynamicCredentials` joins `FAIR_CODE_LICENSED_FEATURES`.
+- **Admission:** an n8n session or the static `X-Authorization` token.
+- **Connect links:** opaque, single-use, and bound to the browser that opens them.
+- **External identities:** sent only to resolvers that can verify them; a raw
+  token is never used as a storage key.
+
+Clean-room sources: the fair-code consumers (`chat.api.ts`, the E2E helper and
+specs, `WorkflowExecutionStatusSchema`, `oauth.service.ts`, `McpServer.ts`) plus
+OpenID Connect Discovery 1.0, OpenID Connect Core 1.0 §5.3 and RFC 6750. The
+contract, decisions and the one accepted residual risk (an API-client-started
+external flow isn't browser-bound) are in `.defork/e12b-contract.md`.
+
+Bugs fixed while making the un-skipped E2E specs pass (all 9 now pass):
+- **Hook matching (#147):** identity-extractor hooks were matched on the bare
+  node name, so webhook workflows using an extractor could not be published.
+- **Import cycle:** two services imported each other, leaving the gate's link
+  minting undefined, so gated webhook/MCP calls answered 500 instead of 428 with
+  connect links.
+- **Connect flow:** gate links dropped the n8n token's `resource` and kept a
+  `Bearer` prefix, so the connect callback could not identify the user and never
+  saved the credential.
+- **Execution status:** always offers both the authorize and revoke links.
+
 ### 2026-10-24 — Multi-main without a license; source control locks cluster-wide (#133 wave 5)
 
 **Ungate + fix; no `.ee` source involved.** Source-control workfolder
@@ -1591,6 +1770,21 @@ scope sets, project listing — unchanged by this work); public API `scope-parit
 keeps 3/4 with the same pre-existing `users.handler.ee` load failure, and the
 "no orphan API-key scopes" assertion still passes. `eslint` on every touched file:
 0 errors, no rule disables.
+
+### 2026-08-09 — S3 and Azure external storage rebuilt fair-code (PR #2)
+
+*Provenance entry added 2026-10-24 (#133); the rebuild landed in `6994717f59`
+without one.* The S3 and Azure object-store providers in `@n8n/blob-storage`
+were Enterprise (`.ee`) and were purged, leaving only the filesystem store.
+`ObjectStoreService` + `S3ByteStore` (via `@aws-sdk/client-s3`) and
+`AzureBlobService` + `AzureByteStore` (via `@azure/storage-blob` /
+`@azure/identity`) were rebuilt clean-room. **Clean-room sources:** the surviving
+package tests (behavioural spec), the surviving fair-code (`ByteStore` interface,
+the `fs-byte-store` pattern, `*.config.ts`, `byte-store-registry`) and the public
+AWS/Azure SDK APIs. No `.ee` source was read. Review follow-ups chunk S3 deletes to
+the 1000-key limit and keep a malformed Azure connection string (which embeds the
+account key) out of startup errors. Verified then: build exit 0, 122/122 package
+tests, eslint 0 errors, 0 `.ee` references.
 
 ### 2026-08-09 — E10 hardening: split-brain fixes in multi-main leadership
 

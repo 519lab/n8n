@@ -192,13 +192,3 @@ export interface AddDatasetRowPayload {
 	executionId: string;
 	mapping: Record<string, DatasetColumnMapping>;
 }
-
-// ---------------------------------------------------------------------------
-// AI insights envelope (cached / generated)
-// ---------------------------------------------------------------------------
-
-import type { AiInsightsResponse } from '@n8n/api-types';
-
-export interface AiInsightsEnvelope {
-	data: AiInsightsResponse | null;
-}
