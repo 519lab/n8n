@@ -400,8 +400,9 @@ main() {
 	case "$N8N_PORT" in
 	'' | *[!0-9]*) fail "N8N_HOST_PORT must be a port number, got '${N8N_PORT}'." ;;
 	esac
-	[ "$N8N_PORT" -ge 1 ] && [ "$N8N_PORT" -le 65535 ] ||
+	if [ "$N8N_PORT" -lt 1 ] || [ "$N8N_PORT" -gt 65535 ]; then
 		fail "N8N_HOST_PORT must be between 1 and 65535, got '${N8N_PORT}'."
+	fi
 	# docker compose prefers a shell variable over .env, so pin it to the port in use.
 	export N8N_HOST_PORT="$N8N_PORT"
 

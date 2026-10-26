@@ -1,4 +1,0 @@
-self-hosted-runner:
-  labels:
-    # Org self-hosted runners (runs-on: [self-hosted, skynet]).
-    - skynet
