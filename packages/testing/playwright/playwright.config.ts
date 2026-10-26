@@ -73,15 +73,18 @@ if (BACKEND_URL && !SKIP_WEB_SERVER) {
 
 // Gate on N8N_EDITOR_URL: FRONTEND_URL alone falls back to N8N_BASE_URL. Invoke vite via
 // pnpm, not turbo — turbo detaches tasks into process groups Playwright's tree-kill misses.
+// Same as editor-ui's `serve` script, but on the ports these URLs name, so CI can use free
+// ports (with the defaults, 8080 and 5678, it matches `pnpm dev` exactly).
 if (IS_DEV && FRONTEND_URL) {
 	webServer.push({
-		command: 'pnpm --filter=n8n-editor-ui dev',
+		command: `pnpm --filter=n8n-editor-ui exec vite --host 0.0.0.0 --port ${getPortFromUrl(FRONTEND_URL)} --strictPort dev`,
 		url: `${FRONTEND_URL}/favicon.ico`,
 		timeout: 30000,
 		reuseExistingServer: IS_DEV ? false : true,
 		env: {
 			E2E_TESTS: 'true',
 			N8N_PORT: getPortFromUrl(FRONTEND_URL),
+			VUE_APP_URL_BASE_API: `${BACKEND_URL ?? FRONTEND_URL}/`,
 			...getTestEnv(),
 		},
 	});
