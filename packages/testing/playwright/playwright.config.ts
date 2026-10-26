@@ -54,7 +54,9 @@ const SKIP_WEB_SERVER = process.env.PLAYWRIGHT_SKIP_WEBSERVER === 'true';
 if (BACKEND_URL && !SKIP_WEB_SERVER) {
 	webServer.push({
 		command: 'cd .. && pnpm start',
-		url: `${BACKEND_URL}/favicon.ico`,
+		// n8n listens before its REST routes are registered, so wait for readiness: it
+		// returns 503 until start-up has finished (/favicon.ico can answer earlier).
+		url: `${BACKEND_URL}/healthz/readiness`,
 		timeout: 30000,
 		reuseExistingServer: IS_DEV ? false : true,
 		env: {
