@@ -1,8 +1,8 @@
-# n8n stack definition for get-n8n.sh (https://get.n8n.io).
+# n8n stack definition for get-n8n.sh (519lab's n8n build, images from ghcr.io/519lab).
 # Downloaded at install time; the copy in your install directory is yours to
 # edit and the script never rewrites it. To review changes between versions:
-# https://github.com/n8n-io/n8n/commits/master/docker/get-n8n-compose.yml
-# compose-version: 2
+# https://github.com/519lab/n8n/commits/master/docker/get-n8n-compose.yml
+# compose-version: 3
 
 volumes:
   n8n-data:
@@ -10,7 +10,7 @@ volumes:
 
 services:
   sandbox-certs:
-    image: ghcr.io/n8n-io/n8n-sandbox-service-api:latest
+    image: ghcr.io/519lab/n8n-sandbox-service-api:latest
     user: '0:0'
     entrypoint: ['sh', '-c']
     command:
@@ -24,7 +24,7 @@ services:
       - sandbox-tls:/tls
 
   sandbox-api:
-    image: ghcr.io/n8n-io/n8n-sandbox-service-api:latest
+    image: ghcr.io/519lab/n8n-sandbox-service-api:latest
     depends_on:
       sandbox-certs:
         condition: service_completed_successfully
@@ -49,7 +49,7 @@ services:
     # n8n reaches this container by service name, over the default Compose network.
 
   sandbox-runner-1:
-    image: ghcr.io/n8n-io/n8n-sandbox-service-runner-dind:latest
+    image: ghcr.io/519lab/n8n-sandbox-service-runner-dind:latest
     privileged: true
     depends_on:
       sandbox-api:
@@ -61,7 +61,7 @@ services:
       SANDBOX_RUNNER_CONTROL_GRPC_LISTEN_ADDR: ':9091'
       SANDBOX_RUNNER_CONTROL_GRPC_ADVERTISE_ADDR: sandbox-runner-1:9091
       SANDBOX_RUNNER_ID: runner-1
-      SANDBOX_RUNNER_DOCKER_SANDBOX_IMAGE: ghcr.io/n8n-io/n8n-sandbox-service-sandbox:latest
+      SANDBOX_RUNNER_DOCKER_SANDBOX_IMAGE: ghcr.io/519lab/n8n-sandbox-service-sandbox:latest
       SANDBOX_RUNNER_REGISTRATION_GRPC_CA_FILE: /tls/runner/ca.crt
       SANDBOX_RUNNER_REGISTRATION_GRPC_CERT_FILE: /tls/runner/grpc-client.crt
       SANDBOX_RUNNER_REGISTRATION_GRPC_KEY_FILE: /tls/runner/grpc-client.key
@@ -74,7 +74,7 @@ services:
     # Never expose this container's ports publicly — it runs privileged Docker-in-Docker.
 
   n8n:
-    image: docker.io/n8nio/n8n:${N8N_VERSION}
+    image: ghcr.io/519lab/n8n:${N8N_VERSION}
     depends_on:
       sandbox-api:
         condition: service_healthy
@@ -85,7 +85,7 @@ services:
       - n8n-data:/home/node/.n8n
 
   runners:
-    image: ghcr.io/n8n-io/runners:${N8N_VERSION}
+    image: ghcr.io/519lab/runners:${N8N_VERSION}
     depends_on:
       - n8n
     environment:

@@ -1,10 +1,10 @@
 name: 'Test get-n8n.sh installer'
 
-# Lints and end-to-end tests the get.n8n.io install script:
+# Lints and end-to-end tests the get-n8n.sh install script (519lab images):
 # fresh install boots the full stack, re-runs are no-ops, --upgrade only
 # bumps N8N_VERSION, and all failure modes exit cleanly.
 #
-# Also runs nightly against master: the script pins n8n but pulls the
+# Also runs nightly: the e2e pulls the rolling nightly n8n image and the
 # sandbox images at :latest, so an image-side change can break installs
 # without any change to the script itself.
 
@@ -43,10 +43,20 @@ jobs:
     name: 'Install, boot, upgrade'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: read
+      # The 519lab/n8n and runners GHCR packages are private.
+      packages: read
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
+      - name: Login to GHCR
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
       - name: Run test harness
         # Publish n8n on a free high port instead of 5678, so the test can't collide
         # with anything already listening there.

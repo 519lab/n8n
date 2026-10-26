@@ -74,10 +74,12 @@ else
 	[ "$(find "$WORK/a/.env" -perm 0600)" = "$WORK/a/.env" ] && pass ".env is mode 600" || fail ".env is mode 600"
 fi
 check "compose.yml validates with generated .env" docker compose -f "$WORK/a/compose.yml" config -q
-case "$(env_value "$WORK/a" N8N_VERSION)" in
-[0-9]*.[0-9]*) pass "default install resolves a sane n8n version" ;;
-*) fail "default install resolves a sane n8n version" ;;
-esac
+[ "$(env_value "$WORK/a" N8N_VERSION)" = "nightly" ] && pass "default install pins the nightly tag" ||
+	fail "default install pins the nightly tag"
+grep -q 'image: ghcr.io/519lab/' "$WORK/a/compose.yml" && pass "compose pulls 519lab images" ||
+	fail "compose pulls 519lab images"
+grep -qE 'n8n-io|n8nio/|docker\.io' "$WORK/a/compose.yml" "$WORK/a/.env" && fail "no upstream images referenced" ||
+	pass "no upstream images referenced"
 
 api_key="$(env_value "$WORK/a" SANDBOX_API_KEYS)"
 runner_key="$(env_value "$WORK/a" SANDBOX_RUNNER_API_KEYS)"
@@ -133,8 +135,11 @@ check_not "unreachable stack definition fails" \
 check "failed fetch writes no config" test ! -e "$WORK/nofetch/compose.yml"
 
 # version pinning
-env N8N_DIR="$WORK/pin" sh "$SCRIPT" --version 2.31.4 --no-start >/dev/null 2>&1
-[ "$(env_value "$WORK/pin" N8N_VERSION)" = "2.31.4" ] && pass "--version x.y.z pins in .env" ||
+env N8N_DIR="$WORK/pin" sh "$SCRIPT" --version nightly-a7bf756 --no-start >/dev/null 2>&1
+[ "$(env_value "$WORK/pin" N8N_VERSION)" = "nightly-a7bf756" ] && pass "--version nightly-<commit> pins in .env" ||
+	fail "--version nightly-<commit> pins in .env"
+env N8N_DIR="$WORK/pinsemver" sh "$SCRIPT" --version 2.31.4 --no-start >/dev/null 2>&1
+[ "$(env_value "$WORK/pinsemver" N8N_VERSION)" = "2.31.4" ] && pass "--version x.y.z pins in .env" ||
 	fail "--version x.y.z pins in .env"
 
 check_not "--upgrade without install fails" env N8N_DIR="$WORK/missing" sh "$SCRIPT" --upgrade
@@ -143,14 +148,17 @@ check_not "--upgrade without install fails" env N8N_DIR="$WORK/missing" sh "$SCR
 check_not "rejects malformed --version" env N8N_DIR="$WORK/badver" sh "$SCRIPT" --version banana --no-start
 check_not "rejects trailing-garbage --version" env N8N_DIR="$WORK/badver" sh "$SCRIPT" --version 2.3.4x --no-start
 check_not "rejects two-component --version" env N8N_DIR="$WORK/badver" sh "$SCRIPT" --version 2.32 --no-start
+check_not "rejects a floating tag other than nightly" env N8N_DIR="$WORK/badver" sh "$SCRIPT" --version latest --no-start
+check_not "rejects a non-hex nightly commit" env N8N_DIR="$WORK/badver" sh "$SCRIPT" --version nightly-zzzzzzz --no-start
+check_not "rejects a too-short nightly commit" env N8N_DIR="$WORK/badver" sh "$SCRIPT" --version nightly-a7bf --no-start
 check "malformed --version writes nothing" test ! -e "$WORK/badver"
 
 # --upgrade --no-start bumps the pin but must not touch containers
-env N8N_DIR="$WORK/stage" sh "$SCRIPT" --version 2.31.4 --no-start >/dev/null 2>&1
-stage_out="$(env N8N_DIR="$WORK/stage" sh "$SCRIPT" --upgrade --version 2.32.0 --no-start 2>&1)" &&
+env N8N_DIR="$WORK/stage" sh "$SCRIPT" --version nightly-a7bf756 --no-start >/dev/null 2>&1
+stage_out="$(env N8N_DIR="$WORK/stage" sh "$SCRIPT" --upgrade --no-start 2>&1)" &&
 	pass "--upgrade --no-start succeeds" || fail "--upgrade --no-start succeeds"
-[ "$(env_value "$WORK/stage" N8N_VERSION)" = "2.32.0" ] && pass "--upgrade --no-start updates the pin" ||
-	fail "--upgrade --no-start updates the pin"
+[ "$(env_value "$WORK/stage" N8N_VERSION)" = "nightly" ] && pass "--upgrade --no-start moves the pin to nightly" ||
+	fail "--upgrade --no-start moves the pin to nightly"
 echo "$stage_out" | grep -q "Not restarting" && pass "--upgrade --no-start skips the restart" ||
 	fail "--upgrade --no-start skips the restart"
 
@@ -199,8 +207,9 @@ if [ "$E2E" -eq 1 ]; then
 	E2E_DIR="$WORK/e2e"
 	trap 'teardown "$E2E_DIR"; rm -rf "$WORK"' EXIT INT TERM
 
-	# install the previous release so --upgrade below is a real version change
-	if env N8N_DIR="$E2E_DIR" sh "$SCRIPT" --version 2.31.4; then
+	# install an immutable nightly-<commit> tag so --upgrade below changes the pin
+	PINNED_TAG="${E2E_PINNED_TAG:-nightly-a7bf756}"
+	if env N8N_DIR="$E2E_DIR" sh "$SCRIPT" --version "$PINNED_TAG"; then
 		pass "fresh install boots and reaches /healthz"
 	else
 		fail "fresh install boots and reaches /healthz"
@@ -228,14 +237,12 @@ if [ "$E2E" -eq 1 ]; then
 	check_not "fresh install fails while port is taken" env N8N_DIR="$WORK/conflict" sh "$SCRIPT"
 
 	# upgrade: only the N8N_VERSION line may change, and the new image must run.
-	# Pin the target explicitly so the assertion is deterministic (a bare
-	# --upgrade resolves the latest stable release at run time).
-	target="$(sed -n 's/^FALLBACK_N8N_VERSION="\(.*\)"$/\1/p' "$SCRIPT")"
+	target=nightly
 	cp "$E2E_DIR/.env" "$WORK/env-before"
-	check "--upgrade succeeds" env N8N_DIR="$E2E_DIR" sh "$SCRIPT" --upgrade --version "$target"
+	check "--upgrade succeeds" env N8N_DIR="$E2E_DIR" sh "$SCRIPT" --upgrade
 	diff "$WORK/env-before" "$E2E_DIR/.env" >"$WORK/env.diff" 2>&1 || true
 	if [ "$(grep -c '^[<>]' "$WORK/env.diff")" = "2" ] &&
-		grep -q '^< N8N_VERSION=2.31.4$' "$WORK/env.diff" &&
+		grep -q "^< N8N_VERSION=${PINNED_TAG}\$" "$WORK/env.diff" &&
 		grep -q "^> N8N_VERSION=${target}\$" "$WORK/env.diff"; then
 		pass "--upgrade changes only N8N_VERSION"
 	else
