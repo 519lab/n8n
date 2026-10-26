@@ -114,14 +114,26 @@ runs:
       uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
       with:
         path: ~/.safe-chain/bin
-        key: safe-chain-1.5.7-${{ runner.os }}-${{ runner.arch }}
+        # v2: the v1 entry was saved under HOME=/home/runner; restored on a runner
+        # with another HOME, it reported a hit but left ~/.safe-chain/bin empty.
+        key: safe-chain-1.5.7-v2-${{ runner.os }}-${{ runner.arch }}
+
+    # Trust the binary, not the cache-hit flag: actions/cache stores absolute
+    # paths, so an entry saved under a different HOME "hits" without restoring here.
+    - name: Check SafeChain binary
+      id: safe-chain-bin
+      shell: bash
+      run: |
+        if [ -x "$HOME/.safe-chain/bin/safe-chain" ]; then
+          echo "present=true" >> "$GITHUB_OUTPUT"
+        fi
 
     # Download + install the SafeChain binary. This is the expensive,
     # CDN-backed part and the only part worth gating on the cache. The install
     # script also runs `setup-ci`, so on a cache miss this both downloads AND
     # activates; the Activate step below then re-runs `setup-ci` idempotently.
     - name: Download Aikido SafeChain
-      if: steps.cache-safe-chain.outputs.cache-hit != 'true'
+      if: steps.safe-chain-bin.outputs.present != 'true'
       run: |
         VERSION="1.5.7"
         EXPECTED_SHA256="07ab512fd8795ce41b2275be369aced4c9a93cc7bca9b397951507891a955239"
