@@ -34,10 +34,29 @@ jobs:
       - name: Install Browsers
         run: pnpm turbo run install-browsers --filter=n8n-playwright
 
+      # The self-hosted runners share the host network, where n8n's usual ports
+      # (5678, 5679, 8080) can already be taken, so use free high ports.
+      - name: Pick free ports
+        id: ports
+        run: |
+          read -r backend broker editor < <(python3 -c 'import socket
+          socks = [socket.socket() for _ in range(3)]
+          for s in socks: s.bind(("127.0.0.1", 0))
+          print(*(s.getsockname()[1] for s in socks))')
+          echo "backend=$backend" >> "$GITHUB_OUTPUT"
+          echo "broker=$broker" >> "$GITHUB_OUTPUT"
+          echo "editor=$editor" >> "$GITHUB_OUTPUT"
+
       - name: Run dev-server smoke spec
+        # Same as the package's `test:dev-server-smoke` script, on the ports picked above.
         # Run from repo root so PLAYWRIGHT_BROWSERS_PATH (relative) resolves
         # correctly. cd-ing into the playwright package double-nests it.
-        run: pnpm --filter=n8n-playwright test:dev-server-smoke --reporter=list
+        env:
+          N8N_BASE_URL: http://localhost:${{ steps.ports.outputs.backend }}
+          N8N_EDITOR_URL: http://localhost:${{ steps.ports.outputs.editor }}
+          N8N_RUNNERS_BROKER_PORT: ${{ steps.ports.outputs.broker }}
+          RESET_E2E_DB: 'true'
+        run: pnpm --filter=n8n-playwright exec playwright test --project=dev-server-smoke --reporter=list
 
       - name: Upload Failure Artifacts
         if: ${{ failure() }}

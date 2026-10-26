@@ -32,6 +32,8 @@ What changed:
 - **Safe on a shared Docker daemon.**
   - E2E images are tagged per commit (`n8nio/n8n:ci-<variant>-<sha>`), so concurrent runs can't test each other's build. A daily job untags this repo's `ci-` images older than 3 days.
   - The get-n8n e2e stack uses a per-run compose project, so one run's teardown can't remove another's stack.
+  - Jobs that start a server on the host use free high ports. The runner host already serves on 5678, and jobs share its network.
+- **`get-n8n.sh` takes `N8N_HOST_PORT`** (script v1.2.0, stack definition v2). Set it to publish n8n on a port other than 5678. It's stored in `.env`, an existing install keeps its port, and invalid values are rejected before anything is written. Previously the port was fixed, and the only way around a taken 5678 was editing `compose.yml` by hand.
   - The E2E image build uses the host's layer cache.
   - The Node toolcache restore skips versions already present.
   - Engine and db integration tests keep Postgres data on tmpfs, so no volumes are left behind.

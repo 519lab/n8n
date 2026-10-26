@@ -312,10 +312,14 @@ The runners:
     `util-cleanup-pr-images.yml` untags this repo's `ci-` images older than 3 days.
   - **Bind mounts:** they resolve on the host. The work dir and `TMPDIR` are
     mounted at the same paths there.
-  - **Port clashes:** jobs that bind fixed host ports, such as the dev-server
-    smoke (5678/8080) and `test-get-n8n.sh --e2e` (5678), fail loudly if they
-    run at the same time. Re-run the one that lost. The get-n8n stack uses a
-    per-run compose project name, so one run's teardown can't remove another's.
+  - **Host ports:** srv2 itself serves on 5678 (the homelab n8n's Swarm ingress
+    publishes it on every node), and concurrent jobs share the network. Jobs that
+    start a server on the host pick free high ports from the kernel:
+    - The dev-server smoke passes `N8N_BASE_URL`, `N8N_EDITOR_URL` and
+      `N8N_RUNNERS_BROKER_PORT`.
+    - `test-get-n8n.sh --e2e` passes `N8N_HOST_PORT`, and uses a per-run compose
+      project name so one run's teardown can't remove another's.
+    Container-based E2E stacks already map random host ports.
   - **Layer cache:** image builds without a buildx container builder reuse the
     host's layer cache between jobs.
 - **Sizing:**
