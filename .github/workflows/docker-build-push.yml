@@ -4,7 +4,7 @@
 # - Uses docker-tags.mjs for tag generation, this generates the tags for the images
 
 name: 'Docker: Build and Push'
-run-name: "${{ github.event_name == 'workflow_dispatch' && format('Docker: Build and Push {0} (push={1}, arm64={2})', github.ref_name, inputs.push_enabled, inputs.include_arm64) || '' }}"
+run-name: "${{ github.event_name == 'workflow_dispatch' && format('Docker: Build and Push {0} (push={1})', github.ref_name, inputs.push_enabled) || '' }}"
 
 env:
   NODE_OPTIONS: '--max-old-space-size=7168'
@@ -48,11 +48,6 @@ on:
         required: false
         type: boolean
         default: true
-      include_arm64:
-        description: 'Also build linux/arm64 (default is amd64-only for manual/branch builds)'
-        required: false
-        type: boolean
-        default: false
       success_url:
         description: 'URL to call after the build is successful'
         required: false
@@ -61,7 +56,7 @@ on:
 jobs:
   determine-build-context:
     name: Determine Build Context
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     outputs:
       release_type: ${{ steps.context.outputs.release_type }}
       n8n_version: ${{ steps.context.outputs.version }}
@@ -70,7 +65,7 @@ jobs:
       short_sha: ${{ steps.sha.outputs.short_sha }}
     steps:
       - name: Checkout code
-        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ inputs.ref }}
 
@@ -86,7 +81,6 @@ jobs:
           N8N_VERSION: ${{ inputs.n8n_version }}
           RELEASE_TYPE: ${{ inputs.release_type }}
           PUSH_ENABLED: ${{ inputs.push_enabled }}
-          INCLUDE_ARM64: ${{ inputs.include_arm64 }}
           GITHUB_REF: ${{ github.ref_name }}
         run: |
           node .github/scripts/docker/docker-config.mjs \
@@ -95,13 +89,12 @@ jobs:
             --branch "$GITHUB_REF" \
             --version "$N8N_VERSION" \
             --release-type "$RELEASE_TYPE" \
-            --push-enabled "$PUSH_ENABLED" \
-            --include-arm64 "$INCLUDE_ARM64"
+            --push-enabled "$PUSH_ENABLED"
 
   build-and-push-docker:
     name: Build App, then Build and Push Docker Image (${{ matrix.platform }})
     needs: determine-build-context
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-latest
     timeout-minutes: 35
     strategy:
       matrix: ${{ fromJSON(needs.determine-build-context.outputs.build_matrix) }}
@@ -150,7 +143,7 @@ jobs:
             "${DATE_ARGS[@]}"
 
           echo "=== Generated Docker Tags ==="
-          cat "$GITHUB_OUTPUT" | grep "_tags=" | while IFS='=' read -r key value; do
+          grep "_tags=" "$GITHUB_OUTPUT" | while IFS='=' read -r key value; do
             echo "${key}: ${value%%,*}..."  # Show first tag for brevity
           done
 
@@ -162,7 +155,7 @@ jobs:
 
       - name: Build and push n8n Docker image
         id: build-n8n
-        uses: useblacksmith/build-push-action@30c71162f16ea2c27c3e21523255d209b8b538c1 # v2
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: ./docker/images/n8n/Dockerfile
@@ -194,7 +187,7 @@ jobs:
 
       - name: Build and push task runners Docker image (Alpine)
         id: build-runners
-        uses: useblacksmith/build-push-action@30c71162f16ea2c27c3e21523255d209b8b538c1 # v2
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: ./docker/images/runners/Dockerfile
@@ -210,7 +203,7 @@ jobs:
 
       - name: Build and push task runners Docker image (distroless)
         id: build-runners-distroless
-        uses: useblacksmith/build-push-action@30c71162f16ea2c27c3e21523255d209b8b538c1 # v2
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: ./docker/images/runners/Dockerfile.distroless
@@ -225,9 +218,9 @@ jobs:
           tags: ${{ steps.determine-tags.outputs.runners_distroless_tags }}
 
   create_multi_arch_manifest:
-    name: Create Multi-Arch Manifest
+    name: Create Manifest
     needs: [determine-build-context, build-and-push-docker]
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     if: |
       needs.build-and-push-docker.result == 'success' &&
       needs.determine-build-context.outputs.push_enabled == 'true'
@@ -240,24 +233,19 @@ jobs:
       runners_distroless_image: ${{ steps.get-digests.outputs.runners_distroless_image }}
     steps:
       - name: Checkout
-        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
-
-      - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@e4c1c000c95f9cc255f72940e9c56bcbd1239436 # v1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Login to Docker registries
         uses: ./.github/actions/docker-registry-login
         with:
           login-ghcr: true
 
-      - name: Create GHCR multi-arch manifests
+      - name: Create GHCR manifests
         env:
           N8N_DATE_MANIFEST_TAG: ${{ needs.build-and-push-docker.outputs.n8n_date_manifest_tag }}
           RUNNERS_DATE_MANIFEST_TAG: ${{ needs.build-and-push-docker.outputs.runners_date_manifest_tag }}
           RUNNERS_DISTROLESS_DATE_MANIFEST_TAG: ${{ needs.build-and-push-docker.outputs.runners_distroless_date_manifest_tag }}
         run: |
-          RELEASE_TYPE="${{ needs.determine-build-context.outputs.release_type }}"
-
           # Function to create manifest for an image
           create_manifest() {
             local IMAGE_NAME=$1
@@ -270,17 +258,10 @@ jobs:
 
             echo "Creating GHCR manifest for $IMAGE_NAME: $MANIFEST_TAG"
 
-            # For branch builds, only AMD64 is built
-            if [[ "$RELEASE_TYPE" == "branch" ]]; then
-              docker buildx imagetools create \
-                --tag "$MANIFEST_TAG" \
-                "${MANIFEST_TAG}-amd64"
-            else
-              docker buildx imagetools create \
-                --tag "$MANIFEST_TAG" \
-                "${MANIFEST_TAG}-amd64" \
-                "${MANIFEST_TAG}-arm64"
-            fi
+            # Images are built for linux/amd64 only (no ARM runners).
+            docker buildx imagetools create \
+              --tag "$MANIFEST_TAG" \
+              "${MANIFEST_TAG}-amd64"
           }
 
           # Create manifests for all images
@@ -311,7 +292,7 @@ jobs:
   call-success-url:
     name: Call Success URL
     needs: [create_multi_arch_manifest]
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     if: needs.create_multi_arch_manifest.result == 'success' || needs.create_multi_arch_manifest.result == 'skipped'
     steps:
       - name: Call Success URL
@@ -398,13 +379,13 @@ jobs:
       (needs.determine-build-context.outputs.release_type == 'stable' ||
        needs.determine-build-context.outputs.release_type == 'rc' ||
        needs.determine-build-context.outputs.release_type == 'nightly')
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     permissions:
       id-token: write
       packages: write
     steps:
       - name: Checkout
-        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
@@ -463,14 +444,14 @@ jobs:
       (needs.determine-build-context.outputs.release_type == 'stable' ||
        needs.determine-build-context.outputs.release_type == 'rc' ||
        needs.determine-build-context.outputs.release_type == 'nightly')
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       id-token: write
       packages: write
     steps:
       - name: Checkout
-        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Setup Node.js and install SBOM tooling
         uses: ./.github/actions/setup-nodejs

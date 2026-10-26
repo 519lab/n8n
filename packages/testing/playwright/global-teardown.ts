@@ -1,9 +1,14 @@
 import { execSync } from 'child_process';
 
+import { getBackendUrl, getFrontendUrl, getPortFromUrl } from './utils/url-helper';
+
 function globalTeardown() {
 	console.log('🧹 Starting global teardown...');
 
-	const ports = [5678, 8080];
+	// Only the ports this run's dev servers used (5678 and 8080 by default), so a run
+	// on other ports never kills unrelated processes.
+	const urls = [getBackendUrl(), getFrontendUrl()].filter((url): url is string => !!url);
+	const ports = [...new Set(urls.map(getPortFromUrl))];
 
 	for (const port of ports) {
 		try {

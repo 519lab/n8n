@@ -15,16 +15,18 @@ on:
         default: 24.18.1
 
 env:
-  # Tuned for the 4-vCPU Blacksmith runner: ~10 parallel eslint processes at 7GB heap each.
-  NODE_OPTIONS: --max-old-space-size=7168
-  TURBO_CONCURRENCY: 10
+  # The 16 GB GitHub-hosted runner ran out of memory at 10 parallel eslint
+  # processes (15.5 GB used, swap full) and was down to 1.1 GB free at 3.
+  # Two at a time peaked at 10.3 GB (uncached, 16 min).
+  NODE_OPTIONS: --max-old-space-size=5120
+  TURBO_CONCURRENCY: 2
 
 jobs:
   lint:
     name: Lint
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     steps:
-      - uses: useblacksmith/checkout@41cdeedae8edb2e684ba22896a5fd2a3cb85db6b # v1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ inputs.ref }}
 
