@@ -191,6 +191,9 @@ jobs:
     env:
       # Runner containers are capped at 6 GB.
       NODE_OPTIONS: --max-old-space-size=4096
+      # editor-ui's vue-tsc alone peaks at ~6.0 GB (measured under a 6 GB cgroup),
+      # so nothing else may run beside it.
+      TURBO_CONCURRENCY: 1
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:

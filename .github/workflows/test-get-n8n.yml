@@ -51,6 +51,11 @@ jobs:
         with:
           persist-credentials: false
       - name: Run test harness
+        env:
+          # The stack's compose project would otherwise be named after its directory
+          # ("e2e") on the shared host Docker daemon, so overlapping runs would tear
+          # down each other's stack.
+          COMPOSE_PROJECT_NAME: get-n8n-e2e-${{ github.run_id }}-${{ github.run_attempt }}
         run: sh docker/test-get-n8n.sh --e2e
 
   report-status:

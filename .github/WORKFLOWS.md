@@ -207,7 +207,7 @@ A failing push run opens a `ci-failure` issue (see [Failure Alerts](#failure-ale
 | Daily 02:00     | `test-get-n8n.yml`          | get-n8n installer health             |
 | Daily 03:00     | `docker-build-smoke.yml`    | No-cache Docker build                |
 | Daily 03:00     | `util-cleanup-pr-images.yml`| Prune CI images older than 3 days    |
-| Daily 04:00     | `test-e2e-nightly.yml`      | Full E2E suite on develop (4 shards) |
+| Daily 05:00     | `test-e2e-nightly.yml`      | Full E2E suite on develop (4 shards) |
 | Mon 10:00       | `clean-stale-branches.yml`  | List stale branches (deleting needs a manual run with dry-run off) |
 | Mon–Fri 09:00   | `community-pr-close-stale.yml` | Close stale community PRs         |
 
@@ -309,14 +309,19 @@ The runners:
   its network, and `/opt/hostedtoolcache`. As a result:
   - **Image tags:** E2E images are tagged per commit
     (`n8nio/n8n:ci-<variant>-<sha>`) so concurrent runs can't swap images.
+    `util-cleanup-pr-images.yml` untags this repo's `ci-` images older than 3 days.
   - **Bind mounts:** they resolve on the host. The work dir and `TMPDIR` are
     mounted at the same paths there.
-  - **Port clashes:** jobs that bind fixed host ports (for example
-    `test-get-n8n.sh --e2e`) can collide if they run at the same time.
+  - **Port clashes:** jobs that bind fixed host ports, such as the dev-server
+    smoke (5678/8080) and `test-get-n8n.sh --e2e` (5678), fail loudly if they
+    run at the same time. Re-run the one that lost. The get-n8n stack uses a
+    per-run compose project name, so one run's teardown can't remove another's.
   - **Layer cache:** image builds without a buildx container builder reuse the
     host's layer cache between jobs.
 - **Sizing:**
   - Heap caps (`NODE_OPTIONS`) are at most 4–5 GB.
+  - Typecheck runs turbo serially: editor-ui's vue-tsc alone peaks at about
+    6.0 GB (measured under a 6 GB cgroup).
   - Lint runs one eslint process at a time.
   - Turbo runs at most 2 tasks unless a job sets `TURBO_CONCURRENCY` or `--concurrency`.
 - **No Windows or ARM:** there are no Windows or ARM runners, so there's no

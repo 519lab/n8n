@@ -1,3 +1,4 @@
+-P self-hosted=ubuntu-latest
 -P skynet=ubuntu-latest
 -P ubuntu-22.04=ubuntu-latest
 -P ubuntu-20.04=ubuntu-latest

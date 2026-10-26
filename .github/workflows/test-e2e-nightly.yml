@@ -2,12 +2,13 @@ name: 'Test: E2E Nightly'
 
 # Full E2E suite on the default branch. PR runs are impact-scoped (or forced with
 # the `force-e2e` label), so this is where every spec runs against develop.
-# Scheduled after the midnight-to-03:00 Docker jobs so it doesn't compete with
-# them for the self-hosted runners.
+# Scheduled after the nightly Docker jobs (00:00, plus the 03:00 no-cache smoke
+# build, which takes a while on 2 CPUs) so it doesn't compete with them for the
+# self-hosted runners.
 
 on:
   schedule:
-    - cron: '0 4 * * *' # 4:00 AM UTC
+    - cron: '0 5 * * *' # 5:00 AM UTC
   workflow_dispatch:
 
 concurrency:

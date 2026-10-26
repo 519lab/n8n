@@ -32,6 +32,23 @@ jobs:
           GHCR_REPO: ${{ github.event.repository.name }}
         run: node .github/scripts/cleanup-ghcr-images.mjs --stale 3
 
+      # E2E images are tagged per commit (n8nio/{n8n,runners}:ci-<variant>-<sha>) on the
+      # self-hosted runners' shared host Docker daemon, which this job also uses. Untag
+      # this repo's ones older than 3 days; images still in use are skipped, and
+      # nothing else on the daemon is touched.
+      - name: Delete stale local CI images
+        run: |
+          cutoff=$(date -d '3 days ago' +%s)
+          docker image ls --format '{{.Repository}}:{{.Tag}}' \
+            --filter 'reference=n8nio/n8n:ci-*' --filter 'reference=n8nio/runners:ci-*' |
+            sort -u | while read -r ref; do
+              created=$(docker image inspect --format '{{.Created}}' "$ref") || continue
+              if [ "$(date -d "$created" +%s)" -lt "$cutoff" ]; then
+                docker image rm "$ref" >/dev/null && echo "Removed $ref" ||
+                  echo "::warning::Could not remove $ref (still in use?)"
+              fi
+            done
+
   report-status:
     name: Report CI status
     needs: [cleanup]

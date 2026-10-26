@@ -24,15 +24,17 @@ What changed:
 - **Standard actions.** Blacksmith's checkout, Docker builder and build-push actions are replaced by the pinned standard ones (`actions/checkout`, `docker/setup-buildx-action`, `docker/build-push-action` v6.19.2).
 - **Sized for the smaller runners.**
   - Heap caps are 4–5 GB instead of 7 GB.
+  - Typecheck runs one task at a time: editor-ui's vue-tsc alone peaks at about 6.0 GB.
   - Lint runs one eslint process at a time.
   - Turbo defaults to 2 parallel tasks.
   - PR E2E uses 4 shards instead of 16 and stays impact-scoped.
   - A new `test-e2e-nightly.yml` runs the full suite on develop every night.
 - **Safe on a shared Docker daemon.**
-  - E2E images are tagged per commit (`n8nio/n8n:ci-<variant>-<sha>`), so concurrent runs can't test each other's build.
+  - E2E images are tagged per commit (`n8nio/n8n:ci-<variant>-<sha>`), so concurrent runs can't test each other's build. A daily job untags this repo's `ci-` images older than 3 days.
+  - The get-n8n e2e stack uses a per-run compose project, so one run's teardown can't remove another's stack.
   - The E2E image build uses the host's layer cache.
   - The Node toolcache restore skips versions already present.
-  - Engine integration tests keep Postgres data on tmpfs, so no volumes are left behind.
+  - Engine and db integration tests keep Postgres data on tmpfs, so no volumes are left behind.
   - Steps that ran the image's Node 18 now set up Node 24 first.
 - **Windows and ARM64 dropped.** No Windows or ARM runners exist, so the Windows build and the Windows get-n8n checks are removed, and Docker images (n8n, runners and the base image) are built for `linux/amd64` only.
 - **Stale-branch cleanup fixed.** It deleted branches on its weekly schedule: `!inputs.dry-run` is true when a scheduled run has no inputs. It had never run here, because no Blacksmith runner picked it up. Scheduled runs now only list stale branches; deleting takes a manual run with dry-run off.

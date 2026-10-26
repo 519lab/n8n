@@ -269,8 +269,8 @@ runs:
     # logs `failed to contact remote cache` for every artifact and falls back
     # to a local cache). The remote cache is inert, but the action's post-run
     # still fetches the unreachable server to save it and dies with a bare
-    # `fetch failed`, turning the whole job red. Skip it so the one Windows
-    # build job stays green; Linux jobs keep remote caching.
+    # `fetch failed`, turning the whole job red. Skip it so Windows jobs stay
+    # green (none run today); Linux jobs keep remote caching.
     - name: Configure Turborepo Cache
       if: steps.turbo-server.outputs.running != 'true' && runner.os != 'Windows'
       uses: rharkor/caching-for-turbo@5d14fba18e450c09393333cfd4242e8b3cb455a6 # v2.4.2
