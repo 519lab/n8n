@@ -12,12 +12,13 @@
 # Source: https://github.com/n8n-io/n8n/blob/master/docker/get-n8n.sh
 set -eu
 
-SCRIPT_VERSION="1.1.0"
+SCRIPT_VERSION="1.2.0"
 # The version to install is derived from the latest stable GitHub release in
 # resolve_n8n_version(); this fallback only applies when that lookup fails.
 FALLBACK_N8N_VERSION="2.32.0"
 N8N_DIR="${N8N_DIR:-./n8n}"
-N8N_PORT=5678
+# Host port n8n is published on. An existing install keeps the one in its .env.
+N8N_PORT="${N8N_HOST_PORT:-5678}"
 SOURCE_URL="https://github.com/n8n-io/n8n/blob/master/docker/get-n8n.sh"
 # The stack definition lives next to this script in the repo and is downloaded
 # at install time. A plain filesystem path also works (used by the test
@@ -56,6 +57,8 @@ Options:
 
 Environment:
   N8N_DIR            Install directory (default: ./n8n)
+  N8N_HOST_PORT      Host port to publish n8n on (default: 5678). Stored in .env;
+                     an existing install keeps the port it was installed with.
 
 For production-grade setups (TLS, Postgres, queue mode) see:
   ${DOCS_HOSTING_URL}
@@ -197,6 +200,9 @@ write_env() {
 
 # n8n version to run. 'get-n8n.sh --upgrade' updates this line and nothing else.
 N8N_VERSION=${INSTALL_VERSION}
+
+# Host port n8n is published on (compose maps it to n8n's port 5678).
+N8N_HOST_PORT=${N8N_PORT}
 
 N8N_ENABLED_MODULES=instance-ai
 
@@ -387,6 +393,19 @@ main() {
 	parse_args "$@"
 	check_deps
 
+	if [ -f "${N8N_DIR}/.env" ]; then
+		installed_port="$(sed -n 's/^N8N_HOST_PORT=//p' "${N8N_DIR}/.env" | head -n1)"
+		[ -z "$installed_port" ] || N8N_PORT="$installed_port"
+	fi
+	case "$N8N_PORT" in
+	'' | *[!0-9]*) fail "N8N_HOST_PORT must be a port number, got '${N8N_PORT}'." ;;
+	esac
+	if [ "$N8N_PORT" -lt 1 ] || [ "$N8N_PORT" -gt 65535 ]; then
+		fail "N8N_HOST_PORT must be between 1 and 65535, got '${N8N_PORT}'."
+	fi
+	# docker compose prefers a shell variable over .env, so pin it to the port in use.
+	export N8N_HOST_PORT="$N8N_PORT"
+
 	if [ -f "${N8N_DIR}/compose.yml" ] || [ -f "${N8N_DIR}/.env" ]; then
 		if [ "$UPGRADE" -eq 1 ]; then
 			do_upgrade
@@ -413,8 +432,8 @@ main() {
   Pick another directory with: N8N_DIR=./some-dir sh get-n8n.sh"
 	fi
 	if [ "$NO_START" -eq 0 ] && port_in_use; then
-		fail "something is already listening on port ${N8N_PORT} — stop it first, or use --no-start
-  and adjust the port mapping in ${N8N_DIR}/compose.yml before starting."
+		fail "something is already listening on port ${N8N_PORT} — stop it first, or pick another
+  port with: N8N_HOST_PORT=<port> sh get-n8n.sh"
 	fi
 
 	INSTALL_VERSION="${REQUESTED_VERSION:-$(resolve_n8n_version)}"

@@ -161,7 +161,7 @@ class MetricsReporter implements Reporter {
 					? 'local'
 					: process.env.RUNNER_ENVIRONMENT === 'github-hosted'
 						? 'github'
-						: 'blacksmith',
+						: 'self-hosted',
 				cpuCores: os.cpus().length,
 				memoryGb: Math.round((os.totalmem() / 1024 ** 3) * 10) / 10,
 			},

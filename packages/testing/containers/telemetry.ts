@@ -24,7 +24,7 @@ export interface StackTelemetryRecord {
 
 	/** Runner info - provider detected from env vars, specs from runtime */
 	runner: {
-		provider: 'github' | 'blacksmith' | 'local';
+		provider: 'github' | 'self-hosted' | 'local';
 		cpuCores: number;
 		memoryGb: number;
 	};
@@ -89,8 +89,8 @@ function getRunnerProvider(): StackTelemetryRecord['runner']['provider'] {
 	if (process.env.RUNNER_ENVIRONMENT === 'github-hosted') {
 		return 'github';
 	}
-	// Everything else in CI is Blacksmith
-	return 'blacksmith';
+	// Everything else in CI is a self-hosted runner
+	return 'self-hosted';
 }
 
 function getRunnerInfo(): StackTelemetryRecord['runner'] {

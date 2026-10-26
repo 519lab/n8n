@@ -10,19 +10,19 @@ on:
 
 env:
   NODE_OPTIONS: '--max-old-space-size=6144'
-  PLAYWRIGHT_BROWSERS_PATH: packages/testing/playwright/.playwright-browsers
+  PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/packages/testing/playwright/.playwright-browsers
 
 jobs:
   smoke:
     name: Dev-server smoke
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
 
     steps:
       - name: Checkout
-        uses: useblacksmith/checkout@41cdeedae8edb2e684ba22896a5fd2a3cb85db6b # v1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 1
           ref: ${{ inputs.ref }}
@@ -33,10 +33,29 @@ jobs:
       - name: Install Browsers
         run: pnpm turbo run install-browsers --filter=n8n-playwright
 
+      # Free high ports instead of n8n's usual 5678/5679/8080, so the smoke can't
+      # collide with anything already listening there.
+      - name: Pick free ports
+        id: ports
+        run: |
+          read -r backend broker editor < <(python3 -c 'import socket
+          socks = [socket.socket() for _ in range(3)]
+          for s in socks: s.bind(("127.0.0.1", 0))
+          print(*(s.getsockname()[1] for s in socks))')
+          {
+            echo "backend=$backend"
+            echo "broker=$broker"
+            echo "editor=$editor"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Run dev-server smoke spec
-        # Run from repo root so PLAYWRIGHT_BROWSERS_PATH (relative) resolves
-        # correctly. cd-ing into the playwright package double-nests it.
-        run: pnpm --filter=n8n-playwright test:dev-server-smoke --reporter=list
+        # Same as the package's `test:dev-server-smoke` script, on the ports picked above.
+        env:
+          N8N_BASE_URL: http://localhost:${{ steps.ports.outputs.backend }}
+          N8N_EDITOR_URL: http://localhost:${{ steps.ports.outputs.editor }}
+          N8N_RUNNERS_BROKER_PORT: ${{ steps.ports.outputs.broker }}
+          RESET_E2E_DB: 'true'
+        run: pnpm --filter=n8n-playwright exec playwright test --project=dev-server-smoke --reporter=list
 
       - name: Upload Failure Artifacts
         if: ${{ failure() }}

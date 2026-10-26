@@ -1,6 +1,6 @@
 # GitHub Actions & CI/CD Documentation
 
-Reference for this fork's `.github/` folder (as of 2026-10-24).
+Reference for this fork's `.github/` folder (as of 2026-10-26).
 
 This is a de-enterprised fork of `n8n-io/n8n`. Upstream's release, backport,
 3.x-sync, benchmark, eval, Chromatic/Storybook, Slack/Codecov/QA-metrics and
@@ -21,7 +21,6 @@ fork-specific purpose.
 ├── CODEOWNERS                            # Team ownership for PR reviews
 ├── pull_request_template.md              # PR description template
 ├── pull_request_title_conventions.md     # Title format rules (Angular)
-├── actionlint.yml                        # Workflow linter config (runner labels)
 ├── docker-compose.yml                    # DB services for local testing
 ├── test-metrics/                         # E2E impact map + playwright baselines
 ├── ISSUE_TEMPLATE/
@@ -96,7 +95,6 @@ Enforced on PRs into `master` and `develop` by `ci-check-pr-title.yml`. See `pul
 | `ci-codeowners-validation.yml`  | Any PR — CODEOWNERS syntax                                    |
 | `ci-python.yml`                 | `packages/@n8n/task-runner-python/**` changes                 |
 | `build-base-image.yml`          | `docker/images/n8n-base/**` changes (pushes on `develop`)     |
-| `build-windows.yml`             | `package.json` / `turbo.json` changes on PRs into `master`    |
 | `docker-build-smoke.yml`        | Docker build inputs change                                    |
 | `test-e2e-helm.yml`             | Helm / container-stack changes                                |
 | `test-get-n8n.yml`              | `docker/get-n8n*` / `docker/test-get-n8n.sh` changes          |
@@ -118,11 +116,12 @@ install-and-build (paths filter + build cache)
 └─ required-checks  (aggregates the above via ci-filter validate)
 ```
 
-**E2E runs the full sqlite suite with no license.** `e2e` runs when the paths
+**E2E runs the sqlite suite with no license.** `e2e` runs when the paths
 filter marks runtime or E2E changes, or when the PR has the `force-e2e` label. It
-is advisory (not in `required-checks`) until develop's E2E baseline is green.
-Push builds of develop don't run E2E; to get a develop baseline, open a draft PR
-from an empty commit with `force-e2e`.
+is advisory (not in `required-checks`). On a PR it runs only the specs affected
+by the change, unless `force-e2e` is set, spread over 16 shards (one worker each).
+The full suite runs every night on develop (`test-e2e-nightly.yml`), and can be
+started by hand from the Actions tab.
 
 ### Manual Triggers (PR Comments)
 
@@ -167,6 +166,10 @@ docker-build-push.yml
 
 test-workflows-nightly.yml / test-workflows-pr-comment.yml
     └─▶ test-workflows-callable.yml
+
+test-e2e-nightly.yml
+    ├─▶ prepare-docker-reusable.yml
+    └─▶ test-e2e-reusable.yml
 ```
 
 ---
@@ -203,7 +206,8 @@ A failing push run opens a `ci-failure` issue (see [Failure Alerts](#failure-ale
 | Daily 02:00     | `test-get-n8n.yml`          | get-n8n installer health             |
 | Daily 03:00     | `docker-build-smoke.yml`    | No-cache Docker build                |
 | Daily 03:00     | `util-cleanup-pr-images.yml`| Prune CI images older than 3 days    |
-| Mon 10:00       | `clean-stale-branches.yml`  | Delete stale branches                |
+| Daily 05:00     | `test-e2e-nightly.yml`      | Full E2E suite on develop (16 shards) |
+| Mon 10:00       | `clean-stale-branches.yml`  | List stale branches (deleting needs a manual run with dry-run off) |
 | Mon–Fri 09:00   | `community-pr-close-stale.yml` | Close stale community PRs         |
 
 ### Failure Alerts
@@ -284,18 +288,28 @@ runs).
 
 ## Runner Selection
 
-All jobs run on Blacksmith runners (hard-coded labels; there is no provider
-toggle), including the Docker build matrix in `scripts/docker/docker-config.mjs`.
-New labels must be added to `actionlint.yml`, or the `actionlint_check`
-pre-commit hook fails.
+Every job runs on GitHub-hosted `ubuntu-latest`, including the Docker build
+matrix in `scripts/docker/docker-config.mjs`. The SLSA provenance generator is a
+third-party reusable workflow that picks its own GitHub-hosted runner.
 
-| Runner                              | Use Case                    |
-|-------------------------------------|-----------------------------|
-| `ubuntu-latest`                     | Simple jobs                 |
-| `blacksmith-4vcpu-ubuntu-2404`      | Default for most jobs       |
-| `blacksmith-4vcpu-windows-2025`     | Windows build               |
-| `blacksmith-{2,4,8}vcpu-ubuntu-2204`| Older jobs / E2E shards     |
-| `blacksmith-8vcpu-ubuntu-2204-arm`  | ARM64 Docker builds         |
+- **Cost:** the repo is public, so standard GitHub-hosted runners are free and
+  unlimited. Don't add paid runner labels (larger runners, third-party runner
+  services). If the repo ever goes private, minutes become metered against the
+  org's allowance, and the org's Actions budget stops CI when it runs out.
+- **Size:** 4 CPUs and 16 GB per job (GitHub's size for public repos). Heap caps
+  (`NODE_OPTIONS`) are 6–7 GB. Lint runs two eslint processes at a time with
+  5 GB heaps: at ten the VM ran out of memory and was shut down, at three it was
+  down to 1.1 GB free; two peak at 10.3 GB.
+- **Images between jobs:** each job is a fresh VM, so `prepare-docker` saves
+  `n8nio/n8n:local` + `n8nio/runners:local` as a zstd tarball in the Actions
+  cache under a variant+SHA key, and `load-n8n-docker` restores it in each shard
+  (rebuilding on a cache miss).
+- **Host ports:** the dev-server smoke and `test-get-n8n.sh --e2e` start servers
+  on free high ports picked from the kernel (`N8N_BASE_URL`, `N8N_EDITOR_URL`,
+  `N8N_RUNNERS_BROKER_PORT`, `N8N_HOST_PORT`) rather than n8n's defaults.
+  Container-based E2E stacks already map random host ports.
+- **No Windows or ARM:** there's no Windows build, and Docker images are built
+  for `linux/amd64` only.
 
 ---
 

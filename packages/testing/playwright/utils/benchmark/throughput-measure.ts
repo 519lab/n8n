@@ -244,7 +244,7 @@ function calculateThroughput(
 	// and flag it in logs so short-run numbers remain interpretable.
 	// 60s chosen based on observed ramp-up durations: V8 JIT + PG pool fill +
 	// Kafka consumer stabilization typically reached steady state at ~60-70s
-	// on Blacksmith runners.
+	// on 8-vCPU CI runners.
 	const WARMUP_MS = 60_000;
 	const activeSpanMs = lastActiveSample.timestamp - firstActiveSample.timestamp;
 	const useWarmupSkip = activeSpanMs >= 2 * WARMUP_MS;

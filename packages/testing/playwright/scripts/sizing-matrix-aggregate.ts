@@ -11,7 +11,8 @@
  * benchmark lanes emit it). Inline attachments are decoded to loose files first
  * so the filesystem scan picks them up — no Currents/secret coupling needed.
  *
- * Hardware defaults to the Blacksmith CI runner (8 vCPU / 16 GB). Override
+ * Hardware defaults to the GitHub-hosted `ubuntu-latest` runner (4 vCPU / 16 GB
+ * on a public repo). Override
  * via `--hardware-runner/--hardware-vcpu/--hardware-ram-gb` or
  * `SIZING_MATRIX_RUNNER/VCPU/RAM_GB` env when running off-CI, or the matrix
  * will mis-attribute the source.
@@ -41,8 +42,8 @@ import {
 import { DEFAULT_MAPPING } from './sizing-matrix-topologies';
 
 const DEFAULT_HARDWARE: HardwareInfo = {
-	runner: 'blacksmith-8vcpu-ubuntu-2204',
-	vcpu: 8,
+	runner: 'ubuntu-latest',
+	vcpu: 4,
 	ramGb: 16,
 };
 

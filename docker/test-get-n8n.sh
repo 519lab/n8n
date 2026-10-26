@@ -101,8 +101,23 @@ rerun_out="$(env N8N_DIR="$WORK/a" sh "$SCRIPT" 2>&1)" && pass "re-run on existi
 	fail "re-run on existing install is a no-op"
 [ "$(cat "$WORK/a/.env" "$WORK/a/compose.yml" "$WORK/a/searxng-settings.yml")" = "$before" ] && pass "re-run leaves files untouched" ||
 	fail "re-run leaves files untouched"
-echo "$rerun_out" | grep -q 'http://localhost:5678' && pass "re-run tells the user where n8n runs" ||
+echo "$rerun_out" | grep -q "http://localhost:${N8N_HOST_PORT:-5678}" && pass "re-run tells the user where n8n runs" ||
 	fail "re-run tells the user where n8n runs"
+
+# host port: recorded in .env, published by compose, kept by an existing install
+[ "$(env_value "$WORK/a" N8N_HOST_PORT)" = "${N8N_HOST_PORT:-5678}" ] &&
+	pass ".env records the host port" || fail ".env records the host port"
+check "N8N_HOST_PORT install succeeds" env N8N_DIR="$WORK/port" N8N_HOST_PORT=15678 sh "$SCRIPT" --no-start
+[ "$(env_value "$WORK/port" N8N_HOST_PORT)" = "15678" ] && pass "N8N_HOST_PORT is stored in .env" ||
+	fail "N8N_HOST_PORT is stored in .env"
+# (unset: compose would prefer a shell N8N_HOST_PORT over the install's .env)
+env -u N8N_HOST_PORT docker compose -f "$WORK/port/compose.yml" config 2>/dev/null | grep -q 'published: "15678"' &&
+	pass "compose publishes N8N_HOST_PORT" || fail "compose publishes N8N_HOST_PORT"
+env N8N_DIR="$WORK/port" N8N_HOST_PORT=25678 sh "$SCRIPT" 2>&1 | grep -q 'http://localhost:15678' &&
+	pass "existing install keeps its host port" || fail "existing install keeps its host port"
+check_not "rejects a non-numeric N8N_HOST_PORT" env N8N_DIR="$WORK/badport" N8N_HOST_PORT=abc sh "$SCRIPT" --no-start
+check_not "rejects an out-of-range N8N_HOST_PORT" env N8N_DIR="$WORK/badport" N8N_HOST_PORT=70000 sh "$SCRIPT" --no-start
+check_not "bad N8N_HOST_PORT writes nothing" test -e "$WORK/badport"
 
 # stack definition versioning
 [ -n "$(sed -n 's/^# compose-version: *//p' "$WORK/a/compose.yml")" ] &&
