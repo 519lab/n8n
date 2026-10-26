@@ -25,7 +25,7 @@ If a webhook is configured, both emitters send:
   "benchmark_name": "kafka-throughput-10n-10kb",
   "git":    { "sha": "abc12345", "branch": "master", "pr": null },
   "ci":     { "runId": "123", "runUrl": "...", "job": "test", "workflow": "CI", "attempt": 1 },
-  "runner": { "provider": "blacksmith", "cpuCores": 8, "memoryGb": 16.0 },
+  "runner": { "provider": "github", "cpuCores": 4, "memoryGb": 15.6 },
   "metrics": [
     { "metric_name": "exec-per-sec", "value": 12.4, "unit": "exec/s", "dimensions": { "trigger": "kafka", "nodes": 10 } }
   ]
@@ -33,7 +33,7 @@ If a webhook is configured, both emitters send:
 ```
 
 `runner.provider` is `local` outside CI, `github` when
-`RUNNER_ENVIRONMENT=github-hosted`, otherwise `blacksmith`.
+`RUNNER_ENVIRONMENT=github-hosted`, otherwise `self-hosted`.
 
 ## Attaching a Metric in a Playwright Test
 

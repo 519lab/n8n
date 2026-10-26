@@ -22,7 +22,7 @@ jobs:
       github.event_name == 'issue_comment' &&
       github.event.issue.pull_request &&
       startsWith(github.event.comment.body, '/size-limit-override')
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: read
@@ -30,7 +30,9 @@ jobs:
       issues: write
       pull-requests: read
     steps:
-      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: ./.github/actions/setup-nodejs
@@ -58,14 +60,16 @@ jobs:
       !contains(github.event.pull_request.labels.*.name, 'automation:backport') &&
       !contains(github.event.pull_request.title, '(backport to') &&
       github.event.pull_request.user.type != 'Bot'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: read
       issues: write
       pull-requests: write
     steps:
-      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: ./.github/actions/setup-nodejs
@@ -86,7 +90,7 @@ jobs:
        github.event.action != 'labeled' &&
        github.event.action != 'unlabeled') ||
       github.event_name == 'merge_group'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: read
@@ -95,7 +99,9 @@ jobs:
       changed-files: ${{ steps.filter.outputs.changed-files }}
       added-files: ${{ steps.filter.outputs.added-files }}
     steps:
-      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Detect changed paths
         id: filter
@@ -111,12 +117,14 @@ jobs:
     name: Static Analysis
     needs: changes
     if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
     steps:
-      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: ./.github/actions/setup-nodejs
@@ -138,7 +146,7 @@ jobs:
     # Fails while the 'Do Not Merge' label is present. Re-runs on labeled/unlabeled
     # so the gate flips as the label is toggled on the current commit.
     if: github.event_name == 'pull_request'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}
     steps:
@@ -152,11 +160,12 @@ jobs:
     name: Required PR Quality Checks
     needs: [check-pr-size, check-static-analysis, check-do-not-merge]
     if: always()
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          persist-credentials: false
           sparse-checkout: .github/actions/ci-filter
           sparse-checkout-cone-mode: false
       - name: Validate required checks

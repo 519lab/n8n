@@ -1,0 +1,70 @@
+name: 'Test: E2E Nightly'
+
+# Full E2E suite on the default branch. PR runs are impact-scoped (or forced with
+# the `force-e2e` label), so this is where every spec runs against develop.
+# Scheduled after the nightly Docker jobs (00:00, plus the 03:00 no-cache smoke
+# build) so a failure there is already visible when this run starts.
+
+on:
+  schedule:
+    - cron: '0 5 * * *' # 5:00 AM UTC
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-nightly-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  matrix:
+    name: Generate shard matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.generate.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup and build the janitor
+        uses: ./.github/actions/setup-nodejs
+        with:
+          build-command: pnpm turbo run build --filter=@n8n/playwright-janitor
+
+      - name: Distribute every spec across 16 shards
+        id: generate
+        run: |
+          MATRIX=$(node packages/testing/playwright/scripts/distribute-tests.mjs --matrix 16 --orchestrate)
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+
+  prepare-docker:
+    name: Prepare Docker image
+    uses: ./.github/workflows/prepare-docker-reusable.yml
+    with:
+      branch: ${{ github.sha }}
+
+  e2e:
+    name: E2E
+    needs: [matrix, prepare-docker]
+    uses: ./.github/workflows/test-e2e-reusable.yml
+    with:
+      branch: ${{ github.sha }}
+      test-mode: docker-artifact
+      test-command: pnpm --filter=n8n-playwright test:container:sqlite:e2e
+      workers: '1'
+      pre-generated-matrix: ${{ needs.matrix.outputs.matrix }}
+      artifact-prefix: e2e-nightly
+
+  report-status:
+    name: Report CI status
+    needs: [matrix, prepare-docker, e2e]
+    # Scheduled runs only: a failing manual run is already visible where it ran.
+    if: ${{ !cancelled() && github.event_name == 'schedule' }}
+    permissions:
+      contents: read
+      issues: write
+    uses: ./.github/workflows/util-ci-failure-issue-reusable.yml
+    with:
+      status: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}

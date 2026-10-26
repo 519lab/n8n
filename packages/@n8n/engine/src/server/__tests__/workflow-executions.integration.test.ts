@@ -22,7 +22,10 @@ describe('POST /api/workflow-executions (integration)', () => {
 	let stop: () => Promise<void>;
 
 	beforeAll(async () => {
-		container = await new PostgreSqlContainer('postgres:18-alpine').start();
+		container = await new PostgreSqlContainer('postgres:18-alpine')
+			// eslint-disable-next-line @typescript-eslint/naming-convention -- container path
+			.withTmpFs({ '/var/lib/postgresql': 'rw' })
+			.start();
 		dataSource = createDataSource(container.getConnectionUri());
 		await dataSource.initialize();
 		await dataSource.runMigrations();
