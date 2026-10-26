@@ -303,8 +303,12 @@ The runners:
 - **Size:** 2 CPUs per runner, and 6 GB of memory per job.
 - **Image:** `myoung34/github-runner` (Ubuntu 24.04). It runs as root with
   `sudo`, and ships `jq`, `zstd`, `gh`, Docker, Compose and buildx. Its own
-  `node` is v18, so jobs set up Node 24 first; `shellcheck` is installed by the
-  job that needs it.
+  `node` is v18, so jobs set up Node 24 first. It lacks some system libraries
+  that GitHub's Ubuntu image has, so jobs that need them install them:
+  `shellcheck` (get-n8n lint), and `libdbus-1-3` plus `libxcb1` (the
+  `node-screenshots` addon in the backend unit tests). If a native module fails
+  with `cannot open shared object file`, run `ldd` on the module in the runner
+  image to list what's missing.
 - **Shared host:** jobs share the host's Docker daemon (through its socket),
   its network, and `/opt/hostedtoolcache`. As a result:
   - **Image tags:** E2E images are tagged per commit
