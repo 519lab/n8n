@@ -1,5 +1,5 @@
 name: 'Test: E2E Helm Chart'
-run-name: "${{ github.event_name == 'workflow_dispatch' && format('Test: E2E Helm Chart (mode={0}, branch={1}, chart={2})', inputs.mode, inputs.branch || 'default', inputs['helm-chart-ref']) || '' }}"
+run-name: "${{ github.event_name == 'workflow_dispatch' && format('Test: E2E Helm Chart (mode={0}, branch={1}, chart={2})', inputs.mode, inputs.branch || 'default', inputs['helm-chart-ref'] || 'pinned') || '' }}"
 
 on:
   pull_request:
@@ -14,9 +14,9 @@ on:
         required: false
         default: ''
       helm-chart-ref:
-        description: 'n8n-hosting branch/tag for Helm chart'
+        description: '519lab/n8n-hosting branch/tag/commit for the Helm chart (empty = the pinned default)'
         required: false
-        default: 'main'
+        default: ''
       mode:
         description: 'Deployment mode to test'
         required: true
@@ -28,7 +28,7 @@ on:
 
 env:
   DOCKER_IMAGE: ghcr.io/${{ github.repository }}:ci-${{ github.run_id }}
-  HELM_CHART_REF: ${{ inputs.helm-chart-ref || 'main' }}
+  HELM_CHART_REF: ${{ inputs.helm-chart-ref }}
 
 jobs:
   build:
@@ -114,7 +114,7 @@ jobs:
             --env E2E_TESTS=true --env NODE_ENV=development \
             --mode "${{ inputs.mode || 'queue' }}" \
             --image "${{ env.DOCKER_IMAGE }}" \
-            --chart-ref "${{ env.HELM_CHART_REF }}" \
+            ${HELM_CHART_REF:+--chart-ref "$HELM_CHART_REF"} \
             --url-file /tmp/n8n-helm-url.txt \
             --kubeconfig-file /tmp/n8n-helm-kubeconfig.txt
 
