@@ -35,8 +35,11 @@ export function useEvaluationsLicense(): EvaluationsLicense {
 			if (!settingsStore.settings.evaluation) {
 				await settingsStore.getSettings();
 			}
-		} finally {
 			isResolved.value = true;
+		} catch {
+			// Callers fire this without awaiting it. A failed settings fetch says
+			// nothing about entitlement, so stay unresolved (neither the panel nor the
+			// paywall shows) and let a later call retry, instead of an unhandled rejection.
 		}
 	}
 
