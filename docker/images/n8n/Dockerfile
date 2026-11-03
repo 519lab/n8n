@@ -1,11 +1,11 @@
-ARG NODE_VERSION=24.18.1
+ARG NODE_VERSION=24.22.1
 ARG N8N_VERSION=snapshot
 
 # Builder stage exists because the runtime base image has no toolchain.
 # Pinned to multi-arch index digest (linux/amd64 + linux/arm64) for reproducible builds.
 # Bump the digest together with the tag when updating the base image.
-# Digest pins to node:24.18.1-alpine3.24 (Node 24.18.1, Alpine 3.24).
-FROM node:24.18.1-alpine3.24@sha256:f70403e87646dc51b45295f4b8b70cdad0b63d2297c4c9899119b03f7af7a6b3 AS builder
+# Digest pins to node:24.22.1-alpine3.24 (Node 24.22.1, Alpine 3.24).
+FROM node:24.22.1-alpine3.24@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53 AS builder
 COPY ./compiled /usr/local/lib/node_modules/n8n
 RUN apk add --no-cache python3 make g++ && \
     cd /usr/local/lib/node_modules/n8n && \
@@ -29,6 +29,7 @@ RUN apk add --no-cache python3 make g++ && \
 # is manually re-pinned here. Bump the digest together with the tag whenever the base
 # image is intentionally updated.
 # Digest pins to ghcr.io/519lab/base:24.18.1 (Node 24.18.1, Alpine 3.24).
+# TODO(CVE-2026-111497): re-pin to ghcr.io/519lab/base:24.22.1 once build-base-image publishes it.
 FROM ghcr.io/519lab/base:24.18.1@sha256:b0db56455ee62d6a248b9721dc5db1d5959ccfa7ba54a771d2de7446531f5836
 
 ARG N8N_VERSION
