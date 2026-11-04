@@ -50,7 +50,7 @@ promotion PRs from `develop`. PR CI (`ci-pull-requests.yml`, `ci-master.yml`,
 The `develop-ci-gate` ruleset requires these checks:
 
 - `Lint / Lint`
-- `Unit tests (22.23.2) / Unit tests`, `Unit tests (24.18.1) / Unit tests`
+- `Unit tests (22.23.4) / Unit tests`, `Unit tests (24.22.1) / Unit tests`
 - `Required PR Quality Checks`
 
 ---
@@ -190,7 +190,7 @@ non-required name so the real checks stay authoritative.
 ```
 Push to master/develop  ·  PR → master/develop
 ├─ build-github (populate cache)
-├─ unit-test (matrix: Node 22.23.2, 24.18.1; coverage collected on 24.18.1)
+├─ unit-test (matrix: Node 22.23.4, 24.22.1; coverage collected on 24.22.1)
 └─ lint
 ```
 
