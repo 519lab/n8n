@@ -28,9 +28,8 @@ RUN apk add --no-cache python3 make g++ && \
 # on every base change, so a base rebuild does not reach this image until the digest
 # is manually re-pinned here. Bump the digest together with the tag whenever the base
 # image is intentionally updated.
-# Digest pins to ghcr.io/519lab/base:24.18.1 (Node 24.18.1, Alpine 3.24).
-# TODO(CVE-2026-111497): re-pin to ghcr.io/519lab/base:24.22.1 once build-base-image publishes it.
-FROM ghcr.io/519lab/base:24.18.1@sha256:b0db56455ee62d6a248b9721dc5db1d5959ccfa7ba54a771d2de7446531f5836
+# Digest pins to ghcr.io/519lab/base:24.22.1 (Node 24.22.1, Alpine 3.24; CVE-2026-111497).
+FROM ghcr.io/519lab/base:24.22.1@sha256:f181cc2f998f16d49765f3168410b32d91360b2b3362fd2921f4293d0e969dba
 
 ARG N8N_VERSION
 ARG N8N_RELEASE_TYPE=dev
