@@ -49,3 +49,16 @@ skip:
       # Permission-gated: only maintainers (admin/write/maintain) can trigger
       # via /test-workflows comment. Verified in test-workflows-pr-comment.yml.
       - .github/workflows/test-workflows-callable.yml
+      # Reusable workflows called only from ci-pull-requests.yml (pull_request /
+      # merge_group) and test-e2e-nightly.yml (schedule / workflow_dispatch).
+      # They build the ref the caller hands them; pull_request runs for forks
+      # get a read-only token and no secrets, and the other triggers need
+      # write access. Re-review if a caller gains another trigger.
+      - .github/workflows/prepare-docker-reusable.yml
+      - .github/workflows/test-db-reusable.yml
+      - .github/workflows/test-dev-server-smoke-reusable.yml
+      - .github/workflows/test-e2e-reusable.yml
+      - .github/workflows/test-workflow-scripts-reusable.yml
+      # Runs on schedule or workflow_dispatch only (no in-repo workflow_call
+      # callers); the ref input is supplied by someone with write access.
+      - .github/workflows/docker-build-push.yml
