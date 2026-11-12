@@ -62,7 +62,7 @@ In CI (no API key):
 
 1. **Fixture setup loads artifacts**: The `instanceAiProxySetup` auto-fixture reads proxy expectations and trace events from disk, uploads them to MockServer and the n8n container respectively.
 
-2. **LLM calls hit MockServer**: The proxy returns pre-recorded responses in sequence. Each expectation fires once (`remainingTimes: 1`), except the last `/v1/messages` expectation which is unlimited (fallback for any extra calls).
+2. **LLM calls hit MockServer**: The proxy returns pre-recorded responses in sequence. Each expectation fires once (`remainingTimes: 1`). The fixture passes `repeatLastResponse: false`, so there is no fallback: a request beyond the recording matches nothing and MockServer forwards it to the real API, which rejects the mock key (see [Troubleshooting](#invalid-x-api-key-in-the-chat)).
 
 3. **Tools execute for real with ID remapping**: When the LLM response triggers a tool call, the tool runs against the real database. But IDs from the recorded session won't match the current run's IDs. The `IdRemapper` translates between them.
 
@@ -229,7 +229,7 @@ expectations/instance-ai/should-send-message-and-receive-assistant-response/
 
 ### Sequential Loading
 
-Expectations are loaded with `sequential: true`, which sets `remainingTimes: 1` on each. They fire in order, one-shot. The last `/v1/messages` expectation is made `unlimited: true` to act as a fallback for any extra LLM calls caused by tool execution divergence.
+Expectations are loaded with `sequential: true`, which sets `remainingTimes: 1` on each. They fire in order, one-shot. `loadExpectations` can make the last `/v1/messages` expectation `unlimited: true` as a fallback, but the Instance AI fixture turns that off (`repeatLastResponse: false`) so an extra LLM call surfaces as an error instead of a repeated final turn.
 
 ### Request Body Matching
 
@@ -424,6 +424,22 @@ The agent made more tool calls than were recorded. The LLM response diverged, po
 ### "Tool mismatch at step N"
 
 The agent called a different tool than expected at this point in the sequence. The agent took a different path than the recording. Re-record the test.
+
+### "invalid x-api-key" in the chat
+
+The agent made an LLM request the recording has no response left for, so
+MockServer forwarded it to the real API with the mock key. On any failed replay
+the fixture writes `instance-ai-llm-exchanges.json` to the test's output
+directory (next to the video and trace). It lists every `/v1/messages` exchange
+the proxy saw: the system prompt start, the last message of the request (which
+carries the result of the previous tool call), the response status, and the
+tool calls the response asked for. The first exchange with a non-200 status is
+the unmatched request; the tool result just before it shows where the run left
+the recorded path.
+
+Use that file rather than `GET /rest/instance-ai/test/tool-trace/:slug` to see
+what a replayed run did: during replay that endpoint returns the recording the
+fixture loaded, not the live tool calls.
 
 ### ECONNRESET from MockServer
 

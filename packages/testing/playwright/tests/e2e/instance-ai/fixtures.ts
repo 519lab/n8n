@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import type { Expectation } from 'mockserver-client';
 import { join } from 'path';
 
+import { attachReplayDiagnostics } from './replay-diagnostics';
 import { test as base, expect as baseExpect } from '../../../fixtures/base';
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY ?? 'mock-anthropic-api-key';
@@ -754,6 +755,13 @@ export const test = base.extend<InstanceAiFixtures>({
 			}
 
 			await use(undefined);
+
+			if (!isRecording && testInfo.status !== testInfo.expectedStatus) {
+				await attachReplayDiagnostics(
+					testInfo,
+					async () => await services.proxy.getAllRequestsMade(),
+				);
+			}
 
 			// Persist strictly on 'passed': a skipped test also satisfies
 			// status === expectedStatus, and persisting for it clears the
