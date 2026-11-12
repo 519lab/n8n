@@ -472,6 +472,10 @@ jobs:
 
       - name: Generate, enrich, gate and attest SBOM per image
         env:
+          # cdxgen resolves licenses missing from a package manifest via the GitHub
+          # API. Anonymous calls share the runner IP's 60/hour limit, and cdxgen
+          # stops looking after 5 errors, which leaves components unlicensed.
+          GITHUB_TOKEN: ${{ github.token }}
           N8N_IMAGE: ${{ needs.create_multi_arch_manifest.outputs.n8n_image }}
           N8N_DIGEST: ${{ needs.create_multi_arch_manifest.outputs.n8n_digest }}
           RUNNERS_IMAGE: ${{ needs.create_multi_arch_manifest.outputs.runners_image }}
