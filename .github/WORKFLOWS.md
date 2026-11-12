@@ -1,6 +1,6 @@
 # GitHub Actions & CI/CD Documentation
 
-Reference for this fork's `.github/` folder (as of 2026-10-26).
+Reference for this fork's `.github/` folder (as of 2026-11-11).
 
 This is a de-enterprised fork of `n8n-io/n8n`. Upstream's release, backport,
 3.x-sync, benchmark, eval, Chromatic/Storybook, Slack/Codecov/QA-metrics and
@@ -288,9 +288,15 @@ runs).
 
 ## Runner Selection
 
-Every job runs on GitHub-hosted `ubuntu-latest`, including the Docker build
-matrix in `scripts/docker/docker-config.mjs`. The SLSA provenance generator is a
-third-party reusable workflow that picks its own GitHub-hosted runner.
+Every job runs on a GitHub-hosted runner: `ubuntu-latest`, including the Docker
+build matrix in `scripts/docker/docker-config.mjs`, except the three jobs that
+install Playwright browsers (`test-e2e-reusable.yml`,
+`test-dev-server-smoke-reusable.yml`, and `helm-e2e` in `test-e2e-helm.yml`),
+which are pinned to `ubuntu-24.04`. `ubuntu-latest` now resolves to Ubuntu
+26.04, where the pinned Playwright (1.60.0) refuses to install Chromium; drop
+the pin when Playwright is bumped to a release that supports 26.04. The SLSA
+provenance generator is a third-party reusable workflow that picks its own
+GitHub-hosted runner.
 
 - **Cost:** the repo is public, so standard GitHub-hosted runners are free and
   unlimited. Don't add paid runner labels (larger runners, third-party runner

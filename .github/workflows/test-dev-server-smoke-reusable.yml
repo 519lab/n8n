@@ -15,7 +15,9 @@ env:
 jobs:
   smoke:
     name: Dev-server smoke
-    runs-on: ubuntu-latest
+    # Pinned: the pinned Playwright cannot install Chromium on the Ubuntu 26.04
+    # image that ubuntu-latest now resolves to. Unpin with the Playwright bump.
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: read
