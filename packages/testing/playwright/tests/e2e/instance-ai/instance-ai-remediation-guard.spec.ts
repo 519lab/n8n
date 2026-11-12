@@ -5,6 +5,11 @@ import type { ApiHelpers } from '../../../services/api-helper';
 
 const TERMINAL_FALLBACK_TEXT = 'I finished the run, but I did not generate a final response';
 
+// A replayed run takes ~40s. Keep three attempts (two CI retries) well inside the
+// 30-minute shard limit so a stall is reported as a failure, not a cancelled job.
+const TEST_TIMEOUT_MS = 180_000;
+const SETUP_CARD_TIMEOUT_MS = 150_000;
+
 test.use({
 	...instanceAiTestConfig,
 	capability: {
@@ -241,7 +246,7 @@ test.describe(
 				],
 			},
 			async ({ api, n8nContainer, n8n }, testInfo) => {
-				test.setTimeout(600_000);
+				test.setTimeout(TEST_TIMEOUT_MS);
 				test.skip(!n8nContainer, 'Replay trace assertions require the container proxy harness');
 
 				await n8n.navigate.toInstanceAi();
@@ -253,16 +258,18 @@ test.describe(
 						'When the build result reports that setup is required before verification, open the workflow setup card with workflows(action="setup") and stop editing.',
 				);
 
-				// The skill-opening narration is surfaced transiently in the thinking
-				// trace while the orchestrator loads the workflow-builder skill, then
-				// collapses once the build completes. Assert it while the run is still
-				// in progress — before awaiting the terminal setup card.
+				await expect(n8n.instanceAi.workflowSetup.getCard()).toBeVisible({
+					timeout: SETUP_CARD_TIMEOUT_MS,
+				});
+				await expect(n8n.instanceAi.getAssistantMessageText(TERMINAL_FALLBACK_TEXT)).toHaveCount(0);
+
+				// The collapsed thinking header shows the skill-opening narration only
+				// until the next tool call starts (~200ms in replay), so it cannot be
+				// caught by polling. The expanded trace keeps every step.
+				await n8n.instanceAi.expandThinkingTrace();
 				await expect(
 					n8n.instanceAi.getAssistantMessageText('Opening skill: workflow-builder'),
-				).toBeVisible({ timeout: 540_000 });
-
-				await expect(n8n.instanceAi.workflowSetup.getCard()).toBeVisible({ timeout: 540_000 });
-				await expect(n8n.instanceAi.getAssistantMessageText(TERMINAL_FALLBACK_TEXT)).toHaveCount(0);
+				).toBeVisible();
 
 				const events = getLatestRecordingEvents(await getTraceEvents(api, testInfo));
 				const summary = summarizeRemediationTrace(events);

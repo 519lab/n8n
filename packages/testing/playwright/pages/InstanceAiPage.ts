@@ -171,6 +171,19 @@ export class InstanceAiPage extends BasePage {
 		return this.container.getByText('Working in the background...');
 	}
 
+	/**
+	 * Expand the collapsed thinking trace so every step the agent took is listed.
+	 * The collapsed header only shows the step in progress, which changes too fast
+	 * to assert on.
+	 */
+	async expandThinkingTrace(): Promise<void> {
+		const header = this.container.getByTestId('thinking-block-header').first();
+		if ((await header.getAttribute('aria-expanded')) !== 'true') {
+			await header.click();
+		}
+		await expect(header).toHaveAttribute('aria-expanded', 'true');
+	}
+
 	getEmptyState(): Locator {
 		return this.container.getByTestId('instance-ai-empty-state');
 	}
