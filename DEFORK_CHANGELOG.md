@@ -16,6 +16,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-11-11 — Browser-installing CI jobs pinned to Ubuntu 24.04
+
+**Infrastructure; no `.ee` source involved.** GitHub moved the `ubuntu-latest` label to Ubuntu 26.04, and Playwright 1.60.0 refuses to install Chromium there (`Playwright does not support chromium on ubuntu26.04-x64`). Every E2E shard and the SQLite sanity check failed at "Install Browsers" before running a test, which turned Required Checks red on every pull request that triggers E2E. The three jobs that install Playwright browsers (`test-e2e-reusable.yml`, `test-dev-server-smoke-reusable.yml`, `helm-e2e` in `test-e2e-helm.yml`) now run on `ubuntu-24.04`; all other jobs stay on `ubuntu-latest`. Remove the pin when Playwright is bumped to a release that supports 26.04.
+
 ### 2026-10-26 — CI no longer pulls anything from upstream n8n
 
 **Infrastructure; no `.ee` source involved.** CI and the `get-n8n.sh` installer fetched several things straight from upstream n8n (`n8n-io`). Each now comes from a 519lab fork or registry:
