@@ -74,7 +74,7 @@ jobs:
 
       - name: Start Postgres
         if: fromJSON(steps.paths-filter.outputs.results).db
-        uses: isbang/compose-action@b659c744ee9bed25aea2307c017ad849bd104433 # v3.2.0
+        uses: isbang/compose-action@cdaf49f2d715a87c3387e86cb35c772b14f0efe0 # v3.2.1
         with:
           compose-file: ./.github/docker-compose.yml
           services: |
