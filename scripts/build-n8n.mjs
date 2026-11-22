@@ -281,7 +281,7 @@ if (generateLicenses) {
 	echo(chalk.yellow('INFO: Generating SBOM and rendering THIRD_PARTY_LICENSES.md...'));
 	try {
 		const toolingDir = path.join(config.rootDir, '.github', 'scripts');
-		await $`cd ${config.rootDir} && pnpm install --frozen-lockfile --dir .github/scripts --ignore-workspace`;
+		await $`cd ${config.rootDir} && pnpm install --frozen-lockfile --dir .github/scripts`;
 		const generateProcess = $`cd ${toolingDir} && pnpm generate-licenses`;
 		generateProcess.pipe(process.stdout);
 		await generateProcess;

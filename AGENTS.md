@@ -135,11 +135,16 @@ not — all three have silently shipped vulnerable versions before:
   value. Overrides still cover transitive copies that no catalog entry reaches.
   *(Verified 2026-09-19: scoped `vitest@<4.1.11` was inert against catalog
   `^4.1.9`; plain `nodemailer` rewrote catalog `8.0.10` → 9.1.1.)*
-- **`.github/scripts` is not a workspace member.** It has its own
-  `package.json` and `pnpm-lock.yaml`, and a plain `pnpm install` from inside
-  it resolves the *root* workspace ("Scope: all 78 workspace projects") and
-  leaves that lockfile untouched. Use the form the workflows use:
-  `pnpm install --dir ./.github/scripts --ignore-workspace`.
+- **`.github/scripts` is its own workspace, not a member of the root one.**
+  It has its own `package.json`, `pnpm-lock.yaml` and `pnpm-workspace.yaml`;
+  its overrides live in that `pnpm-workspace.yaml`, because pnpm 11+ ignores
+  the `pnpm` field in `package.json`. Install with the form the workflows use:
+  `pnpm install --dir ./.github/scripts`. Do **not** add `--ignore-workspace`:
+  it makes pnpm skip that file, so a frozen install fails with
+  `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` on both pnpm 10 and 12 (and a non-frozen
+  one silently drops the overrides). With no `packageManager` pin of its own,
+  a local run inside the folder uses whatever pnpm is newest on the machine;
+  CI runs the root pin.
 
 Version-scoped pins (`ip-address@10`, `linkify-it@<=5.0.2`) only rewrite the
 range they name, so a vulnerable version outside it survives — after any

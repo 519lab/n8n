@@ -259,9 +259,10 @@ Composite actions in `.github/actions/`:
 
 ## Scripts
 
-`.github/scripts` has its own `package.json` and lockfile and is **not** a
-workspace member. Install with
-`pnpm install --dir ./.github/scripts --ignore-workspace`; test with
+`.github/scripts` has its own `package.json`, lockfile and
+`pnpm-workspace.yaml` (which holds its overrides) and is **not** a member of
+the root workspace. Install with `pnpm install --dir ./.github/scripts`
+(without `--ignore-workspace`, which would skip its `pnpm-workspace.yaml`); test with
 `npm test --prefix=.github/scripts` (what `test-workflow-scripts-reusable.yml`
 runs).
 
