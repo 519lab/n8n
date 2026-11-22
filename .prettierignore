@@ -9,7 +9,6 @@ packages/cli/templates/form-trigger-completion.handlebars
 packages/cli/templates/form-trigger-409.handlebars
 packages/cli/templates/form-trigger-404.handlebars
 CHANGELOG.md
-.github/pull_request_template.md
 # Ignored for now
 **/*.md
 # Handled by biome

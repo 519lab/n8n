@@ -16,6 +16,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-11-22 — Community policies come from 519lab, not upstream n8n
+
+**Docs; no `.ee` source involved.** The fork still shipped upstream's community files, which sent people to n8n: the code of conduct had conduct reports go to an n8n employee, the issue chooser linked n8n's community forum and vulnerability program, the PR template asked for n8n Linear tickets, and `CONTRIBUTING.md` required n8n's Contributor License Agreement. `CODE_OF_CONDUCT.md`, `.github/pull_request_template.md` and `.github/ISSUE_TEMPLATE/` are removed, so the 519lab organization defaults from `519lab/.github` apply (Contributor Covenant 3.0 with reports to conduct@519lab.com, issue forms, PR template, support page). `CONTRIBUTING.md` keeps its setup and development guide, points to the 519lab contributing guide for branch, commit and PR conventions, and drops the CLA section. `AGENTS.md`, `.github/WORKFLOWS.md` and `.prettierignore` no longer name the removed files. `SECURITY.md` (fork changes here, upstream code to n8n's disclosure program) and `.github/CODEOWNERS`, which CI validates, are unchanged.
+
 ### 2026-11-11 — Browser-installing CI jobs pinned to Ubuntu 24.04
 
 **Infrastructure; no `.ee` source involved.** GitHub moved the `ubuntu-latest` label to Ubuntu 26.04, and Playwright 1.60.0 refuses to install Chromium there (`Playwright does not support chromium on ubuntu26.04-x64`). Every E2E shard and the SQLite sanity check failed at "Install Browsers" before running a test, which turned Required Checks red on every pull request that triggers E2E. The three jobs that install Playwright browsers (`test-e2e-reusable.yml`, `test-dev-server-smoke-reusable.yml`, `helm-e2e` in `test-e2e-helm.yml`) now run on `ubuntu-24.04`; all other jobs stay on `ubuntu-latest`. Remove the pin when Playwright is bumped to a release that supports 26.04.

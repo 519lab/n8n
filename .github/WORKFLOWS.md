@@ -19,11 +19,9 @@ fork-specific purpose.
 ├── CI-TELEMETRY.md                       # Container-stack telemetry (playwright)
 ├── DEVELOPING_V3.md                      # Upstream v3 model (reference only here)
 ├── CODEOWNERS                            # Team ownership for PR reviews
-├── pull_request_template.md              # PR description template
 ├── pull_request_title_conventions.md     # Title format rules (Angular)
 ├── docker-compose.yml                    # DB services for local testing
 ├── test-metrics/                         # E2E impact map + playwright baselines
-├── ISSUE_TEMPLATE/
 ├── scripts/                              # Automation scripts (own package.json)
 │   ├── attest-image-sbom.mjs             # SBOM attestation for images
 │   ├── cleanup-ghcr-images.mjs           # Prune stale CI images from GHCR
