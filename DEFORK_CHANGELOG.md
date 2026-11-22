@@ -16,6 +16,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-11-22 — `.github/scripts` overrides moved to its own `pnpm-workspace.yaml`
+
+**Infrastructure; no `.ee` source involved.** `.github/scripts` kept its dependency overrides in the `pnpm` field of its `package.json`, which pnpm 11 and later no longer read. The folder has no `packageManager` pin of its own, so running `pnpm test` there with a current pnpm failed with `ERR_PNPM_VERIFY_DEPS_BEFORE_RUN` before any test ran. CI pins pnpm 10 and was not affected. The overrides now live in `.github/scripts/pnpm-workspace.yaml`, which also makes the folder its own workspace root. The six workflow install steps and `scripts/build-n8n.mjs` drop `--ignore-workspace`, because that flag makes pnpm skip the file: frozen installs then fail with `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`, and non-frozen ones silently drop the overrides. The lockfile is unchanged. Frozen installs pass on pnpm 10.32.1 and 12.9.1, and the root workspace still has 78 members, none of them this folder. `AGENTS.md` and `.github/WORKFLOWS.md` document the new install command.
+
 ### 2026-11-22 — CODEOWNERS, OWNERS and the community PR readiness skill removed
 
 **Infrastructure; no `.ee` source involved.** `.github/CODEOWNERS` assigned review of migrations, workflows, CI scripts and `get-n8n.sh` to upstream `@n8n-io` teams, which don't exist on this fork, so no reviewer could ever be requested. It is removed, along with `ci-codeowners-validation.yml`, which only checked that file's syntax and was not a required check. No ruleset requires code-owner review. `.github/CLAUDE.md` and `.github/WORKFLOWS.md` no longer list either file. `.github/OWNERS` mapped the same upstream teams for the `community-pr-readiness-check` skill, which labelled community PRs and routed them to n8n's Linear teams. That process doesn't exist here, so the skill, its `.claude/plugins/n8n/skills/` symlink, `.github/OWNERS`, `.github/scripts/owners.mjs` and its test are removed too, along with their `.github/WORKFLOWS.md` rows.
