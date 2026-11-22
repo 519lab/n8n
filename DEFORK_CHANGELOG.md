@@ -16,9 +16,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
-### 2026-11-22 — CODEOWNERS removed
+### 2026-11-22 — CODEOWNERS, OWNERS and the community PR readiness skill removed
 
-**Infrastructure; no `.ee` source involved.** `.github/CODEOWNERS` assigned review of migrations, workflows, CI scripts and `get-n8n.sh` to upstream `@n8n-io` teams, which don't exist on this fork, so no reviewer could ever be requested. It is removed, along with `ci-codeowners-validation.yml`, which only checked that file's syntax and was not a required check. No ruleset requires code-owner review. `.github/CLAUDE.md` and `.github/WORKFLOWS.md` no longer list either file. `.github/OWNERS` and `owners.mjs` stay, because the `community-pr-readiness-check` skill reads them.
+**Infrastructure; no `.ee` source involved.** `.github/CODEOWNERS` assigned review of migrations, workflows, CI scripts and `get-n8n.sh` to upstream `@n8n-io` teams, which don't exist on this fork, so no reviewer could ever be requested. It is removed, along with `ci-codeowners-validation.yml`, which only checked that file's syntax and was not a required check. No ruleset requires code-owner review. `.github/CLAUDE.md` and `.github/WORKFLOWS.md` no longer list either file. `.github/OWNERS` mapped the same upstream teams for the `community-pr-readiness-check` skill, which labelled community PRs and routed them to n8n's Linear teams. That process doesn't exist here, so the skill, its `.claude/plugins/n8n/skills/` symlink, `.github/OWNERS`, `.github/scripts/owners.mjs` and its test are removed too, along with their `.github/WORKFLOWS.md` rows.
 
 ### 2026-11-22 — Community policies come from 519lab, not upstream n8n
 

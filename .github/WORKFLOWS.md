@@ -25,7 +25,6 @@ fork-specific purpose.
 │   ├── attest-image-sbom.mjs             # SBOM attestation for images
 │   ├── cleanup-ghcr-images.mjs           # Prune stale CI images from GHCR
 │   ├── github-helpers.mjs                # Shared Octokit helpers
-│   ├── owners.mjs                        # OWNERS last-match allocation
 │   ├── retry.mjs                         # Retry wrapper for flaky CLI steps
 │   ├── trim-fe-packageJson.js            # Strip frontend devDeps (build-n8n.mjs)
 │   ├── verify-safechain.mjs              # Package-manager safe-chain check
@@ -277,7 +276,6 @@ runs).
 | `quality/check-pr-size.mjs`          | `ci-pr-quality.yml`                    |
 | `stale/clean-stale-branches.mjs`     | `clean-stale-branches.yml`             |
 | `ci-failure-issue.mjs`               | `util-ci-failure-issue-reusable.yml`   |
-| `owners.mjs`                         | `community-pr-readiness-check` skill   |
 | `trim-fe-packageJson.js`             | `scripts/build-n8n.mjs` (image build)  |
 
 ---
