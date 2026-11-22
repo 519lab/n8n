@@ -438,8 +438,8 @@ large multi-main setup", not the company name) and use generic placeholder
 names (e.g. `Acme Corp`) in tests and examples.
 
 ## Github Guidelines
-- When creating a PR, use the conventions in
-  `.github/pull_request_template.md` and
+- When creating a PR, fill in the 519lab organization PR template (served from
+  `519lab/.github`, so it is not in this repo) and follow
   `.github/pull_request_title_conventions.md`.
 - Use `gh pr create --draft` to create draft PRs.
 - If there is a corresponding Linear ticket, reference it in the PR

@@ -2,6 +2,12 @@
 
 Great that you are here and you want to contribute to n8n
 
+> **This is 519lab's fork of n8n.** Branches, commits, the changelog and pull
+> requests follow the [519lab contributing guide](https://github.com/519lab/.github/blob/develop/CONTRIBUTING.md),
+> with all work landing on `develop` (see `AGENTS.md`). This guide covers setting
+> up and developing n8n itself. Where it describes upstream's process (the n8n
+> team, the community forum, their release cycle), the 519lab guide wins.
+
 ## Contents
 
 - [Contributing to n8n](#contributing-to-n8n)
@@ -32,14 +38,13 @@ Great that you are here and you want to contribute to n8n
 	- [Create custom nodes](#create-custom-nodes)
 	- [Extend documentation](#extend-documentation)
 	- [Contribute workflow templates](#contribute-workflow-templates)
-	- [Contributor License Agreement](#contributor-license-agreement)
 
 ## Code of conduct
 
-This project and everyone participating in it are governed by the Code of
-Conduct which can be found in the file [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
-By participating, you are expected to uphold this code. Please report
-unacceptable behavior to jan@n8n.io.
+This project and everyone participating in it are governed by the 519lab
+[Code of Conduct](https://github.com/519lab/.github/blob/develop/CODE_OF_CONDUCT.md). By participating, you are
+expected to uphold it. Please report unacceptable behavior to
+conduct@519lab.com.
 
 ## Directory structure
 
@@ -585,11 +590,3 @@ You can submit your workflows to n8n's template library.
 n8n is working on a creator program, and developing a marketplace of templates. This is an ongoing project, and details are likely to change.
 
 Refer to [n8n Creator hub](https://www.notion.so/n8n/n8n-Creator-hub-7bd2cbe0fce0449198ecb23ff4a2f76f) for information on how to submit templates and become a creator.
-
-## Contributor License Agreement
-
-That we do not have any potential problems later it is sadly necessary to sign a [Contributor License Agreement](CONTRIBUTOR_LICENSE_AGREEMENT.md). That can be done literally with the push of a button.
-
-We used the most simple one that exists. It is from [Indie Open Source](https://indieopensource.com/forms/cla) which uses plain English and is literally only a few lines long.
-
-Once a pull request is opened, an automated bot will promptly leave a comment requesting the agreement to be signed. The pull request can only be merged once the signature is obtained.
