@@ -15,7 +15,6 @@ notifiers) were removed; see `WORKFLOWS.md` before adding any back.
 | `workflows/` | GitHub Actions workflows |
 | `actions/` | Reusable composite actions |
 | `scripts/` | Release & Docker automation |
-| `CODEOWNERS` | Team review ownership |
 
 ### Workflow Naming
 
