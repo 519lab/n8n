@@ -16,6 +16,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/). Dates are ISO-86
 
 ## [Unreleased]
 
+### 2026-11-22 — CODEOWNERS removed
+
+**Infrastructure; no `.ee` source involved.** `.github/CODEOWNERS` assigned review of migrations, workflows, CI scripts and `get-n8n.sh` to upstream `@n8n-io` teams, which don't exist on this fork, so no reviewer could ever be requested. It is removed, along with `ci-codeowners-validation.yml`, which only checked that file's syntax and was not a required check. No ruleset requires code-owner review. `.github/CLAUDE.md` and `.github/WORKFLOWS.md` no longer list either file. `.github/OWNERS` and `owners.mjs` stay, because the `community-pr-readiness-check` skill reads them.
+
 ### 2026-11-22 — Community policies come from 519lab, not upstream n8n
 
 **Docs; no `.ee` source involved.** The fork still shipped upstream's community files, which sent people to n8n: the code of conduct had conduct reports go to an n8n employee, the issue chooser linked n8n's community forum and vulnerability program, the PR template asked for n8n Linear tickets, and `CONTRIBUTING.md` required n8n's Contributor License Agreement. `CODE_OF_CONDUCT.md`, `.github/pull_request_template.md` and `.github/ISSUE_TEMPLATE/` are removed, so the 519lab organization defaults from `519lab/.github` apply (Contributor Covenant 3.0 with reports to conduct@519lab.com, issue forms, PR template, support page). `CONTRIBUTING.md` keeps its setup and development guide, points to the 519lab contributing guide for branch, commit and PR conventions, and drops the CLA section. `AGENTS.md`, `.github/WORKFLOWS.md` and `.prettierignore` no longer name the removed files. `SECURITY.md` (fork changes here, upstream code to n8n's disclosure program) and `.github/CODEOWNERS`, which CI validates, are unchanged.

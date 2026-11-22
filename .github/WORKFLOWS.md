@@ -18,7 +18,6 @@ fork-specific purpose.
 ├── WORKFLOWS.md                          # This document
 ├── CI-TELEMETRY.md                       # Container-stack telemetry (playwright)
 ├── DEVELOPING_V3.md                      # Upstream v3 model (reference only here)
-├── CODEOWNERS                            # Team ownership for PR reviews
 ├── pull_request_title_conventions.md     # Title format rules (Angular)
 ├── docker-compose.yml                    # DB services for local testing
 ├── test-metrics/                         # E2E impact map + playwright baselines
@@ -90,7 +89,6 @@ Enforced on PRs into `master` and `develop` by `ci-check-pr-title.yml`. See `pul
 | `ci-master-python-only.yml`     | Python-only PRs — reports the required ci-master checks as stubs |
 | `ci-pr-quality.yml`             | Any PR — size check (`/size-limit-override` comment to bypass)      |
 | `ci-check-pr-title.yml`         | PRs into `master`/`develop` — title format                    |
-| `ci-codeowners-validation.yml`  | Any PR — CODEOWNERS syntax                                    |
 | `ci-python.yml`                 | `packages/@n8n/task-runner-python/**` changes                 |
 | `build-base-image.yml`          | `docker/images/n8n-base/**` changes (pushes on `develop`)     |
 | `docker-build-smoke.yml`        | Docker build inputs change                                    |
