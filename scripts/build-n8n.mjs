@@ -128,6 +128,18 @@ const packageJsonFiles = await $`cd ${config.rootDir} && find . -name "package.j
 
 // Backup all package.json files
 // This is only needed locally, not in CI
+function restorePackageJsonFiles() {
+	for (const file of packageJsonFiles) {
+		if (file) {
+			const fullPath = path.join(config.rootDir, file);
+			const backupPath = `${fullPath}.bak`;
+			if (fs.pathExistsSync(backupPath)) {
+				fs.moveSync(backupPath, fullPath, { overwrite: true });
+			}
+		}
+	}
+}
+
 if (process.env.CI !== 'true') {
 	for (const file of packageJsonFiles) {
 		if (file) {
@@ -135,6 +147,11 @@ if (process.env.CI !== 'true') {
 			await fs.copy(fullPath, `${fullPath}.bak`);
 		}
 	}
+	// A failed step (thrown error, process.exit, Ctrl-C) must not leave the trimmed
+	// package.json files and their .bak copies behind in the working tree.
+	process.once('exit', restorePackageJsonFiles);
+	process.once('SIGINT', () => process.exit(130));
+	process.once('SIGTERM', () => process.exit(143));
 }
 // Run FE trim script
 await $`cd ${config.rootDir} && node .github/scripts/trim-fe-packageJson.js`;
@@ -303,15 +320,7 @@ if (generateLicenses) {
 // Restore package.json files
 // This is only needed locally, not in CI
 if (process.env.CI !== 'true') {
-	for (const file of packageJsonFiles) {
-		if (file) {
-			const fullPath = path.join(config.rootDir, file);
-			const backupPath = `${fullPath}.bak`;
-			if (await fs.pathExists(backupPath)) {
-				await fs.move(backupPath, fullPath, { overwrite: true });
-			}
-		}
-	}
+	restorePackageJsonFiles();
 }
 
 // Calculate output size
