@@ -87,7 +87,7 @@ export function useInstallNode() {
 			// refresh store information about installed nodes
 			await Promise.all([
 				nodeTypesStore.getNodeTypes(),
-				nodeTypesStore.fetchCommunityNodePreviews(),
+				nodeTypesStore.fetchCommunityNodePreviews({ force: true }),
 				credentialsStore.fetchCredentialTypes(true),
 			]);
 			await nextTick();

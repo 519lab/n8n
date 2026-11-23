@@ -225,7 +225,7 @@ describe('useInstallNode', () => {
 				'1.0.0',
 			);
 			expect(nodeTypesStore.getNodeTypes).toHaveBeenCalled();
-			expect(nodeTypesStore.fetchCommunityNodePreviews).toHaveBeenCalled();
+			expect(nodeTypesStore.fetchCommunityNodePreviews).toHaveBeenCalledWith({ force: true });
 			expect(credentialsStore.fetchCredentialTypes).toHaveBeenCalledWith(true);
 			expect(showMessage).toHaveBeenCalledWith({
 				title: 'settings.communityNodes.messages.install.success',
@@ -301,7 +301,7 @@ describe('useInstallNode', () => {
 			expect(result.success).toBe(true);
 			expect(communityNodesStore.installPackage).toHaveBeenCalledWith('test-package');
 			expect(nodeTypesStore.getNodeTypes).toHaveBeenCalled();
-			expect(nodeTypesStore.fetchCommunityNodePreviews).toHaveBeenCalled();
+			expect(nodeTypesStore.fetchCommunityNodePreviews).toHaveBeenCalledWith({ force: true });
 			expect(credentialsStore.fetchCredentialTypes).toHaveBeenCalledWith(true);
 		});
 

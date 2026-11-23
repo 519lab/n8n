@@ -8,6 +8,8 @@ import { mockNodeTypeDescription } from '@/__tests__/mocks';
 import { createTestingPinia } from '@pinia/testing';
 import { STORES } from '@n8n/stores';
 import { COMMUNITY_PACKAGE_CONFIRM_MODAL_KEY } from '../communityNodes.constants';
+import { useCommunityNodesStore } from '../communityNodes.store';
+import userEvent from '@testing-library/user-event';
 
 const fetchWorkflowsWithNodesIncluded = vi.fn();
 vi.mock('@/app/stores/workflowsList.store', () => ({
@@ -218,5 +220,30 @@ describe('CommunityPackageManageConfirmModal', () => {
 
 		const testId = screen.queryByTestId('communityPackageManageConfirmModal-warning');
 		expect(testId).not.toBeInTheDocument();
+	});
+
+	it('should refetch community node previews after uninstalling a package', async () => {
+		useSettingsStore().setSettings({ ...defaultSettings, communityNodesEnabled: true });
+
+		nodeTypesStore.loadNodeTypesIfNotLoaded = vi.fn().mockResolvedValue(undefined);
+		nodeTypesStore.getCommunityNodeAttributes = vi.fn().mockResolvedValue(null);
+		nodeTypesStore.getNodeTypes = vi.fn().mockResolvedValue(undefined);
+		nodeTypesStore.fetchCommunityNodePreviews = vi.fn().mockResolvedValue(undefined);
+		useCommunityNodesStore().uninstallPackage = vi.fn().mockResolvedValue(undefined);
+		fetchWorkflowsWithNodesIncluded.mockResolvedValue({ data: [] });
+
+		const screen = renderComponent({
+			props: {
+				modalName: 'test-modal',
+				activePackageName: 'n8n-nodes-test',
+				mode: 'uninstall',
+			},
+		});
+		await flushPromises();
+
+		await userEvent.click(screen.getByRole('button', { name: 'Confirm uninstall' }));
+		await flushPromises();
+
+		expect(nodeTypesStore.fetchCommunityNodePreviews).toHaveBeenCalledWith({ force: true });
 	});
 });
