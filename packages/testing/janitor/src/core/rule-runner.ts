@@ -1,3 +1,4 @@
+import { globSync } from 'glob';
 import { performance } from 'node:perf_hooks';
 
 import type {
@@ -27,6 +28,12 @@ export interface RunnableRule {
 	getTargetGlobs(): string[];
 	analyze(context: JanitorRunContext): Violation[];
 	configure(settings: { options?: Record<string, unknown> }): void;
+}
+
+interface ExecutedRule {
+	result: RuleResult;
+	/** Root-relative paths the rule analyzed, for the de-duplicated summary count. */
+	files: string[];
 }
 
 export class RuleRunner {
@@ -90,7 +97,7 @@ export class RuleRunner {
 		}
 
 		const runContext: JanitorRunContext = { ...context, changedFiles: options?.files };
-		const results: RuleResult[] = [];
+		const results: ExecutedRule[] = [];
 		for (const ruleId of this.enabledRules) {
 			const rule = this.rules.get(ruleId);
 			if (rule) results.push(this.execute(rule, runContext));
@@ -109,18 +116,30 @@ export class RuleRunner {
 		return this.buildReport(context.rootDir, [this.execute(rule, runContext)]);
 	}
 
-	private execute(rule: RunnableRule, context: JanitorRunContext): RuleResult {
+	private execute(rule: RunnableRule, context: JanitorRunContext): ExecutedRule {
 		const start = performance.now();
 		const violations = rule.analyze(context);
 		const executionTimeMs = Math.round((performance.now() - start) * 100) / 100;
+		const files = this.targetFiles(rule, context.rootDir);
 
 		return {
-			rule: rule.id,
-			violations,
-			filesAnalyzed: 0,
-			executionTimeMs,
-			fixable: rule.fixable,
+			files,
+			result: {
+				rule: rule.id,
+				violations,
+				filesAnalyzed: files.length,
+				executionTimeMs,
+				fixable: rule.fixable,
+			},
 		};
+	}
+
+	/** The files a rule analyzes: those its target globs match under rootDir (`!` globs exclude). */
+	private targetFiles(rule: RunnableRule, rootDir: string): string[] {
+		const globs = rule.getTargetGlobs();
+		const include = globs.filter((g) => !g.startsWith('!'));
+		const ignore = globs.filter((g) => g.startsWith('!')).map((g) => g.slice(1));
+		return include.length ? globSync(include, { cwd: rootDir, nodir: true, ignore }) : [];
 	}
 
 	private toRuleInfo(rule: RunnableRule): RuleInfo {
@@ -135,10 +154,12 @@ export class RuleRunner {
 		};
 	}
 
-	private buildReport(projectRoot: string, results: RuleResult[]): JanitorReport {
+	private buildReport(projectRoot: string, executed: ExecutedRule[]): JanitorReport {
 		const byRule: Record<string, number> = {};
 		const bySeverity: Record<Severity, number> = { error: 0, warning: 0, info: 0 };
 		let totalViolations = 0;
+		const results = executed.map((e) => e.result);
+		const filesAnalyzed = new Set(executed.flatMap((e) => e.files)).size;
 
 		for (const result of results) {
 			byRule[result.rule] = result.violations.length;
@@ -151,7 +172,7 @@ export class RuleRunner {
 			projectRoot,
 			rules: { enabled: this.getEnabledRules(), disabled: this.getDisabledRules() },
 			results,
-			summary: { totalViolations, byRule, bySeverity, filesAnalyzed: 0 },
+			summary: { totalViolations, byRule, bySeverity, filesAnalyzed },
 		};
 	}
 }
