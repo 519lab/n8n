@@ -152,6 +152,27 @@ describe('CommunityNodeTypesService', () => {
 		});
 	});
 
+	describe('getCommunityNodeTypes', () => {
+		it('should share one upstream fetch between concurrent requests', async () => {
+			communityPackagesServiceMock.getAllInstalledPackages = vi.fn().mockResolvedValue([]);
+			let resolveFetch: (value: unknown[]) => void = () => {};
+			(getCommunityNodeTypes as unknown as Mock).mockReturnValueOnce(
+				new Promise((resolve) => {
+					resolveFetch = resolve;
+				}),
+			);
+
+			const first = service.getCommunityNodeTypes();
+			const second = service.getCommunityNodeTypes();
+			resolveFetch([{ name: 'n8n-nodes-acme.acme', nodeDescription: {} }]);
+			const [firstResult, secondResult] = await Promise.all([first, second]);
+
+			expect(getCommunityNodeTypes).toHaveBeenCalledTimes(1);
+			expect(firstResult.map((t) => t.name)).toEqual(['n8n-nodes-acme.acme']);
+			expect(secondResult.map((t) => t.name)).toEqual(['n8n-nodes-acme.acme']);
+		});
+	});
+
 	describe('updateCommunityNodeTypes', () => {
 		beforeEach(() => {
 			vi.spyOn(Date, 'now').mockImplementation(() => 1000000);

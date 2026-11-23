@@ -2,6 +2,7 @@ import { setActivePinia } from 'pinia';
 import { createTestingPinia } from '@pinia/testing';
 import { NodeConnectionTypes } from 'n8n-workflow';
 import type { INodeTypeDescription } from 'n8n-workflow';
+import type { CommunityNodeType } from '@n8n/api-types';
 import { useNodeTypesStore } from '@/app/stores/nodeTypes.store';
 import * as nodeTypesApi from '@n8n/rest-api-client/api/nodeTypes';
 import { LOCAL_STORAGE_DATA_WORKER } from '@/app/constants/localStorage';
@@ -315,6 +316,59 @@ describe('useNodeTypesStore', () => {
 				mocks.rootStore.restApiContext,
 				[nodeInfo],
 			);
+		});
+	});
+
+	describe('fetchCommunityNodePreviews', () => {
+		const communityNode = { name: 'n8n-nodes-acme.acme' } as CommunityNodeType;
+
+		beforeEach(() => {
+			setActivePinia(
+				createTestingPinia({
+					stubActions: false,
+					initialState: { settings: { settings: { communityNodesEnabled: true } } },
+				}),
+			);
+			vi.clearAllMocks();
+			vi.mocked(nodeTypesApi.fetchCommunityNodeTypes).mockResolvedValue([communityNode]);
+		});
+
+		it('should share one request between concurrent calls', async () => {
+			const store = useNodeTypesStore();
+
+			await Promise.all([store.fetchCommunityNodePreviews(), store.fetchCommunityNodePreviews()]);
+
+			expect(nodeTypesApi.fetchCommunityNodeTypes).toHaveBeenCalledTimes(1);
+			expect(store.communityNodeType(communityNode.name)).toEqual(communityNode);
+		});
+
+		it('should not fetch again once the catalog has loaded', async () => {
+			const store = useNodeTypesStore();
+
+			await store.fetchCommunityNodePreviews();
+			await store.fetchCommunityNodePreviews();
+
+			expect(nodeTypesApi.fetchCommunityNodeTypes).toHaveBeenCalledTimes(1);
+		});
+
+		it('should fetch again when forced', async () => {
+			const store = useNodeTypesStore();
+
+			await store.fetchCommunityNodePreviews();
+			await store.fetchCommunityNodePreviews({ force: true });
+
+			expect(nodeTypesApi.fetchCommunityNodeTypes).toHaveBeenCalledTimes(2);
+		});
+
+		it('should retry on the next call after a failed fetch', async () => {
+			const store = useNodeTypesStore();
+			vi.mocked(nodeTypesApi.fetchCommunityNodeTypes).mockRejectedValueOnce(new Error('offline'));
+
+			await store.fetchCommunityNodePreviews();
+			await store.fetchCommunityNodePreviews();
+
+			expect(nodeTypesApi.fetchCommunityNodeTypes).toHaveBeenCalledTimes(2);
+			expect(store.communityNodeType(communityNode.name)).toEqual(communityNode);
 		});
 	});
 });

@@ -28,6 +28,9 @@ export class CommunityNodeTypesService {
 
 	private lastUpdateTimestamp = 0;
 
+	/** In-flight refresh, shared so concurrent requests don't each crawl the upstream catalog. */
+	private refreshInFlight: Promise<void> | null = null;
+
 	constructor(
 		private readonly logger: Logger,
 		private config: CommunityPackagesConfig,
@@ -191,6 +194,14 @@ export class CommunityNodeTypesService {
 		}
 	}
 
+	private async refreshIfRequired() {
+		if (!this.updateRequired()) return;
+		this.refreshInFlight ??= this.fetchNodeTypes().finally(() => {
+			this.refreshInFlight = null;
+		});
+		await this.refreshInFlight;
+	}
+
 	private updateRequired() {
 		if (!this.lastUpdateTimestamp) return true;
 		return Date.now() - this.lastUpdateTimestamp > UPDATE_INTERVAL;
@@ -209,9 +220,7 @@ export class CommunityNodeTypesService {
 	}
 
 	async getCommunityNodeTypes(): Promise<CommunityNodeType[]> {
-		if (this.updateRequired()) {
-			await this.fetchNodeTypes();
-		}
+		await this.refreshIfRequired();
 
 		const isInstalled = await this.createIsInstalled();
 
@@ -229,9 +238,7 @@ export class CommunityNodeTypesService {
 	}
 
 	async findVetted(packageName: string) {
-		if (this.updateRequired()) {
-			await this.fetchNodeTypes();
-		}
+		await this.refreshIfRequired();
 		const vettedTypes = Array.from(this.communityNodeTypes.values());
 		return vettedTypes.find((nodeType) => nodeType.packageName === packageName);
 	}

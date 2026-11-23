@@ -130,7 +130,7 @@ const onUninstall = async () => {
 		await communityNodesStore.uninstallPackage(props.activePackageName);
 		await Promise.all([
 			useNodeTypesStore().getNodeTypes(),
-			useNodeTypesStore().fetchCommunityNodePreviews(),
+			useNodeTypesStore().fetchCommunityNodePreviews({ force: true }),
 		]);
 		toast.showMessage({
 			title: i18n.baseText('settings.communityNodes.messages.uninstall.success.title'),

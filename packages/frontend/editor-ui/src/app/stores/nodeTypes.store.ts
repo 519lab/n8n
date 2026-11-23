@@ -472,10 +472,13 @@ export const useNodeTypesStore = defineStore(STORES.NODE_TYPES, () => {
 		return await nodeTypesApi.getNodeParameterActionResult(rootStore.restApiContext, sendData);
 	};
 
-	const fetchCommunityNodePreviews = async () => {
-		if (!settingsStore.isCommunityNodesFeatureEnabled) {
-			return;
-		}
+	// The catalog is large and slow to build server-side, and every editor load asks for it.
+	// Load it once per session and share an in-flight request, so repeated navigation can't
+	// stack up open requests that exhaust the browser's per-host connections.
+	let communityNodePreviewsRequest: Promise<void> | null = null;
+	let communityNodePreviewsLoaded = false;
+
+	const loadCommunityNodePreviews = async () => {
 		try {
 			const communityNodeTypes = await nodeTypesApi.fetchCommunityNodeTypes(
 				rootStore.restApiContext,
@@ -484,8 +487,26 @@ export const useNodeTypesStore = defineStore(STORES.NODE_TYPES, () => {
 			vettedCommunityNodeTypes.value = new Map(
 				communityNodeTypes.map((nodeType) => [nodeType.name, nodeType]),
 			);
+			communityNodePreviewsLoaded = true;
 		} catch (error) {
 			vettedCommunityNodeTypes.value = new Map();
+		}
+	};
+
+	/** `force` refetches, e.g. after a package install changes `isInstalled`. */
+	const fetchCommunityNodePreviews = async ({ force = false }: { force?: boolean } = {}) => {
+		if (!settingsStore.isCommunityNodesFeatureEnabled) {
+			return;
+		}
+		if (!force && communityNodePreviewsLoaded) return;
+		if (!force && communityNodePreviewsRequest) return await communityNodePreviewsRequest;
+
+		const request = loadCommunityNodePreviews();
+		communityNodePreviewsRequest = request;
+		try {
+			await request;
+		} finally {
+			if (communityNodePreviewsRequest === request) communityNodePreviewsRequest = null;
 		}
 	};
 
