@@ -154,6 +154,25 @@ describe('WorkflowHistory', () => {
 		});
 	});
 
+	it('should not replace url path when the view is left before history finishes loading', async () => {
+		Object.keys(route.params).forEach((key) => delete route.params[key]);
+		route.params.workflowId = workflowId;
+
+		let resolveHistory: (value: typeof historyData) => void = () => {};
+		vi.spyOn(workflowHistoryStore, 'getWorkflowHistory').mockReturnValue(
+			new Promise((resolve) => {
+				resolveHistory = resolve;
+			}),
+		);
+
+		const { unmount } = renderComponent({ pinia });
+		unmount();
+		resolveHistory(historyData);
+		await flushPromises();
+
+		expect(router.replace).not.toHaveBeenCalled();
+	});
+
 	it('should load version data if path contains /:versionId', async () => {
 		const getWorkflowVersionSpy = vi.spyOn(workflowHistoryStore, 'getWorkflowVersion');
 
