@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeMount, ref, watch, watchEffect, computed, h } from 'vue';
+import { onBeforeMount, onBeforeUnmount, ref, watch, watchEffect, computed, h } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import type { IWorkflowDb, UserAction } from '@/Interface';
 import {
@@ -196,6 +196,12 @@ const onSelectPublishTimelineVersion = async (id: WorkflowVersionId) => {
 	await navigateToVersion(id);
 };
 
+// Set when the user leaves the view, so the initial load can't redirect them back into it.
+let isUnmounted = false;
+onBeforeUnmount(() => {
+	isUnmounted = true;
+});
+
 onBeforeMount(async () => {
 	sendTelemetry('User opened workflow history');
 	if (activeTab.value === 'publishTimeline') {
@@ -209,7 +215,7 @@ onBeforeMount(async () => {
 		publishedWorkflow.value = workflow;
 		isListLoading.value = false;
 
-		if (!versionId.value && workflowHistory.value.length) {
+		if (!isUnmounted && !versionId.value && workflowHistory.value.length) {
 			await router.replace({
 				name: VIEWS.WORKFLOW_HISTORY,
 				params: {

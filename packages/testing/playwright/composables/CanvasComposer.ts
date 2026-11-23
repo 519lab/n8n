@@ -54,7 +54,11 @@ export class CanvasComposer {
 	 */
 	async switchBetweenEditorAndHistory(): Promise<void> {
 		await this.n8n.canvas.openWorkflowHistory();
+		await expect(this.n8n.page).toHaveURL(/\/history/);
 		await this.n8n.canvas.closeWorkflowHistory();
+		// The history page renders its own canvas preview, so node visibility alone
+		// doesn't prove the editor is back.
+		await expect(this.n8n.page).not.toHaveURL(/\/history/);
 		await this.n8n.page.waitForLoadState();
 		await expect(this.n8n.canvas.getCanvasNodes().first()).toBeVisible();
 		await expect(this.n8n.canvas.getCanvasNodes().last()).toBeVisible();
